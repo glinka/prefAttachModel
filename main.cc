@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <iostream>
 #include "prefAttachModel.h"
 
 using namespace std;
@@ -9,6 +10,6 @@ int main(int argc, char *argv[]) {
   double kappa = atof(argv[3]);
   int nSteps = atoi(argv[4]);
   int dataInterval = atoi(argv[5]);
-  prefAttachModel m(n, m, kappa);
-  m.run(nStpes, dataInterval);
+  prefAttachModel model(n, m, kappa);
+  model.run(nSteps, dataInterval);
 }

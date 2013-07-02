@@ -2,18 +2,19 @@
 #define PREFATTACH_H
 #include <random>
 
+struct graphData {
+  int *degSeq;
+};
+
 class prefAttachModel {
  private:
-  struct graphData {
-    int *degSeq;
-  };
   const int n, m;
   const double kappa;
   double rnNormalization;
   int **A;
   int *degs;
-  std::mt19937 (*randomGenerator)();
-  double getURN();
+  std::mt19937 mt;
+  double genURN();
   void initGraph();
   graphData step();
  public:

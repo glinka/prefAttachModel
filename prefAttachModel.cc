@@ -12,11 +12,10 @@ prefAttachModel::prefAttachModel(const int n, const int m, const double kappa): 
   unsigned seed = chrono::system_clock::now().time_since_epoch().count();
   mt19937 mt(seed);
   rnNormalization = (double) mt.max();
-  randomGenerator = mt;
 };
 
-double prefAttachModel::getURN() {
-  return randomGenerator()/rnNormalization;
+double prefAttachModel::genURN() {
+  return mt()/rnNormalization;
 }
 
 void prefAttachModel::initGraph() {
@@ -24,8 +23,8 @@ void prefAttachModel::initGraph() {
   //init random number generator
   //init adjacency matrix and edge vector
   A = new int*[n];
-  degs = new int[n]
-  for(i = 0, i < n; i++) {
+  degs = new int[n];
+  for(i = 0; i < n; i++) {
     A[i] = new int[n];
   }
   int nEdges = (n*(n-1))/2 + n;
@@ -33,7 +32,7 @@ void prefAttachModel::initGraph() {
   int newEdge;
   //assign m edges uniformly
   for(i = 0; i < m; i++) {
-    newEdge = (int) floor(nEdges*getURN());
+    newEdge = (int) floor(nEdges*genURN());
     edges[newEdge] = edges[newEdge] + 1;
   }
   int index = 0;
@@ -90,7 +89,7 @@ graphData prefAttachModel::step() {
   sum = 0;
   i = 0;
   while(sum < p) {
-    sum += (degs[i++]+kappa)/(2*m+n*k);
+    sum += (degs[i++]+kappa)/(2*m+n*kappa);
   }
   uNew = --i;
   A[uOld][v] = A[uOld][v] - 1;
