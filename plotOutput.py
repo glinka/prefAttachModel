@@ -27,7 +27,7 @@ def genData(fileName):
 if __name__=="__main__":
     import sys
     import matplotlib.pyplot as plt
-    import matplotlib.animation as animation
+    #import matplotlib.animation as animation
     params, data = genData(sys.argv[1])
     fig = plt.figure()
     ims = []

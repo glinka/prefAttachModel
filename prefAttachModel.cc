@@ -4,6 +4,7 @@
 #include <chrono>
 #include <sstream>
 #include <fstream>
+#include <ctime>
 #include "prefAttachModel.h"
 
 using namespace std;
@@ -35,7 +36,15 @@ int compInt(const void *p1, const void *p2) {
 int compFlt(const void *p1, const void *p2) {
     double fp1 = *(double *) p1;
     double fp2 = *(double *) p2;
-    return( ((int) fp1) - ((int) fp2));
+    if(fp1 > fp2) {
+	return 1;
+    }
+    else if(fp2 > fp1) {
+	return -1;
+    }
+    else {
+	return 0;
+    }
 }
 
 prefAttachModel::prefAttachModel(const int n, const int m, const double kappa): n(n), m(m), kappa(kappa) {
@@ -110,10 +119,8 @@ void prefAttachModel::initGraph() {
 }
 
 graphData prefAttachModel::step(bool saveFlag) {
-  int uOld, uNew, v;
   int i = 0, degCount = 0;
   int oldEdge = ((int) floor(2*m*genURN())) + 1;
-  double p, sum;
   while(degCount < oldEdge) {
     degCount = degCount + degs[i++];
   }
@@ -123,6 +130,7 @@ graphData prefAttachModel::step(bool saveFlag) {
       degCount += A[i][j++];
   }
   j--;
+  int uOld, v;
   if(genURN() > 0.5) {
     uOld = i;
     v = j;
@@ -131,33 +139,14 @@ graphData prefAttachModel::step(bool saveFlag) {
     uOld = j;
     v = i;
   }
-  //above should be faster for large n, as
-  //the commented block below must loop through
-  //n^2 elements to find the old edge
-  /**
-    sum = 0;
-    for(j = i; j < n; j++) {
-      sum += A[i][j];
-    }
-    edgeCount += sum;
-    i++;
-  }
-  edgeCount -= sum;
-  i--;
-  j = i;
-  while(edgeCount < oldEdge) {
-    edgeCount += A[i][j++];
-  }
-  j--;
-  **/
   //find new edge based on linear preferential attachment
-  p = genURN();
-  sum = 0;
+  double p = genURN();
+  double sum = 0;
   i = 0;
   while(sum < p) {
     sum += (degs[i++]+kappa)/(2*m+n*kappa);
   }
-  uNew = --i;
+  int uNew = --i;
   A[uOld][v] = A[uOld][v] - 1;
   A[v][uOld] = A[v][uOld] - 1;
   A[uNew][v] = A[uNew][v] + 1;
@@ -168,17 +157,16 @@ graphData prefAttachModel::step(bool saveFlag) {
       cout << "sumthins up" << endl;
   }
   if(saveFlag) {
-      int degcpy[n];
       graphData data;
+      data.degSeq = new int[n];
       data.A = new int*[n];
       for(i = 0; i < n; i++) {
 	  data.A[i] = new int[n];
-	  degcpy[i] = degs[i];
+	  data.degSeq[i] = degs[i];
 	  for(j = 0; j < n; j++) {
 	      data.A[i][j] = A[i][j];
 	  }
       }
-      data.degSeq = degcpy;
       return data;
   }
 }
@@ -202,6 +190,7 @@ void prefAttachModel::run(int nSteps, int dataInterval) {
 	  delete[] data[i].A[j];
       }
       delete[] data[i].A;
+      delete[] data[i].degSeq;
   }
   delete[] data;
 }
@@ -209,136 +198,69 @@ void prefAttachModel::run(int nSteps, int dataInterval) {
 void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
     int i, j, k;
     int nData = nSteps/dataInterval;
-    double ***toSort = new double**[nData];
+    int ***sorted = new int**[nData];
+    int **toSort = new int*[n+1];
+    for(j = 0; j < n+1; j++) {
+      toSort[j] = new int[n+1];
+    }
     //for each piece of data, fill
     //with n x n+1 array with the first column
     //composed of the degrees
+    /**
+       toSort[i] is organized as follows:
+
+          0   deg(v1)  deg(v2)  ...  deg(vn)
+       deg(v1)  A11      A12    ...    A1n
+       deg(v2)  A21      A22    ...    A2n
+          .      .        .      .      .
+	  .      .        .      .      .
+	  .      .        .      .      .
+       deg(vn)  An1      An2    ...    Ann
+
+       and is thus symmetric
+    **/
     for(i = 0; i < nData; i++) {
-	toSort[i] = new double*[n+1];
+	sorted[i] = new int*[n+1];
 	for(j = 0; j < n+1; j++) {
-	    toSort[i][j] = new double[n+1];
+	    sorted[i][j] = new int[n+1];
 	    for(k = 0; k < n+1; k++) {
 		if((j == 0) && (k == 0)) {
-		    toSort[i][j][k] = 0;
+		    toSort[j][k] = 0;
 		}
 		else if(j == 0) {
-		    toSort[i][j][k] = data[i].degSeq[k-1];
+		    toSort[j][k] = data[i].degSeq[k-1];
 		}
 		else if(k == 0) {
-		    toSort[i][j][k] = data[i].degSeq[j-1];
+		    toSort[j][k] = data[i].degSeq[j-1];
 		}
 		else {
-		    toSort[i][j][k] = data[i].A[j-1][k-1];
+		    toSort[j][k] = data[i].A[j-1][k-1];
 		}
 	    }
 	}
 	//toSort[i] cannot be cast into a double pointer. because
 	//it's non-contiguous memory. dick move, bjarne, dick move.
-	int sortedDegs[n];
-	double fltSortedDegs[n];
+	int sortedDegs[n][2];
 	for(j = 0; j < n; j++) {
-	    sortedDegs[j] = toSort[i][0][j+1];
+	    sortedDegs[j][0] = toSort[0][j+1];
+	    sortedDegs[j][1] = j;
 	}
-	qsort(sortedDegs, n, sizeof(int), compInt);
-	for(j = 0; j < n; j++) {
-	    fltSortedDegs[j] = sortedDegs[j];
-	}
-	double inc = 1.0/n;
-	//create unique ordering of degrees
-	for(j = 0; j < n-1; j++) {
-	    if(sortedDegs[j+1] == sortedDegs[j]) {
-		fltSortedDegs[j+1] = fltSortedDegs[j] + inc;
-	    }
-	}
-	double *pD;
-	for(j = 0; j < n; j++) {
-	    pD = (double *) bsearch(&toSort[i][0][j+1], fltSortedDegs, n-j, sizeof(double), compFlt);
-	    toSort[i][0][j+1] = *pD;
-	    toSort[i][j+1][0] = toSort[i][0][j+1];
-	    *pD = fltSortedDegs[n-j-1];
-	    qsort(fltSortedDegs, n-j, sizeof(double), compFlt);
+	qsort(sortedDegs, n, 2*sizeof(int), compInt);
+	int newIndex;
+	for(k = 0; k < n; k++) {
+	  newIndex = sortedDegs[k][1] + 1;
+	  for(j = 0; j < n+1; j++) {
+	      sorted[i][j][k+1] = toSort[j][newIndex];
+	  }
 	}
 	for(j = 0; j < n; j++) {
-	    //cout << toSort[i][0][j+1] << endl;
+	  newIndex = sortedDegs[j][1] + 1;
+	  for(k = 0; k < n+1; k++) {
+	    sorted[i][j+1][k] = toSort[newIndex][k];
+	  }
 	}
+	sorted[i][0][0] = 0;
 	/**
-	//check symmetry
-	for(j = 0; j < n+1; j++) {
-	    for(k = 0; k < n+1; k++) {
-		if(toSort[i][j][k] != toSort[i][k][j]) {
-		    cout << j << "error" << k << endl;
-		}
-	    }
-	}
-	**/
-	double sortNow[n][n+1];
-	for(j = 0; j < n; j++) {
-	    for(k = 0; k < n+1; k++) {
-		sortNow[j][k] = toSort[i][j+1][k];
-	    }
-	}
-	/**
-	//check symmetry
-	for(j = 0; j < n; j++) {
-	    for(k = 0; k < n; k++) {
-		if(sortNow[j][k+1] != sortNow[k][j+1]) {
-		    cout << j << "error" << k;
-		}
-	    }
-	}
-//passed
-**/
-	for(j = 0; j < n; j++) {
-	    //cout << sortNow[j][0] << " " << sortNow[j][1] << endl;
-	}
-
-	qsort(sortNow, n, (n+1)*sizeof(double), compndArray);
-
-	for(j = 0; j < n; j++) {
-	    //cout << sortNow[j][0] << " " << sortNow[j][1] << endl;
-	}
-
-	double temp;
-	for(j = 0; j < n; j++) {
-	    sortNow[j][0] = toSort[i][j+1][0];
-	    for(k = j; k < n; k++) {
-		temp = sortNow[j][k+1];
-		sortNow[j][k+1] = sortNow[k][j+1];
-		sortNow[k][j+1] = temp;
-	    }
-	}
-	for(j = 0; j < n; j++) {
-	    //cout << sortNow[j][0] << " " << sortNow[j][50] << endl;
-	}
-	qsort(sortNow, n, (n+1)*sizeof(double), compndArray);
-	/**
-	//check symmetry
-	for(j = 0; j < n; j++) {
-	    for(k = 0; k < n; k++) {
-		if(sortNow[j][k+1] != sortNow[k][j+1]) {
-		    cout << j << "error" << k << endl;
-		}
-	    }
-	}
-//passed
-
-
-	for(j = 0; j < n; j++) {
-	    //cout << sortNow[j][0] << " " << sortNow[j][50] << endl;
-	}
-	**/
-	//*************************************
-	//copy properly sorted array into toSort
-	//***************pp**********************
-	for(j = 0; j < n; j++) {
-	    for(k = 0; k < n+1; k++) {
-		toSort[i][j+1][k] = sortNow[j][k];
-	    }
-	}
-	//finish unecessary duplicate of degrees, then check for symmetry
-	for(j = 0; j < n; j++) {
-	    toSort[i][0][j+1] = sortNow[j][0];
-	}
 	for(j = 0; j < n+1; j++) {
 	    for(k = 0; k < n+1; k++) {
 		if(toSort[i][j][k] != toSort[i][k][j]) {
@@ -346,18 +268,8 @@ void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
 		}
 	    }
 	}
+	**/
     }
-    //test if A changed
-    int sum = 0;
-    for(i = 0; i < n+1; i++) {
-	for(j = 0; j < n+1; j++) {
-	    if(toSort[0][i][j] == toSort[9][i][j]) {
-		sum++;
-	    }
-	}
-    }
-    cout << "n of similarities: " << sum << endl;
-
     /**
        output data into single csv file with following format:
        n, m, kappa, nSteps, dataInterval
@@ -378,7 +290,7 @@ void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
     for(i = 0; i < nData; i++) {
 	for(j = 0; j < n; j++) {
 	    for(k = 0; k < n+1; k++) {
-		paData << (int) toSort[i][j+1][k];
+		paData << (int) sorted[i][j+1][k];
 		if(k != n) {
 		    paData << ",";
 		}
@@ -393,20 +305,24 @@ void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
     //free memory, no leaks will be possible
     for(i = 0; i < nData; i++) {
 	for(j = 0; j < n+1; j++) {
-	    delete[] toSort[i][j];
+	    delete[] sorted[i][j];
 	}
-	delete[] toSort[i];
+	delete[] sorted[i];
     }
+    for(j = 0; j < n+1; j++) {
+      delete[] toSort[j];
+    }
+    delete[] sorted;
     delete[] toSort;
 }
 
 
 
 int prefAttachModel::consistencyCheck() {
-    int sum;
-    for(int i = 0; i < n; i++) {
+  int sum, i , j;
+    for(i = 0; i < n; i++) {
 	sum = 0;
-	for(int j = 0; j < n; j++) {
+	for(j = 0; j < n; j++) {
 	    sum += A[i][j];
 	    if(A[i][j] != A[j][i]) {
 		cout << "symmmetry broken" << endl;
@@ -416,6 +332,9 @@ int prefAttachModel::consistencyCheck() {
 	if(sum != degs[i]) {
 	    cout << sum << " " << degs[i] << " " << i << endl;
 	    return 1;
+	}
+	else if(sum < 0) {
+	  cout << "negative degree at: " << i << " " << j << endl;
 	}
     }
     return 0;
