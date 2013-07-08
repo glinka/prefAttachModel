@@ -15,5 +15,15 @@
 .#*
 *#
 *~
+#"compiled" python
+*.pyc
 #executable
 prefAttachModel
+#png of plots
+*.png
+#.txt from plotOutput
+*.txt
+#csv output
+*.csv
+#avi files
+*.avi

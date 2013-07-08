@@ -3,7 +3,8 @@
 #include <random>
 
 struct graphData {
-  int *degSeq;
+    int *degSeq;
+    int **A;
 };
 
 class prefAttachModel {
@@ -13,14 +14,23 @@ class prefAttachModel {
   double rnNormalization;
   int **A;
   int *degs;
-  std::mt19937 mt;
+  std::mt19937 *mt;
   double genURN();
   void initGraph();
-  graphData step();
+  graphData step(bool saveFlag);
+  int consistencyCheck();
+  void saveData(graphData *data, int nSteps, int dataInterval);
  public:
   void run(int nSteps, int dataInterval);
   prefAttachModel(int n, int m, double kappa);
-  ~prefAttachModel(){};
+  ~prefAttachModel() {
+      for(int i = 0; i < n; i++) {
+	  delete[] A[i];
+      }
+      delete[] A;
+      delete[] degs;
+      delete mt;
+  };
 };
 
 #endif
