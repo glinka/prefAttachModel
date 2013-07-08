@@ -370,7 +370,11 @@ void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
     string fileName = ss.str();
     ofstream paData;
     paData.open(fileName);
-    paData << n << "," << m << "," << kappa << "," << nSteps << "," << dataInterval << "\n";
+    paData << "n=" << n << ",";
+    paData << "m=" << m << ",";
+    paData << "kappa=" << kappa << ",";
+    paData << "nSteps=" << nSteps << ",";
+    paData << "dataInterval=" << dataInterval << "\n";
     for(i = 0; i < nData; i++) {
 	for(j = 0; j < n; j++) {
 	    for(k = 0; k < n+1; k++) {

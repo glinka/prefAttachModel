@@ -7,22 +7,22 @@ def genData(fileName):
     pathToFile = os.path.realpath(fileName)
     f = open(pathToFile, "r")
     paramstr = f.readline()
-    params = []
+    params = {}
     f.close()
-    comma1 = 0
-    for i in range(4):
-        comma2 = paramstr.find(",")
-        params.append(float(paramstr[comma1:comma2]))
-        paramstr = paramstr[comma2+1:]
-    params.append(float(paramstr))
-    for i in range(len(params)):
-        if(params[i] % 1 == 0):
-            params[i] = int(params[i])
+    begin = 0
+    comma = 1
+    while comma > 0:
+        comma = paramstr.find(",")
+        equals = paramstr.find("=")
+        params[paramstr[begin:equals]] = float(paramstr[equals+1:comma])
+        paramstr = paramstr[comma+1:]
+    params[paramstr[begin:equals]] = float(paramstr[equals+1:comma])
+    for key in params:
+        if(params[key] % 1 == 0):
+            params[key] = int(params[key])
     print params
     data = np.genfromtxt(pathToFile, delimiter=",", skip_header=1)
-    print data.shape
     return params, data
-#output in key:val to add into dict, loop through first line with while(comma2>0):
 
 if __name__=="__main__":
     import sys
@@ -31,15 +31,10 @@ if __name__=="__main__":
     params, data = genData(sys.argv[1])
     fig = plt.figure()
     ims = []
-    n = params[0]
-    m = params[1]
-    kappa = params[2]
-    nSteps = params[3]
-    dataInterval = params[4]
     f = open('pngList.txt', "w")
-    for i in range(nSteps/dataInterval):
+    for i in range(params['nSteps']/params['dataInterval']):
         fig = plt.figure(i)
-        plt.pcolormesh(data[(i)*n:(i+1)*n,1:n+1], cmap='Greys')
+        plt.pcolormesh(data[(i)*params['n']:(i+1)*params['n'],1:params['n']+1], cmap='Greys')
         plt.savefig("fig" + str(i) + ".png", format="png")
         f.write("fig" + str(i) + ".png\n")
     f.close()
