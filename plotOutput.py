@@ -35,7 +35,7 @@ if __name__=="__main__":
     f = open('pngList.txt', "w")
     for i in range(params['nSteps']/params['dataInterval']):
         fig = plt.figure(i)
-        plt.pcolormesh(data[(i)*params['n']:(i+1)*params['n'],1:params['n']+1], cmap='Greys')
+        plt.pcolormesh(data[(i)*params['n']:(i+1)*params['n'],1:params['n']+1], cmap='Paired')
         plt.savefig("fig" + str(i) + ".png", format="png")
         f.write("fig" + str(i) + ".png\n")
     f.close()
