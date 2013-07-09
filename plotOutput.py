@@ -11,6 +11,7 @@ def genData(fileName):
     f.close()
     begin = 0
     comma = 1
+#create dict from header, based on key=value format in csv
     while comma > 0:
         comma = paramstr.find(",")
         equals = paramstr.find("=")

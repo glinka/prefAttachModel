@@ -4,7 +4,7 @@
 #include <chrono>
 #include <sstream>
 #include <fstream>
-#include <ctime>
+//#include <ctime>
 #include "prefAttachModel.h"
 
 using namespace std;
@@ -112,9 +112,11 @@ void prefAttachModel::initGraph() {
   }
   cout << sum/2 << " " << newSum << " " << m << endl;
   **/
+  /**
   if(consistencyCheck() == 1) {
-      cout << "sumthins up initially" << endl;
+      cout << "init error" << endl;
   }
+  **/
   delete[] edges;
 }
 
@@ -153,9 +155,11 @@ graphData prefAttachModel::step(bool saveFlag) {
   A[v][uNew] = A[v][uNew] + 1;
   degs[uOld] = degs[uOld] - 1;
   degs[uNew] = degs[uNew] + 1;
+  /**
   if(consistencyCheck() == 1) {
-      cout << "sumthins up" << endl;
+      cout << "step error" << endl;
   }
+  **/
   if(saveFlag) {
       graphData data;
       data.degSeq = new int[n];
@@ -247,19 +251,24 @@ void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
 	}
 	qsort(sortedDegs, n, 2*sizeof(int), compInt);
 	int newIndex;
+	int tempArray[n+1][n];
 	for(k = 0; k < n; k++) {
 	  newIndex = sortedDegs[k][1] + 1;
 	  for(j = 0; j < n+1; j++) {
-	      sorted[i][j][k+1] = toSort[j][newIndex];
+	      tempArray[j][k] = toSort[j][newIndex];
 	  }
 	}
 	for(j = 0; j < n; j++) {
 	  newIndex = sortedDegs[j][1] + 1;
-	  for(k = 0; k < n+1; k++) {
-	    sorted[i][j+1][k] = toSort[newIndex][k];
+	  for(k = 0; k < n; k++) {
+	      sorted[i][j+1][k+1] = tempArray[newIndex][k];
 	  }
 	}
 	sorted[i][0][0] = 0;
+	for(j = 0; j < n; j++) {
+	    sorted[i][0][j+1] = sortedDegs[j][0];
+	    sorted[i][j+1][0] = sortedDegs[j][0];
+	}
 	/**
 	for(j = 0; j < n+1; j++) {
 	    for(k = 0; k < n+1; k++) {
@@ -319,7 +328,8 @@ void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
 
 
 int prefAttachModel::consistencyCheck() {
-  int sum, i , j;
+    int sum, i , j;
+    int edgeSum = 0;
     for(i = 0; i < n; i++) {
 	sum = 0;
 	for(j = 0; j < n; j++) {
@@ -329,6 +339,7 @@ int prefAttachModel::consistencyCheck() {
 		return 1;
 	    }
 	}
+	edgeSum += sum;
 	if(sum != degs[i]) {
 	    cout << sum << " " << degs[i] << " " << i << endl;
 	    return 1;
@@ -336,6 +347,10 @@ int prefAttachModel::consistencyCheck() {
 	else if(sum < 0) {
 	  cout << "negative degree at: " << i << " " << j << endl;
 	}
+    }
+    if(edgeSum/2 != m) {
+	cout << "nonconservative edge simulation" << endl;
+	return 1;
     }
     return 0;
 }
