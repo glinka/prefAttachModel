@@ -92,31 +92,6 @@ void prefAttachModel::initGraph() {
       degs[j] = degs[j] + A[j][i];
     }
   }
-  /** 
-      tests whether calcGraphsProps is working
-  **/
-  calcGraphProps::getAdjEigVals(A, n);
-  /**new method for assigning degs, inefficient
-  int sum;
-  for(i = 0; i < n; i++) {
-      sum = 0;
-      for(j = 0; j < n; j++) {
-	  sum += A[i][j];
-      }
-      degs[i] = sum;
-  }
-  **/
-  //deg test
-  /**  int sum = 0;
-  for(i = 0; i < n; i++) {
-      sum += degs[i];
-  }
-  int newSum = 0;
-  for(i = 0; i < nEdges; i++) {
-      newSum += edges[i];
-  }
-  cout << sum/2 << " " << newSum << " " << m << endl;
-  **/
   /**
   if(consistencyCheck() == 1) {
       cout << "init error" << endl;
@@ -289,7 +264,7 @@ void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
     paData << "dataInterval=" << dataInterval << "\n";
     for(i = 0; i < nData; i++) {
 	for(j = 0; j < n; j++) {
-	    for(k = 0; k < n+1; k++) {
+	    for(k = 0; k < n; k++) {
 		paData << (int) sorted[i][j+1][k];
 		if(k != n) {
 		    paData << ",";
