@@ -6,7 +6,7 @@
 #include <fstream>
 //#include <ctime>
 #include "prefAttachModel.h"
-
+#include "calcGraphProps.h"
 using namespace std;
 
 int compndArray(const void *c1v, const void *c2v) {
@@ -30,7 +30,8 @@ int compndArray(const void *c1v, const void *c2v) {
 }
 
 int compInt(const void *p1, const void *p2) {
-    return( *(int *)p1 - *(int *)p2);
+  //overflow be damned
+  return( *(int *)p1 - *(int *)p2);
 }
 
 int compFlt(const void *p1, const void *p2) {
@@ -50,11 +51,11 @@ int compFlt(const void *p1, const void *p2) {
 prefAttachModel::prefAttachModel(const int n, const int m, const double kappa): n(n), m(m), kappa(kappa) {
   unsigned seed = chrono::system_clock::now().time_since_epoch().count();
   mt = new mt19937(seed);
-  rnNormalization = (double) mt->max();
+  rnNormalization = (double) (mt->max()+1);
 };
 
 double prefAttachModel::genURN() {
-    return (*mt)()/(rnNormalization-1);
+    return (*mt)()/(rnNormalization);
 }
 
 void prefAttachModel::initGraph() {
@@ -91,6 +92,10 @@ void prefAttachModel::initGraph() {
       degs[j] = degs[j] + A[j][i];
     }
   }
+  /** 
+      tests whether calcGraphsProps is working
+  **/
+  calcGraphProps::getAdjEigVals(A, n);
   /**new method for assigning degs, inefficient
   int sum;
   for(i = 0; i < n; i++) {
@@ -202,11 +207,8 @@ void prefAttachModel::run(int nSteps, int dataInterval) {
 void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
     int i, j, k;
     int nData = nSteps/dataInterval;
-    int ***sorted = new int**[nData];
-    int **toSort = new int*[n+1];
-    for(j = 0; j < n+1; j++) {
-      toSort[j] = new int[n+1];
-    }
+    int sorted[nData][n+1][n+1];
+    int toSort[n+1][n+1];
     //for each piece of data, fill
     //with n x n+1 array with the first column
     //composed of the degrees
@@ -224,9 +226,7 @@ void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
        and is thus symmetric
     **/
     for(i = 0; i < nData; i++) {
-	sorted[i] = new int*[n+1];
 	for(j = 0; j < n+1; j++) {
-	    sorted[i][j] = new int[n+1];
 	    for(k = 0; k < n+1; k++) {
 		if((j == 0) && (k == 0)) {
 		    toSort[j][k] = 0;
@@ -269,15 +269,6 @@ void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
 	    sorted[i][0][j+1] = sortedDegs[j][0];
 	    sorted[i][j+1][0] = sortedDegs[j][0];
 	}
-	/**
-	for(j = 0; j < n+1; j++) {
-	    for(k = 0; k < n+1; k++) {
-		if(toSort[i][j][k] != toSort[i][k][j]) {
-		    cout << "botched symmetry at: " << k << "," << j << endl;
-		}
-	    }
-	}
-	**/
     }
     /**
        output data into single csv file with following format:
@@ -309,20 +300,6 @@ void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
     }
     paData << "\n\n";
     paData.close();
-		
-
-    //free memory, no leaks will be possible
-    for(i = 0; i < nData; i++) {
-	for(j = 0; j < n+1; j++) {
-	    delete[] sorted[i][j];
-	}
-	delete[] sorted[i];
-    }
-    for(j = 0; j < n+1; j++) {
-      delete[] toSort[j];
-    }
-    delete[] sorted;
-    delete[] toSort;
 }
 
 
