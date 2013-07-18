@@ -265,7 +265,7 @@ void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
     for(i = 0; i < nData; i++) {
 	for(j = 0; j < n; j++) {
 	    for(k = 0; k < n; k++) {
-		paData << (int) sorted[i][j+1][k];
+		paData << (int) sorted[i][j+1][k+1];
 		if(k != n) {
 		    paData << ",";
 		}
