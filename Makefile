@@ -2,7 +2,7 @@ toCompile = calcGraphProps.o prefAttachModel.o main.o
 
 CXX = g++
 
-CXXFLAGS = -g -Wall -std=c++0x -O2 -fPIC
+CXXFLAGS = -g -Wall -std=c++0x -O3 -fPIC
 
 all: prefAttachModel
 
