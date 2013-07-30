@@ -25,5 +25,6 @@ prefAttachModel
 *.txt
 #csv output
 *.csv
-#avi files
+#animation files
 *.avi
+*.mkv
