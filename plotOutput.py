@@ -27,21 +27,36 @@ def genData(fileName):
     data = np.genfromtxt(pathToFile, delimiter=",", skip_header=1)
     return params, data
 
+def makeFolder(baseName):
+    folderCount = 0
+    newFolder = baseName + str(folderCount) + '/'
+    while os.path.exists(newFolder):
+        folderCount = folderCounter + 1
+        newFolder = baseName + str(folderCount) + '/'
+    os.mkdir(newFolder)
+    return newFolder
+
+def genFileName(baseName, params, uniqueID=''):
+    fileName = baseName
+    for key in params.keys():
+        fileName = fileName + '_' + key + '_' + str(params[key])
+    return fileName + uniqueID
+
 def animateContour(data, params, fileName, cmap='Paired', fps=10, bitrate=14400, containerType='.mkv'):
     import matplotlib.animation as animation
+    nData = params['nSteps']/params['dataInterval']
+    n = params['n']
     fig = plt.figure()
-    plt.text(params['n']/2,1.05*params['n'],'Evolution of adjacency matrix in preferential attachment model', ha='center', fontsize=16)
-    ims = []
-    for i in range(params['nSteps']/params['dataInterval']):
-        ims.append((plt.pcolormesh(data[(i)*params['n']:(i+1)*params['n'],:params['n']], cmap=cmap),))
-    tcAnim = animation.ArtistAnimation(fig, ims, interval=10)
-    metadata = dict(artist='alexander holiday')
-    writer = animation.FFMpegWriter(fps=fps, bitrate=bitrate, metadata=metadata)
-    us = fileName.find('_')
-    animFileName = "paContourAnim" + fileName[us:-4] + containerType
-    tcAnim.save(animFileName, writer=writer)
+    plt.text(n/2,1.05*params['n'],'Evolution of adjacency matrix in preferential attachment model', ha='center', fontsize=16)
+    newFolder = makeFolder('contourPlots')
+    for i in range(nData):
+        plt.clf()
+        plt.pcolormesh(data[(i)*n:(i+1)*n,:n], cmap=cmap)
+        plt.draw()
+        fileName = genFileName('contour', params, str(i))
+        plt.savefig(newFolder + fileName + '.png')
 
-def animate3d(data, params, fileName, fps=10, bitrate=14400, containerType='.mkv'):
+def animateRawData(data, params, fileName, fps=10, bitrate=14400, containerType='.mkv'):
     import matplotlib.animation as animation
     from mpl_toolkits.mplot3d import Axes3D
     nData = params['nSteps']/params['dataInterval']
@@ -59,30 +74,13 @@ def animate3d(data, params, fileName, fps=10, bitrate=14400, containerType='.mkv
         ax.set_ylim3d(bottom=0, top=100)
         ax.set_zlim3d(bottom=0, top=maxDeg)
     xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
-    fileCounter = 0
-    # create new folder for images
-    newFolder = './animations' + str(fileCounter) + '/'
-    while (os.path.exists(newFolder)) & (fileCounter < 100):
-        fileCounter = fileCounter + 1
-        newFolder = './animations' + str(fileCounter) + '/'
-    os.mkdir(newFolder)
-    # plot all data
+    newFolder = makeFolder('animations')
     for i in range(nData):
         for ax in spAxes:
             ax.scatter(xgrid, ygrid, data[(i)*n:(i+1)*n,:n], c=data[(i)*n:(i+1)*n,:n], cmap='jet')
         plt.draw()
-        plt.savefig(newFolder + 'anim3d_fig' + str(i) + '.png')
-      # may be faster to save files in directory, then stitch together with ffmpeg. Not much
-      # more work at any rate
-    # ims = []
-    # for i in range(nData):
-    #     ims.append((ax.scatter(xgrid, ygrid, data[(i)*n:(i+1)*n,:n], c=data[(i)*n:(i+1)*n,:n], cmap='jet'),))
-    # tcAnim = animation.ArtistAnimation(fig, ims, interval=10)
-    # metadata = dict(artist='alexander holiday')
-    # writer = animation.FFMpegWriter(fps=fps, bitrate=bitrate, metadata=metadata)
-    # us = fileName.find('_')
-    # animFileName = "pa3dAnim" + fileName[us:-4] + containerType
-    # tcAnim.save(animFileName, writer=writer)
+        fileName = genFileName('rawData3d', params, str(i))
+        plt.savefig(newFolder + fileName + '.png')
 
 def plotFittedData(data, params, fns):
     from mpl_toolkits.mplot3d import Axes3D
@@ -93,48 +91,36 @@ def plotFittedData(data, params, fns):
     plt.text(n/2,1.05*n,'Fitted data', ha='center', fontsize=16)
     ax = fig.add_subplot(111, projection='3d')
     ax.view_init(-2.0, 45.0)
-    #makeFolder(name) fn?
-    fileCounter = 0
-    newFolder = './fittedPlots' + str(fileCounter) + '/'
-    while (os.path.exists(newFolder)) & (fileCounter < 100):
-        fileCounter = fileCounter + 1
-        newFolder = './fittedPlots' + str(fileCounter) + '/'
-    os.mkdir(newFolder)
     xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
+    #don't plot each f(x,y) in wireframe
     stride = 10
+    newFolder = makeFolder('fittedPlots')
     for i in range(nData):
-        print i
         fn = gGP.fitXYFunction(xgrid, ygrid, data[(i)*n:(i+1)*n,:n], fns)
         ax.scatter(xgrid, ygrid, data[(i)*n:(i+1)*n,:n], c=data[(i)*n:(i+1)*n,:n], cmap='jet')
-        print fn(xgrid, ygrid)
         ax.plot_wireframe(xgrid, ygrid, fn(xgrid, ygrid), rstride=stride, cstride=stride)
         plt.draw()
-        plt.savefig(newFolder + 'fittedPlot' + str(i) + '.png')
+        fileName = genFileName('fittedPlot', params, str(i))
+        plt.savefig(newFolder + fileName + '.png')
         plt.show()
         ax.cla()
     
 
-def animateEigValsTimeCourse(data, params, fileName, fn, fps=10, bitrate=14400, containerType='.mkv'):
+def animateEigVals(data, params, fileName, fn, fps=10, bitrate=14400, containerType='.mkv'):
     import matplotlib.animation as animation
+    nData = params['nSteps']/params['dataInterval']
+    n = params['n']
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt.figtext(0.5, 0.92, 'Evolution of adjacency eigenvalues in preferential attachment model', ha='center', fontsize=16)
     plt.xlabel('Eigenvalue index')
     plt.ylabel('Eigvenvalue')
-    ims = []
-    fps = int(params['nSteps']/params['dataInterval']/5.0)
-    for i in range(params['nSteps']/params['dataInterval']):
-        ims.append((ax.plot(np.linspace(1,params['n'],params['n']), fn(data[(i)*params['n']:(i+1)*params['n'],:params['n']], params['n']), marker='o', c=[1,0.5,0.5])),)
-    tcAnim = animation.ArtistAnimation(fig, ims, interval=10)
-    metadata = dict(artist='alexander holiday')
-    writer = animation.FFMpegWriter(fps=fps, bitrate=bitrate, metadata=metadata)
-    us = fileName.find('_')
-    #bootleg but functional method for getting filename:
-    space1 = str(fn).find(" ")
-    space2 = str(fn).find(" ", space1+1)
-    prefix = str(fn)[space1+1:space2]
-    animFileName = prefix + fileName[us:-4] + containerType
-    tcAnim.save(animFileName, writer=writer)
+    newFolder = makeFolder('eigVals')
+    for i in range(nData):    
+        ax.cla()
+        ax.plot(np.linspace(1,n,n), fn(data[(i)*n:(i+1)*n,:n], n), marker='o', c=[1,0.5,0.5])
+        fileName = genFileName('eigVals', params, str(i))
+        plt.savefig(newFolder + fileName + '.png')
 
 if __name__=="__main__":
     import argparse
@@ -150,17 +136,16 @@ if __name__=="__main__":
     parser.add_argument('--plot-adj-eigvals', action='store_true', default=False)
     parser.add_argument('--plot-lapl-eigvals', action='store_true', default=False)
     args = parser.parse_args()
-    print args
     for fileName in args.inputFiles:
         params, data = genData(fileName)
         if args.contour:
             animateContour(data, params, fileName, args.cmap, args.fps, args.bitrate, args.container_type)
         if args.threed:
-            animate3d(data, params, fileName, args.fps, args.bitrate, args.container_type)
+            animateRawData(data, params, fileName, args.fps, args.bitrate, args.container_type)
         if args.plot_adj_eigvals:
-            animateEigValsTimeCourse(data, params, fileName, gGP.getAdjEigVals, args.fps, args.bitrate, args.container_type)
+            animateEigVals(data, params, fileName, gGP.getAdjEigVals, args.fps, args.bitrate, args.container_type)
         if args.plot_lapl_eigvals:
-            animateEigValsTimeCourse(data, params, fileName, gGP.getLaplEigVals, args.fps, args.bitrate, args.container_type)
+            animateEigVals(data, params, fileName, gGP.getLaplEigVals, args.fps, args.bitrate, args.container_type)
         #plot fitted data, eventually should be moved into different fn prly
         if args.fit:
             epsilon = 0.1

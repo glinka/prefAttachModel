@@ -43,7 +43,6 @@ def fitXYFunction(X, Y, Z, fns):
     n = X.shape[0]
     nPoints = n*m
     nCoeff = len(fns)
-    scale = 100
     Zvect = np.reshape(Z, nPoints)
     A = np.zeros((nPoints,nCoeff))
     count = 0
@@ -57,8 +56,4 @@ def fitXYFunction(X, Y, Z, fns):
                     A[count, k] = 20
             count = count + 1
     coeffs = np.dot(np.dot(np.linalg.inv(np.dot(np.transpose(A), A)), np.transpose(A)), Zvect)
-    # fn = [lambda x,y: 0]
-    # for i in range(1, nCoeff+1):
-    #     fn.append(lambda x,y: fn[i-1](x,y) + coeffs[i-1]*fns[i-1](x,y))
-    print coeffs
     return (lambda x,y: np.sum([coeffs[i]*fns[i](x,y) for i in range(nCoeff)], 0))
