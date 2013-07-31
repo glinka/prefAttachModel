@@ -31,7 +31,7 @@ def makeFolder(baseName):
     folderCount = 0
     newFolder = baseName + str(folderCount) + '/'
     while os.path.exists(newFolder):
-        folderCount = folderCounter + 1
+        folderCount = folderCount + 1
         newFolder = baseName + str(folderCount) + '/'
     os.mkdir(newFolder)
     return newFolder
@@ -40,7 +40,7 @@ def genFileName(baseName, params, uniqueID=''):
     fileName = baseName
     for key in params.keys():
         fileName = fileName + '_' + key + '_' + str(params[key])
-    return fileName + uniqueID
+    return fileName + '_' + uniqueID
 
 def animateContour(data, params, fileName, cmap='Paired', fps=10, bitrate=14400, containerType='.mkv'):
     import matplotlib.animation as animation
@@ -88,23 +88,32 @@ def plotFittedData(data, params, fns):
     n = params['n']
     fig = plt.figure()
     fig.hold(True)
-    plt.text(n/2,1.05*n,'Fitted data', ha='center', fontsize=16)
-    ax = fig.add_subplot(111, projection='3d')
-    ax.view_init(-2.0, 45.0)
+    spAxes = [fig.add_subplot(i, projection='3d') for i in range(221, 225)]
+    spAxes[0].view_init(-2.0, 45.0)
+    spAxes[1].view_init(-2, 135)
+    spAxes[2].view_init(45, 225)
     xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
+    xyScaling = 100.0
+    xgrid = xgrid/xyScaling
+    ygrid = ygrid/xyScaling
+    #find max degree for axis limits
+    maxDeg = np.max([np.max(data[(i)*n:(i+1)*n,:n]) for i in range(nData)])
+    for ax in spAxes:
+        ax.set_xlim3d(left=0, right=n/xyScaling)
+        ax.set_ylim3d(bottom=0, top=n/xyScaling)
+        ax.set_zlim3d(bottom=0, top=maxDeg)
     #don't plot each f(x,y) in wireframe
     stride = 10
     newFolder = makeFolder('fittedPlots')
     for i in range(nData):
-        fn, xyScaling = gGP.fitXYFunction(xgrid, ygrid, data[(i)*n:(i+1)*n,:n], fns)
-        ax.scatter(xgrid, ygrid, data[(i)*n:(i+1)*n,:n], c=data[(i)*n:(i+1)*n,:n], cmap='jet')
-        ax.plot_wireframe(xgrid/xyScaling, ygrid/xyScaling, fn(xgrid, ygrid), rstride=stride, cstride=stride)
+        Z = np.transpose(data[(i)*n:(i+1)*n,:n])
+        fn = gGP.fitXYFunction(xgrid, ygrid, Z, fns)
+        for ax in spAxes:
+            ax.scatter(xgrid, ygrid, Z, c=Z, cmap='jet', alpha=0.1)
+            ax.plot_wireframe(xgrid, ygrid, fn(xgrid, ygrid), rstride=stride, cstride=stride)
         plt.draw()
         fileName = genFileName('fittedPlot', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
-        plt.show()
-        ax.cla()
-    
 
 def animateEigVals(data, params, fileName, fn, fps=10, bitrate=14400, containerType='.mkv'):
     import matplotlib.animation as animation
@@ -150,7 +159,11 @@ if __name__=="__main__":
         if args.fit:
             epsilon = 0.1
             fns = []
-            fns.append(lambda x,y: x+y)
-            fns.append(lambda x,y: 1/(x*y + epsilon))
+            fns.append(lambda x,y: x + y)
             plotFittedData(data, params, fns)
+#             for i in range(1,2):
+#                 fns.append(lambda x,y: x**i + y**i)
+#             fns.append(lambda x,y: 1/(x*y + epsilon))
+#             fns.append(lambda x,y: x**3 + y**3)
+#             fns.append(lambda x,y: x**5 + y**5)
 
