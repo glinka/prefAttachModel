@@ -96,9 +96,9 @@ def plotFittedData(data, params, fns):
     stride = 10
     newFolder = makeFolder('fittedPlots')
     for i in range(nData):
-        fn = gGP.fitXYFunction(xgrid, ygrid, data[(i)*n:(i+1)*n,:n], fns)
+        fn, xyScaling = gGP.fitXYFunction(xgrid, ygrid, data[(i)*n:(i+1)*n,:n], fns)
         ax.scatter(xgrid, ygrid, data[(i)*n:(i+1)*n,:n], c=data[(i)*n:(i+1)*n,:n], cmap='jet')
-        ax.plot_wireframe(xgrid, ygrid, fn(xgrid, ygrid), rstride=stride, cstride=stride)
+        ax.plot_wireframe(xgrid/xyScaling, ygrid/xyScaling, fn(xgrid, ygrid), rstride=stride, cstride=stride)
         plt.draw()
         fileName = genFileName('fittedPlot', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
@@ -151,6 +151,6 @@ if __name__=="__main__":
             epsilon = 0.1
             fns = []
             fns.append(lambda x,y: x+y)
-            fns.append(lambda x,y: x*y)
+            fns.append(lambda x,y: 1/(x*y + epsilon))
             plotFittedData(data, params, fns)
 

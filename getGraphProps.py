@@ -45,15 +45,16 @@ def fitXYFunction(X, Y, Z, fns):
     nCoeff = len(fns)
     Zvect = np.reshape(Z, nPoints)
     A = np.zeros((nPoints,nCoeff))
+    xyScaling = 100.0
     count = 0
     for i in range(m):
         for j in range(n):
             for k in range(nCoeff):
                 #real poor handling of division by zero
                 try:
-                    A[count, k] = fns[k](i,j)
+                    A[count, k] = fns[k](i/xyScaling,j/xyScaling)
                 except ZeroDivisionError:
                     A[count, k] = 20
             count = count + 1
     coeffs = np.dot(np.dot(np.linalg.inv(np.dot(np.transpose(A), A)), np.transpose(A)), Zvect)
-    return (lambda x,y: np.sum([coeffs[i]*fns[i](x,y) for i in range(nCoeff)], 0))
+    return (lambda x,y: np.sum([coeffs[i]*fns[i](x,y) for i in range(nCoeff)], 0)), xyScaling
