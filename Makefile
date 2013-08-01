@@ -1,4 +1,4 @@
-toCompile = calcGraphProps.o prefAttachModel.o main.o
+toCompile = prefAttachModel.o main.o
 
 CXX = g++
 
