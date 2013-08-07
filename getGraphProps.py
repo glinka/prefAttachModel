@@ -57,3 +57,33 @@ def fitXYFunction(X, Y, Z, fns):
             count = count + 1
     coeffs = np.dot(np.dot(np.linalg.inv(np.dot(np.transpose(A), A)), np.transpose(A)), Zvect)
     return (lambda x,y: np.sum([coeffs[i]*fns[i](x,y) for i in range(nCoeff)], 0))
+
+def getSVD(A):
+    return np.linalg(A)
+
+def getSVs(A, n):
+    u, s, v = np.linalg.svd(A)
+    return s
+
+def getSVLeadingEigVect(A, n):
+    u, s, v = np.linalg.svd(A)
+    return u[:,0]
+
+def getSVDReconstruction(A):
+    u, s, v = np.linalg.svd(A)
+    n = A.shape[0]
+    u1 = u[:,0]
+    v1 = v[:,0]
+    u1.shape = (n,1)
+    v1.shape = (1,n)
+    ANew = s[0]*np.dot(u1, np.conj(v1))
+    degs = getDegrees(ANew, n)
+    i = np.argsort(degs)
+    cpy = ANew
+    ANew[:,range(n)] = cpy[:,i]
+    cpy = ANew
+    ANew[range(n),:] = cpy[i,:]
+    return np.rint(ANew)
+
+
+

@@ -1,8 +1,6 @@
 import getGraphProps as gGP
 import numpy as np
 import os
-import matplotlib
-matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 def genData(fileName):
@@ -82,6 +80,28 @@ def animateRawData(data, params, fileName, fps=10, bitrate=14400, containerType=
         fileName = genFileName('rawData3d', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
 
+def animateReconstruction(data, params, fileName, fps=10, bitrate=14400, containerType='.mkv'):
+    import matplotlib.animation as animation
+    from mpl_toolkits.mplot3d import Axes3D
+    nData = params['nSteps']/params['dataInterval']
+    n = params['n']
+    fig = plt.figure()
+    ax1 = fig.add_subplot(211, projection='3d')
+    ax2 = fig.add_subplot(212, projection='3d')
+    #find max degree to set z limits:
+    maxDeg = np.max([np.max(data[(i)*n:(i+1)*n,:n]) for i in range(nData)])
+    ax1.set_xlim3d(left=0, right=100)
+    ax1.set_ylim3d(bottom=0, top=100)
+    ax1.set_zlim3d(bottom=0, top=maxDeg)
+    xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
+    newFolder = makeFolder('reconstruction')
+    for i in range(nData):
+        z = data[(i)*n:(i+1)*n,:n]
+        ax1.scatter(xgrid, ygrid, z, c=z, cmap='jet')
+        ax2.scatter(xgrid, ygrid, gGP.getSVDReconstruction(z), c=z, cmap='jet')
+        fileName = genFileName('rawDataAndReconstruction', params, str(i))
+        plt.savefig(newFolder + fileName + '.png')
+
 def plotFittedData(data, params, fns):
     from mpl_toolkits.mplot3d import Axes3D
     nData = params['nSteps']/params['dataInterval']
@@ -115,7 +135,7 @@ def plotFittedData(data, params, fns):
         fileName = genFileName('fittedPlot', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
 
-def animateEigVals(data, params, fileName, fn, fps=10, bitrate=14400, containerType='.mkv'):
+def animateVector(data, params, fileName, fn, fps=10, bitrate=14400, containerType='.mkv'):
     import matplotlib.animation as animation
     nData = params['nSteps']/params['dataInterval']
     n = params['n']
@@ -124,7 +144,7 @@ def animateEigVals(data, params, fileName, fn, fps=10, bitrate=14400, containerT
     plt.figtext(0.5, 0.92, 'Evolution of adjacency eigenvalues in preferential attachment model', ha='center', fontsize=16)
     plt.xlabel('Eigenvalue index')
     plt.ylabel('Eigvenvalue')
-    newFolder = makeFolder('eigVals')
+    newFolder = makeFolder('vector')
     for i in range(nData):    
         ax.cla()
         ax.plot(np.linspace(1,n,n), fn(data[(i)*n:(i+1)*n,:n], n), marker='o', c=[1,0.5,0.5])
@@ -144,6 +164,9 @@ if __name__=="__main__":
     parser.add_argument('--fit', action='store_true', default=False)
     parser.add_argument('--plot-adj-eigvals', action='store_true', default=False)
     parser.add_argument('--plot-lapl-eigvals', action='store_true', default=False)
+    parser.add_argument('-svs', '--plot-svs', action='store_true', default=False)
+    parser.add_argument('-svEig', '--plot-svsEig', action='store_true', default=False)
+    parser.add_argument('-pr', '--plot-reconstruction', action='store_true', default=False)
     args = parser.parse_args()
     for fileName in args.inputFiles:
         params, data = genData(fileName)
@@ -152,18 +175,17 @@ if __name__=="__main__":
         if args.threed:
             animateRawData(data, params, fileName, args.fps, args.bitrate, args.container_type)
         if args.plot_adj_eigvals:
-            animateEigVals(data, params, fileName, gGP.getAdjEigVals, args.fps, args.bitrate, args.container_type)
+            animateVector(data, params, fileName, gGP.getAdjEigVals, args.fps, args.bitrate, args.container_type)
         if args.plot_lapl_eigvals:
-            animateEigVals(data, params, fileName, gGP.getLaplEigVals, args.fps, args.bitrate, args.container_type)
-        #plot fitted data, eventually should be moved into different fn prly
+            animateVector(data, params, fileName, gGP.getLaplEigVals, args.fps, args.bitrate, args.container_type)
+        if args.plot_svs:
+            animateVector(data, params, fileName, gGP.getSVs, args.fps, args.bitrate, args.container_type)
+        if args.plot_svsEig:
+            animateVector(data, params, fileName, gGP.getSVLeadingEigVect, args.fps, args.bitrate, args.container_type)        
+        if args.plot_reconstruction:
+            animateReconstruction(data, params, fileName, args.fps, args.bitrate, args.container_type)
         if args.fit:
             epsilon = 0.1
             fns = []
             fns.append(lambda x,y: x + y)
             plotFittedData(data, params, fns)
-#             for i in range(1,2):
-#                 fns.append(lambda x,y: x**i + y**i)
-#             fns.append(lambda x,y: 1/(x*y + epsilon))
-#             fns.append(lambda x,y: x**3 + y**3)
-#             fns.append(lambda x,y: x**5 + y**5)
-
