@@ -176,7 +176,7 @@ def animateVector(data, params, fileName, fn, fps=10, bitrate=14400, containerTy
         fileName = genFileName('eigVals', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
 
-def plot3dData((x, y, z, zlim, folder, params, plotID,)):
+def plot3dData((x, y, z, zlim, folder, params, plotID)):
     import matplotlib.animation as animation
     from mpl_toolkits.mplot3d import Axes3D
     n = params['n']
