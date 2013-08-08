@@ -66,7 +66,7 @@ def animateRawData(data, params, fileName, fps=10, bitrate=14400, containerType=
     spAxes[1].view_init(-2, 135)
     spAxes[2].view_init(45, 225)
     #find max degree to set z limits:
-    maxDeg = np.max([np.max(data[(i)*n:(i+1)*n,:n]) for i in range(nData)])
+    maxDeg = np.amax(data[:,:])
     for ax in spAxes:
         ax.set_xlim3d(left=0, right=100)
         ax.set_ylim3d(bottom=0, top=100)
@@ -80,7 +80,7 @@ def animateRawData(data, params, fileName, fps=10, bitrate=14400, containerType=
         fileName = genFileName('rawData3d', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
 
-def animateReconstruction(data, params, fileName, fps=10, bitrate=14400, containerType='.mkv'):
+def animateReconstruction(data, params, fileName, fps=10, bitrate=1600, containerType='.mkv'):
     import matplotlib.animation as animation
     from mpl_toolkits.mplot3d import Axes3D
     nData = params['nSteps']/params['dataInterval']
@@ -88,19 +88,43 @@ def animateReconstruction(data, params, fileName, fps=10, bitrate=14400, contain
     fig = plt.figure()
     ax1 = fig.add_subplot(211, projection='3d')
     ax2 = fig.add_subplot(212, projection='3d')
+    ax1.grid(b=False)
+    ax2.grid(b=False)
     #find max degree to set z limits:
-    maxDeg = np.max([np.max(data[(i)*n:(i+1)*n,:n]) for i in range(nData)])
-    ax1.set_xlim3d(left=0, right=100)
-    ax1.set_ylim3d(bottom=0, top=100)
+    maxDeg = np.amax(data[:,:])
+    ax1.set_xlim3d(left=0, right=n)
+    ax1.set_ylim3d(bottom=0, top=n)
     ax1.set_zlim3d(bottom=0, top=maxDeg)
     xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
     newFolder = makeFolder('reconstruction')
+    fileName = ""
     for i in range(nData):
         z = data[(i)*n:(i+1)*n,:n]
+        zRecon = gGP.getSVDReconstruction(z)
         ax1.scatter(xgrid, ygrid, z, c=z, cmap='jet')
-        ax2.scatter(xgrid, ygrid, gGP.getSVDReconstruction(z), c=z, cmap='jet')
+        ax2.scatter(xgrid, ygrid, zRecon, c=zRecon, cmap='RdBu')
         fileName = genFileName('rawDataAndReconstruction', params, str(i))
+        plt.draw()
         plt.savefig(newFolder + fileName + '.png')
+        ax1.cla()
+        ax2.cla()
+        ax1.grid(b=False)
+        ax2.grid(b=False)
+        ax1.set_xlim3d(left=0, right=n)
+        ax1.set_ylim3d(bottom=0, top=n)
+        ax1.set_zlim3d(bottom=0, top=maxDeg)
+    makeAnimation(fileName, newFolder, outputFilename="reconstruction")
+
+def makeAnimation(inputFilename, inputFolder, outputFilename="output", fps=10, bitrate=1600, containerType='.mkv'):
+    from subprocess import call
+    us1 = 1
+    us2 = 0
+    while us1 > 0:
+        us2 = us1
+        us1 = inputFilename.find("_", us2)
+    inputFiles = inputFilename[:us2+1] + "%d" + inputFilename[-4]
+    call(['cd', inputFolder])
+    call(["ffmpeg", "-i", inputFiles, "-r", str(fps), "-b", str(bitrate), outputFilename+containerType])
 
 def plotFittedData(data, params, fns):
     from mpl_toolkits.mplot3d import Axes3D
@@ -117,7 +141,7 @@ def plotFittedData(data, params, fns):
     xgrid = xgrid/xyScaling
     ygrid = ygrid/xyScaling
     #find max degree for axis limits
-    maxDeg = np.max([np.max(data[(i)*n:(i+1)*n,:n]) for i in range(nData)])
+    maxDeg = np.amax(data[:,:])
     for ax in spAxes:
         ax.set_xlim3d(left=0, right=n/xyScaling)
         ax.set_ylim3d(bottom=0, top=n/xyScaling)

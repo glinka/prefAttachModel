@@ -4,9 +4,9 @@
 #include <chrono>
 #include <sstream>
 #include <fstream>
-//#include <ctime>
 #include "prefAttachModel.h"
 #include "calcGraphProps.h"
+
 using namespace std;
 
 int compndArray(const void *c1v, const void *c2v) {
@@ -266,7 +266,7 @@ void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
 	for(j = 0; j < n; j++) {
 	    for(k = 0; k < n; k++) {
 		paData << (int) sorted[i][j+1][k+1];
-		if(k != n) {
+		if(k < n-1) {
 		    paData << ",";
 		}
 	    }

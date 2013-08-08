@@ -59,7 +59,7 @@ def fitXYFunction(X, Y, Z, fns):
     return (lambda x,y: np.sum([coeffs[i]*fns[i](x,y) for i in range(nCoeff)], 0))
 
 def getSVD(A):
-    return np.linalg(A)
+    return np.linalg.svd(A)
 
 def getSVs(A, n):
     u, s, v = np.linalg.svd(A)
@@ -70,9 +70,9 @@ def getSVLeadingEigVect(A, n):
     return u[:,0]
 
 def getSVDReconstruction(A):
-    u, s, v = np.linalg.svd(A)
+    u, s, v = getSVD(A)
     n = A.shape[0]
-    u1 = u[:,0]
+    u1 = v[:,0]
     v1 = v[:,0]
     u1.shape = (n,1)
     v1.shape = (1,n)
@@ -84,6 +84,3 @@ def getSVDReconstruction(A):
     cpy = ANew
     ANew[range(n),:] = cpy[i,:]
     return np.rint(ANew)
-
-
-
