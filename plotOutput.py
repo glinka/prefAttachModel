@@ -176,18 +176,16 @@ def animateVector(data, params, fileName, fn, fps=10, bitrate=14400, containerTy
         fileName = genFileName('eigVals', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
 
-def plot3dData((x, y, z, zlim, folder, params, plotID)):
+def plot3dData((x, y, z, zlim, xylim, folder, fileName)):
     import matplotlib.animation as animation
     from mpl_toolkits.mplot3d import Axes3D
-    n = params['n']
     fig = plt.figure()
     ax1 = fig.add_subplot(211, projection='3d')
     ax1.grid(b=False)
-    ax1.set_xlim3d(left=0, right=n)
-    ax1.set_ylim3d(bottom=0, top=n)
+    ax1.set_xlim3d(left=0, right=xylim)
+    ax1.set_ylim3d(bottom=0, top=xylim)
     ax1.set_zlim3d(bottom=0, top=zlim)
     ax1.scatter(x, y, z, c=z, cmap='jet')
-    fileName = genFileName('rawData', params, str(plotID))
     plt.savefig(folder + fileName + ".png")
     plt.close(fig)
 
@@ -223,16 +221,14 @@ if __name__=="__main__":
         if args.plot_svsEig:
             animateVector(data, params, fileName, gGP.getSVLeadingEigVect, args.fps, args.bitrate, args.container_type)        
         if args.plot_reconstruction:
-            p = Pool(processes=2)
+            p = Pool(processes=12)
             nData = params['nSteps']/params['dataInterval']
             n = params['n']
             #find max degree to set z limits:
             maxDeg = np.amax(data[:,:])
             newFolder = makeFolder('reconstruction')
             xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
-            result = p.map(plot3dData, [(xgrid, ygrid, data[i*n:(i+1)*n,:], maxDeg, newFolder, params, i,) for i in range(nData)])
-            #makeAnimation(fileName, newFolder, outputFilename="reconstruction")
-            #animateReconstruction(data, params, fileName, args.fps, args.bitrate, args.container_type)
+            result = p.map(plot3dData, [(xgrid, ygrid, data[i*n:(i+1)*n,:], maxDeg, n, newFolder, genFileName('rawData', params, str(i))) for i in range(nData)])
         if args.fit:
             epsilon = 0.1
             fns = []
