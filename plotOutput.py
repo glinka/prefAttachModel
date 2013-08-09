@@ -2,6 +2,8 @@ from multiprocessing import Pool
 import getGraphProps as gGP
 import numpy as np
 import os
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 def genData(fileName):
@@ -221,7 +223,7 @@ if __name__=="__main__":
         if args.plot_svsEig:
             animateVector(data, params, fileName, gGP.getSVLeadingEigVect, args.fps, args.bitrate, args.container_type)        
         if args.plot_reconstruction:
-            p = Pool(processes=12)
+            p = Pool(processes=8)
             nData = params['nSteps']/params['dataInterval']
             n = params['n']
             #find max degree to set z limits:
