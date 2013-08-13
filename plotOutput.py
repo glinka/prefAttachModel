@@ -177,12 +177,32 @@ def animateVector(data, params, fn, fps=10, bitrate=14400, containerType='.mkv')
     ax = fig.add_subplot(111)
     newFolder = makeFolder('vector')
     fileName = ""
+    #find y upper and lower limits
+    yMin = np.min([fn(data[(i)*n:(i+1)*n,:n]) for i in range(nData)])
+    yMax = np.max([fn(data[(i)*n:(i+1)*n,:n]) for i in range(nData)])
     for i in range(nData):    
         ax.cla()
+        ax.set_ylim((yMin, yMax))
         ax.plot(np.linspace(1,n,n), fn(data[(i)*n:(i+1)*n,:n]), marker='o', c=[1,0.5,0.5])
         fileName = genFileName('eigVals', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
     makeAnimation(fileName, newFolder)
+
+def scalarEvolution(data, params, fn):
+    nData = params['nSteps']/params['dataInterval']
+    stepSize = params['dataInterval']
+    n = params['n']
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    newFolder = makeFolder('vector')
+    fileName = ""
+    yData = np.array([fn(data[(i)*n:(i+1)*n,:n]) for i in range(nData)])
+    xData = np.array([i*stepSize for i in range(nData)])
+    ax.plot(xData, yData, color='g', marker='o')
+    fileName = genFileName('scalarEvo', params, str(i))
+    newFolder = makeFolder('scalarEvo')
+    plt.savefig(newFolder + fileName + ".png")
+    
 
 def plot3dData((x, y, z, zlim, xylim, folder)):
     import matplotlib.animation as animation
@@ -209,6 +229,7 @@ if __name__=="__main__":
     parser.add_argument('--threed', action='store_true', default=False)
     parser.add_argument('--fit', action='store_true', default=False)
     parser.add_argument('--plot-adj-eigvals', action='store_true', default=False)
+    parser.add_argument('--plot-adj-leading-eigval', action='store_true', default=False)
     parser.add_argument('--plot-adj-leading-eigvect', action='store_true', default=False)
     parser.add_argument('--plot-lapl-eigvals', action='store_true', default=False)
     parser.add_argument('-svs', '--plot-svs', action='store_true', default=False)
@@ -224,6 +245,8 @@ if __name__=="__main__":
             animateRawData(data, params, args.fps, args.bitrate, args.container_type)
         if args.plot_adj_eigvals:
             animateVector(data, params, gGP.getAdjEigVals, args.fps, args.bitrate, args.container_type)
+        if args.plot_adj_leading_eigval:
+            scalarEvolution(data, params, gGP.getAdjLeadingEigVal)
         if args.plot_adj_leading_eigvect:
             animateVector(data, params, gGP.getAdjLeadingEigVect, args.fps, args.bitrate, args.container_type)
         if args.plot_lapl_eigvals:

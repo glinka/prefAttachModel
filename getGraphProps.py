@@ -13,6 +13,11 @@ def getAdjEigVals(A):
     of the adjacency matrix, sorted in ascending order
     """
     return np.sort(np.linalg.eigvals(A))
+
+def getAdjLeadingEigVal(A):
+    n = A.shape[0]
+    return getAdjEigVals(A)[n-1]
+
 def getAdjEigVects(A):
     """Return a numpy ndarray containing the eigenvectors
     of the adjacency matrix, sorted so that the first
@@ -26,7 +31,12 @@ def getAdjLeadingEigVect(A):
     n = A.shape[0]
     eigvals, eigvects = np.linalg.eig(A)
     sortedIndices = np.argsort(eigvals)
-    return np.sort(eigvects[:,sortedIndices[n-1]])
+    v1 = np.sort(eigvects[:,sortedIndices[n-1]])
+    #fix this averaging business
+    #this is not a safe method
+    if np.average(v1) < 0:
+        v1 = np.sort(-1*v1)
+    return v1
 
 def getLaplEigVals(A):
     """Return a numpy ndarray containing the eigenvalues
