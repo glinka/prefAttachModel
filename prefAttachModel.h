@@ -1,6 +1,7 @@
 #ifndef PREFATTACH_H
 #define PREFATTACH_H
 #include <random>
+#include <fstream>
 
 struct graphData {
     int *degSeq;
@@ -19,7 +20,7 @@ class prefAttachModel {
   void initGraph();
   graphData step(bool saveFlag);
   int consistencyCheck();
-  void saveData(graphData *data, int nSteps, int dataInterval);
+  void saveData(graphData *data, int nData, std::ofstream &fileHandle);
  public:
   void run(int nSteps, int dataInterval);
   prefAttachModel(int n, int m, double kappa);

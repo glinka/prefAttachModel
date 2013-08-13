@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdlib.h>
 #include "prefAttachModel.h"
 
@@ -15,7 +16,17 @@ int main(int argc, char *argv[]) {
     if(argv[i][0] == '-') {
       string currentLabel = argv[i];
       char *currentArg = argv[i+1];
-      if(currentLabel == "-n" || currentLabel == "-nodes") {
+      if(currentLabel == "-h" || currentLabel == "-help") {
+	cout << "\nDefault parameters are:" << "\n";
+	cout << "\tn : " << n << "\n";
+	cout << "\tm : " << m << "\n";
+	cout << "\tkappa: " << kappa << "\n";
+	cout << "\tsteps: " << nSteps << "\n";
+	cout << "\tcollection_interval: " << dataInterval << "\n";
+	cout << "\nUse -variable_name to change values on the command line, e.g. \n./prefAttachModel -n 500 -m 250000 \nfor a 500 vertex, 250000 edge run with default kappa, steps and collection interval" << endl << endl;
+	return 0;
+      }
+      else if(currentLabel == "-n" || currentLabel == "-nodes") {
 	n = atoi(currentArg);
       }
       else if(currentLabel == "-m" || currentLabel == "-nEdges" || currentLabel == "-edges") {
@@ -24,14 +35,15 @@ int main(int argc, char *argv[]) {
       else if(currentLabel == "-k" || currentLabel == "-kappa") {
 	kappa = atof(currentArg);
       }
-      else if(currentLabel == "-s" || currentLabel == "-nSteps") {
+      else if(currentLabel == "-s" || currentLabel == "-nSteps" || currentLabel == "-steps") {
 	nSteps = atoi(currentArg);
       }
-      else if(currentLabel == "-di" || currentLabel == "-dataInterval") {
+      else if(currentLabel == "-di" || currentLabel == "-dataInterval" || currentLabel == "-ci" || currentLabel == "-collection_interval") {
 	dataInterval = atoi(currentArg);
       }
     }
   }
   prefAttachModel model(n, m, kappa);
   model.run(nSteps, dataInterval);
+  return 0;
 }

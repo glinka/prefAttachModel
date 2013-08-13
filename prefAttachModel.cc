@@ -3,7 +3,7 @@
 #include <random>
 #include <chrono>
 #include <sstream>
-#include <fstream>
+#include <iomanip>
 #include "prefAttachModel.h"
 #include "calcGraphProps.h"
 
@@ -157,19 +157,37 @@ graphData prefAttachModel::step(bool saveFlag) {
 
 void prefAttachModel::run(int nSteps, int dataInterval) {
   graphData *data;
-  int nData = nSteps/dataInterval;
-  data = new graphData[nData];
+  //data will be appended to file every time SAVE_INTERVAL data pts are collected
+  const int SAVE_INTERVAL = 10;
+  data = new graphData[SAVE_INTERVAL];
   initGraph();
+  //create filename and make header to csv
+  stringstream ss;
+  ss << "paData_" << n << "_" << m << "_" << kappa << "_" << nSteps << "_" << dataInterval << ".csv";
+  string fileName = ss.str();
+  ofstream paData;
+  paData.open(fileName);
+  paData << "n=" << n << ",";
+  paData << "m=" << m << ",";
+  paData << "kappa=" << kappa << ",";
+  paData << "nSteps=" << nSteps << ",";
+  paData << "dataInterval=" << dataInterval << "\n";
   for(int i = 0; i < nSteps; i++) {
-    if(i % dataInterval == 0) {
-      data[i/dataInterval] = step(true);
+    if((i+1) % dataInterval == 0) {
+      int dataIndex = ((i+1) / dataInterval) % SAVE_INTERVAL;
+      data[dataIndex] = step(true);
+      //save data every SAVE_INTERVAL times data is collected
+      if(dataIndex == 0) {
+	  saveData(data, SAVE_INTERVAL, paData);
+      }
     }
     else{
       step(false);
     }
   }
-  saveData(data, nSteps, dataInterval);
-  for(int i = 0; i < nSteps/dataInterval; i++) {
+  paData.close();
+  //take out the garbage
+  for(int i = 0; i < SAVE_INTERVAL; i++) {
        for(int j = 0; j < n; j++) {
 	  delete[] data[i].A[j];
       }
@@ -179,9 +197,8 @@ void prefAttachModel::run(int nSteps, int dataInterval) {
   delete[] data;
 }
 
-void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
+void prefAttachModel::saveData(graphData *data, int nData, ofstream &fileHandle) {
     int i, j, k;
-    int nData = nSteps/dataInterval;
     int sorted[nData][n+1][n+1];
     int toSort[n+1][n+1];
     //for each piece of data, fill
@@ -252,29 +269,19 @@ void prefAttachModel::saveData(graphData *data, int nSteps, int dataInterval) {
        sortNow[1][j][k]
        ...
     **/
-    stringstream ss;
-    ss << "paData_" << n << "_" << m << "_" << kappa << "_" << nSteps << "_" << dataInterval << ".csv";
-    string fileName = ss.str();
-    ofstream paData;
-    paData.open(fileName);
-    paData << "n=" << n << ",";
-    paData << "m=" << m << ",";
-    paData << "kappa=" << kappa << ",";
-    paData << "nSteps=" << nSteps << ",";
-    paData << "dataInterval=" << dataInterval << "\n";
     for(i = 0; i < nData; i++) {
 	for(j = 0; j < n; j++) {
 	    for(k = 0; k < n; k++) {
-		paData << (int) sorted[i][j+1][k+1];
+		fileHandle << (int) sorted[i][j+1][k+1];
+		//don't append comma to last data pt
 		if(k < n-1) {
-		    paData << ",";
+		    fileHandle << ",";
 		}
 	    }
-	    paData << endl;
+	    fileHandle << "\n";
 	}
     }
-    paData << "\n\n";
-    paData.close();
+    fileHandle.flush();
 }
 
 

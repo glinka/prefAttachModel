@@ -1,19 +1,19 @@
 import numpy as np
 
-def getDegrees(A, n):
+def getDegrees(A):
     """Return an numpy ndarray containing the 
     degrees of the adjacency matrix
 
     >>>>getDegrees(np.identity(10))
     array([ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.])
     """
-    return np.array([A[i,:].sum() for i in range(n)])
-def getAdjEigVals(A, n):
+    return np.array([A[i,:].sum() for i in range(A.shape[0])])
+def getAdjEigVals(A):
     """Return a numpy ndarray containing the eigenvalues
     of the adjacency matrix, sorted in ascending order
     """
     return np.sort(np.linalg.eigvals(A))
-def getAdjEigVects(A, n):
+def getAdjEigVects(A):
     """Return a numpy ndarray containing the eigenvectors
     of the adjacency matrix, sorted so that the first
     column corresponds to the smallest eigenvalue
@@ -21,20 +21,20 @@ def getAdjEigVects(A, n):
     eigvals, eigvects = np.linalg.eig(A)
     sortedIndices = np.argsort(eigvals)
     return [eigvects[:,i] for i in sortedIndices]
-def getLaplEigVals(A, n):
+def getLaplEigVals(A):
     """Return a numpy ndarray containing the eigenvalues
     of the Laplacian matrix, sorted in ascending order
     """
-    return np.sort(np.linalg.eigvals(np.diag(getDegrees(A, n))-A))
-def getLaplEigVects(A, n):
+    return np.sort(np.linalg.eigvals(np.diag(getDegrees(A, A.shape[0]))-A))
+def getLaplEigVects(A):
     """Return a numpy ndarray containing the eigenvectors
     of the Laplacian matrix, sorted so that the first
     column corresponds to the smallest eigenvalue
     """
-    eigvals, eigvects = np.linalg.eig(np.diag(getDegrees(A, n))-A)
+    eigvals, eigvects = np.linalg.eig(np.diag(getDegrees(A, A.shape[0]))-A)
     sortedIndices = np.argsort(eigvals)
-    return [eigvects[:,i] for i in sortedIndices]
-
+    #return [eigvects[:,i] for i in sortedIndices]
+    return eigvects[:, sortedIndices]
 def fitXYFunction(X, Y, Z, fns):
     """returns lambda function that represents the linear combination
     of fns with appropriate least-squares-fitted coefficients. assumes
@@ -61,26 +61,25 @@ def fitXYFunction(X, Y, Z, fns):
 def getSVD(A):
     return np.linalg.svd(A)
 
-def getSVs(A, n):
+def getSVs(A):
     u, s, v = np.linalg.svd(A)
     return s
 
-def getSVLeadingEigVect(A, n):
+def getSVLeadingEigVect(A):
     u, s, v = np.linalg.svd(A)
     return u[:,0]
 
-def getSVDReconstruction(A):
-    u, s, v = getSVD(A)
+def getEigenReconstruction(A):
     n = A.shape[0]
-    u1 = v[:,0]
-    v1 = v[:,0]
-    u1.shape = (n,1)
-    v1.shape = (1,n)
-    ANew = s[0]*np.dot(u1, np.conj(v1))
-    degs = getDegrees(ANew, n)
+    vals = getAdjEigVals(A)
+    vects = np.array(getAdjEigVects(A))
+    u = vects[:,0]
+    u.shape = (1,n)
+    ANew = vals[0]*np.dot(np.transpose(u), np.conj(u))
+    degs = getDegrees(ANew)
     i = np.argsort(degs)
     cpy = ANew
-    ANew[:,range(n)] = cpy[:,i]
+    ANew[:,(n-1) - np.arange(n)] = cpy[:,i]
     cpy = ANew
-    ANew[range(n),:] = cpy[i,:]
-    return np.rint(ANew)
+    ANew[(n-1) - np.arange(n),:] = cpy[i,:]
+    return np.transpose(np.rint(ANew))

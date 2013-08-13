@@ -2,8 +2,8 @@ from multiprocessing import Pool
 import getGraphProps as gGP
 import numpy as np
 import os
-import matplotlib
-matplotlib.use('Agg')
+#import matplotlib
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 def genData(fileName):
@@ -24,8 +24,8 @@ def genData(fileName):
     for key in params:
         if(params[key] % 1 == 0):
             params[key] = int(params[key])
-    print params
     data = np.genfromtxt(pathToFile, delimiter=",", skip_header=1)
+    print params
     return params, data
 
 def makeFolder(baseName):
@@ -43,7 +43,7 @@ def genFileName(baseName, params, uniqueID=''):
         fileName = fileName + '_' + key + '_' + str(params[key])
     return fileName + '_' + uniqueID
 
-def animateContour(data, params, fileName, cmap='Paired', fps=10, bitrate=14400, containerType='.mkv'):
+def animateContour(data, params, cmap='Paired', fps=10, bitrate=14400, containerType='.mkv'):
     import matplotlib.animation as animation
     nData = params['nSteps']/params['dataInterval']
     n = params['n']
@@ -57,7 +57,7 @@ def animateContour(data, params, fileName, cmap='Paired', fps=10, bitrate=14400,
         fileName = genFileName('contour', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
 
-def animateRawData(data, params, fileName, fps=10, bitrate=14400, containerType='.mkv'):
+def animateRawData(data, params, fps=10, bitrate=14400, containerType='.mkv'):
     import matplotlib.animation as animation
     from mpl_toolkits.mplot3d import Axes3D
     nData = params['nSteps']/params['dataInterval']
@@ -71,8 +71,8 @@ def animateRawData(data, params, fileName, fps=10, bitrate=14400, containerType=
     #find max degree to set z limits:
     maxDeg = np.amax(data[:,:])
     for ax in spAxes:
-        ax.set_xlim3d(left=0, right=100)
-        ax.set_ylim3d(bottom=0, top=100)
+        ax.set_xlim3d(left=0, right=n)
+        ax.set_ylim3d(bottom=0, top=n)
         ax.set_zlim3d(bottom=0, top=maxDeg)
     xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
     newFolder = makeFolder('animations')
@@ -83,7 +83,7 @@ def animateRawData(data, params, fileName, fps=10, bitrate=14400, containerType=
         fileName = genFileName('rawData3d', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
 
-def animateReconstruction(data, params, fileName, fps=10, bitrate=1600, containerType='.mkv'):
+def animateReconstruction(data, params, fps=10, bitrate=1600, containerType='.mkv'):
     import matplotlib.animation as animation
     from mpl_toolkits.mplot3d import Axes3D
     nData = params['nSteps']/params['dataInterval']
@@ -98,12 +98,15 @@ def animateReconstruction(data, params, fileName, fps=10, bitrate=1600, containe
     ax1.set_xlim3d(left=0, right=n)
     ax1.set_ylim3d(bottom=0, top=n)
     ax1.set_zlim3d(bottom=0, top=maxDeg)
+    ax2.set_xlim3d(left=0, right=n)
+    ax2.set_ylim3d(bottom=0, top=n)
+    ax2.set_zlim3d(bottom=0, top=maxDeg)
     xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
     newFolder = makeFolder('reconstruction')
     fileName = ""
     for i in range(nData):
         z = data[(i)*n:(i+1)*n,:n]
-        zRecon = gGP.getSVDReconstruction(z)
+        zRecon = gGP.getEigenReconstruction(z)
         ax1.scatter(xgrid, ygrid, z, c=z, cmap='jet')
         ax2.scatter(xgrid, ygrid, zRecon, c=zRecon, cmap='RdBu')
         fileName = genFileName('rawDataAndReconstruction', params, str(i))
@@ -116,6 +119,9 @@ def animateReconstruction(data, params, fileName, fps=10, bitrate=1600, containe
         ax1.set_xlim3d(left=0, right=n)
         ax1.set_ylim3d(bottom=0, top=n)
         ax1.set_zlim3d(bottom=0, top=maxDeg)
+        ax2.set_xlim3d(left=0, right=n)
+        ax2.set_ylim3d(bottom=0, top=n)
+        ax2.set_zlim3d(bottom=0, top=maxDeg)
     makeAnimation(fileName, newFolder, outputFilename="reconstruction")
 
 def makeAnimation(inputFilename, inputFolder, outputFilename="output", fps=10, bitrate=1600, containerType='.mkv'):
@@ -162,7 +168,7 @@ def plotFittedData(data, params, fns):
         fileName = genFileName('fittedPlot', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
 
-def animateVector(data, params, fileName, fn, fps=10, bitrate=14400, containerType='.mkv'):
+def animateVector(data, params, fn, fps=10, bitrate=14400, containerType='.mkv'):
     import matplotlib.animation as animation
     nData = params['nSteps']/params['dataInterval']
     n = params['n']
@@ -178,7 +184,7 @@ def animateVector(data, params, fileName, fn, fps=10, bitrate=14400, containerTy
         fileName = genFileName('eigVals', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
 
-def plot3dData((x, y, z, zlim, xylim, folder, fileName)):
+def plot3dData((x, y, z, zlim, xylim, folder)):
     import matplotlib.animation as animation
     from mpl_toolkits.mplot3d import Axes3D
     fig = plt.figure()
@@ -207,22 +213,25 @@ if __name__=="__main__":
     parser.add_argument('-svs', '--plot-svs', action='store_true', default=False)
     parser.add_argument('-svEig', '--plot-svsEig', action='store_true', default=False)
     parser.add_argument('-pr', '--plot-reconstruction', action='store_true', default=False)
+    parser.add_argument('-ppr', '--parallel-plot-reconstruction', action='store_true', default=False)
     args = parser.parse_args()
     for fileName in args.inputFiles:
         params, data = genData(fileName)
         if args.contour:
-            animateContour(data, params, fileName, args.cmap, args.fps, args.bitrate, args.container_type)
+            animateContour(data, params, args.cmap, args.fps, args.bitrate, args.container_type)
         if args.threed:
-            animateRawData(data, params, fileName, args.fps, args.bitrate, args.container_type)
+            animateRawData(data, params, args.fps, args.bitrate, args.container_type)
         if args.plot_adj_eigvals:
-            animateVector(data, params, fileName, gGP.getAdjEigVals, args.fps, args.bitrate, args.container_type)
+            animateVector(data, params, gGP.getAdjEigVals, args.fps, args.bitrate, args.container_type)
         if args.plot_lapl_eigvals:
-            animateVector(data, params, fileName, gGP.getLaplEigVals, args.fps, args.bitrate, args.container_type)
+            animateVector(data, params, gGP.getLaplEigVals, args.fps, args.bitrate, args.container_type)
         if args.plot_svs:
-            animateVector(data, params, fileName, gGP.getSVs, args.fps, args.bitrate, args.container_type)
+            animateVector(data, params, gGP.getSVs, args.fps, args.bitrate, args.container_type)
         if args.plot_svsEig:
-            animateVector(data, params, fileName, gGP.getSVLeadingEigVect, args.fps, args.bitrate, args.container_type)        
+            animateVector(data, params, gGP.getSVLeadingEigVect, args.fps, args.bitrate, args.container_type)
         if args.plot_reconstruction:
+            animateReconstruction(data, params, args.fps, args.bitrate, args.container_type)
+        if args.parallel_plot_reconstruction:
             p = Pool(processes=12)
             nData = params['nSteps']/params['dataInterval']
             n = params['n']
