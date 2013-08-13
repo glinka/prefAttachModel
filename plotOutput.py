@@ -2,8 +2,8 @@ from multiprocessing import Pool
 import getGraphProps as gGP
 import numpy as np
 import os
-#import matplotlib
-#matplotlib.use('Agg')
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 def genData(fileName):
@@ -184,16 +184,22 @@ def animateVector(data, params, fn, fps=10, bitrate=14400, containerType='.mkv')
         fileName = genFileName('eigVals', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
 
-def plot3dData((x, y, z, zlim, xylim, folder)):
+def plotReconstruction((x, y, z, zlim, xylim, folder, fileName)):
     import matplotlib.animation as animation
     from mpl_toolkits.mplot3d import Axes3D
     fig = plt.figure()
     ax1 = fig.add_subplot(211, projection='3d')
+    ax2 = fig.add_subplot(212, projection='3d')
     ax1.grid(b=False)
+    ax2.grid(b=False)
     ax1.set_xlim3d(left=0, right=xylim)
     ax1.set_ylim3d(bottom=0, top=xylim)
     ax1.set_zlim3d(bottom=0, top=zlim)
+    ax2.set_xlim3d(left=0, right=xylim)
+    ax2.set_ylim3d(bottom=0, top=xylim)
+    ax2.set_zlim3d(bottom=0, top=zlim)
     ax1.scatter(x, y, z, c=z, cmap='jet')
+    ax2.scatter(x, y, gGP.getEigenReconstruction(z), c=z, cmap = 'jet')
     plt.savefig(folder + fileName + ".png")
     plt.close(fig)
 
@@ -232,14 +238,14 @@ if __name__=="__main__":
         if args.plot_reconstruction:
             animateReconstruction(data, params, args.fps, args.bitrate, args.container_type)
         if args.parallel_plot_reconstruction:
-            p = Pool(processes=12)
+            p = Pool(processes=8)
             nData = params['nSteps']/params['dataInterval']
             n = params['n']
             #find max degree to set z limits:
             maxDeg = np.amax(data[:,:])
             newFolder = makeFolder('reconstruction')
             xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
-            result = p.map(plot3dData, [(xgrid, ygrid, data[i*n:(i+1)*n,:], maxDeg, n, newFolder, genFileName('rawData', params, str(i))) for i in range(nData)])
+            result = p.map(plotReconstruction, [(xgrid, ygrid, data[i*n:(i+1)*n,:], maxDeg, n, newFolder, genFileName('rawData', params, str(i))) for i in range(nData)])
         if args.fit:
             epsilon = 0.1
             fns = []
