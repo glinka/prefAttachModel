@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
   int n = 100;
   int m = 10000;
   double kappa = 0.5;
-  int nSteps = 10000000;
+  long int nSteps = 10000000;
   int dataInterval = 1000;
   int i;
   //parse command line args, could be moved to separate fn?

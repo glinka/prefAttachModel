@@ -155,7 +155,7 @@ graphData prefAttachModel::step(bool saveFlag) {
   }
 }
 
-void prefAttachModel::run(int nSteps, int dataInterval) {
+void prefAttachModel::run(long int nSteps, int dataInterval) {
   graphData *data;
   //data will be appended to file every time SAVE_INTERVAL data pts are collected
   const int SAVE_INTERVAL = 10;
@@ -172,7 +172,7 @@ void prefAttachModel::run(int nSteps, int dataInterval) {
   paData << "kappa=" << kappa << ",";
   paData << "nSteps=" << nSteps << ",";
   paData << "dataInterval=" << dataInterval << "\n";
-  for(int i = 0; i < nSteps; i++) {
+  for(long int i = 0; i < nSteps; i++) {
     if((i+1) % dataInterval == 0) {
       int dataIndex = ((i+1) / dataInterval) % SAVE_INTERVAL;
       data[dataIndex] = step(true);
