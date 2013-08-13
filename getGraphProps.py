@@ -21,11 +21,19 @@ def getAdjEigVects(A):
     eigvals, eigvects = np.linalg.eig(A)
     sortedIndices = np.argsort(eigvals)
     return [eigvects[:,i] for i in sortedIndices]
+
+def getAdjLeadingEigVect(A):
+    n = A.shape[0]
+    eigvals, eigvects = np.linalg.eig(A)
+    sortedIndices = np.argsort(eigvals)
+    return np.sort(eigvects[:,sortedIndices[n-1]])
+
 def getLaplEigVals(A):
     """Return a numpy ndarray containing the eigenvalues
     of the Laplacian matrix, sorted in ascending order
     """
     return np.sort(np.linalg.eigvals(np.diag(getDegrees(A, A.shape[0]))-A))
+
 def getLaplEigVects(A):
     """Return a numpy ndarray containing the eigenvectors
     of the Laplacian matrix, sorted so that the first
@@ -35,6 +43,7 @@ def getLaplEigVects(A):
     sortedIndices = np.argsort(eigvals)
     #return [eigvects[:,i] for i in sortedIndices]
     return eigvects[:, sortedIndices]
+
 def fitXYFunction(X, Y, Z, fns):
     """returns lambda function that represents the linear combination
     of fns with appropriate least-squares-fitted coefficients. assumes
@@ -73,9 +82,9 @@ def getEigenReconstruction(A):
     n = A.shape[0]
     vals = getAdjEigVals(A)
     vects = np.array(getAdjEigVects(A))
-    u = vects[:,0]
+    u = vects[:,n-1]
     u.shape = (1,n)
-    ANew = vals[0]*np.dot(np.transpose(u), np.conj(u))
+    ANew = vals[n-1]*np.dot(np.transpose(u), np.conj(u))
     degs = getDegrees(ANew)
     i = np.argsort(degs)
     cpy = ANew

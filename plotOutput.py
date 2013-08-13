@@ -122,18 +122,19 @@ def animateReconstruction(data, params, fps=10, bitrate=1600, containerType='.mk
         ax2.set_xlim3d(left=0, right=n)
         ax2.set_ylim3d(bottom=0, top=n)
         ax2.set_zlim3d(bottom=0, top=maxDeg)
-    makeAnimation(fileName, newFolder, outputFilename="reconstruction")
+        print 1.0*(i+1)/nData
+    makeAnimation(fileName, newFolder)
 
-def makeAnimation(inputFilename, inputFolder, outputFilename="output", fps=10, bitrate=1600, containerType='.mkv'):
+def makeAnimation(inputFilename, inputFolder, fps=50, bitrate=3000000, containerType='.mkv'):
     from subprocess import call
     us1 = 1
     us2 = 0
     while us1 > 0:
         us2 = us1
-        us1 = inputFilename.find("_", us2)
-    inputFiles = inputFilename[:us2+1] + "%d" + inputFilename[-4]
-    call(['cd', inputFolder])
-    call(["ffmpeg", "-i", inputFiles, "-r", str(fps), "-b", str(bitrate), outputFilename+containerType])
+        us1 = inputFilename.find("_", us2+1)
+    inputFiles = inputFilename[:us2+1] + "%d.png"
+    os.chdir(os.path.realpath(inputFolder))
+    call(["ffmpeg", "-i", inputFiles, "-r", str(fps), "-b", str(bitrate), inputFilename+containerType])
 
 def plotFittedData(data, params, fns):
     from mpl_toolkits.mplot3d import Axes3D
@@ -174,15 +175,14 @@ def animateVector(data, params, fn, fps=10, bitrate=14400, containerType='.mkv')
     n = params['n']
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    plt.figtext(0.5, 0.92, 'Evolution of adjacency eigenvalues in preferential attachment model', ha='center', fontsize=16)
-    plt.xlabel('Eigenvalue index')
-    plt.ylabel('Eigvenvalue')
     newFolder = makeFolder('vector')
+    fileName = ""
     for i in range(nData):    
         ax.cla()
-        ax.plot(np.linspace(1,n,n), fn(data[(i)*n:(i+1)*n,:n], n), marker='o', c=[1,0.5,0.5])
+        ax.plot(np.linspace(1,n,n), fn(data[(i)*n:(i+1)*n,:n]), marker='o', c=[1,0.5,0.5])
         fileName = genFileName('eigVals', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
+    makeAnimation(fileName, newFolder)
 
 def plot3dData((x, y, z, zlim, xylim, folder)):
     import matplotlib.animation as animation
@@ -209,6 +209,7 @@ if __name__=="__main__":
     parser.add_argument('--threed', action='store_true', default=False)
     parser.add_argument('--fit', action='store_true', default=False)
     parser.add_argument('--plot-adj-eigvals', action='store_true', default=False)
+    parser.add_argument('--plot-adj-leading-eigvect', action='store_true', default=False)
     parser.add_argument('--plot-lapl-eigvals', action='store_true', default=False)
     parser.add_argument('-svs', '--plot-svs', action='store_true', default=False)
     parser.add_argument('-svEig', '--plot-svsEig', action='store_true', default=False)
@@ -223,6 +224,8 @@ if __name__=="__main__":
             animateRawData(data, params, args.fps, args.bitrate, args.container_type)
         if args.plot_adj_eigvals:
             animateVector(data, params, gGP.getAdjEigVals, args.fps, args.bitrate, args.container_type)
+        if args.plot_adj_leading_eigvect:
+            animateVector(data, params, gGP.getAdjLeadingEigVect, args.fps, args.bitrate, args.container_type)
         if args.plot_lapl_eigvals:
             animateVector(data, params, gGP.getLaplEigVals, args.fps, args.bitrate, args.container_type)
         if args.plot_svs:
@@ -232,7 +235,7 @@ if __name__=="__main__":
         if args.plot_reconstruction:
             animateReconstruction(data, params, args.fps, args.bitrate, args.container_type)
         if args.parallel_plot_reconstruction:
-            p = Pool(processes=12)
+            p = Pool(processes=2)
             nData = params['nSteps']/params['dataInterval']
             n = params['n']
             #find max degree to set z limits:
