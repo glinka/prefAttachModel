@@ -2,8 +2,8 @@ from multiprocessing import Pool
 import getGraphProps as gGP
 import numpy as np
 import os
-import matplotlib
-matplotlib.use('Agg')
+#import matplotlib
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 def genData(fileName):
@@ -132,9 +132,11 @@ def makeAnimation(inputFilename, inputFolder, fps=50, bitrate=3000000, container
     while us1 > 0:
         us2 = us1
         us1 = inputFilename.find("_", us2+1)
-    inputFiles = inputFilename[:us2+1] + "%d.png"
+    fileNamebase = inputFilename[:us2+1]
+    inputFiles =  fileNamebase + "%d.png"
+    outputFilename = fileNamebase + containerType
     os.chdir(os.path.realpath(inputFolder))
-    call(["ffmpeg", "-i", inputFiles, "-r", str(fps), "-b", str(bitrate), inputFilename+containerType])
+    call(["ffmpeg", "-i", inputFiles, "-r", str(fps), "-b", str(bitrate), outputFilename])
 
 def plotFittedData(data, params, fns):
     from mpl_toolkits.mplot3d import Axes3D

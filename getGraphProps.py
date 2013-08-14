@@ -12,11 +12,11 @@ def getAdjEigVals(A):
     """Return a numpy ndarray containing the eigenvalues
     of the adjacency matrix, sorted in ascending order
     """
-    return np.sort(np.linalg.eigvals(A))
+    return np.linalg.eigvals(A)
 
 def getAdjLeadingEigVal(A):
     n = A.shape[0]
-    return getAdjEigVals(A)[n-1]
+    return np.sort(getAdjEigVals(A))[n-1]
 
 def getAdjEigVects(A):
     """Return a numpy ndarray containing the eigenvectors
@@ -24,8 +24,7 @@ def getAdjEigVects(A):
     column corresponds to the smallest eigenvalue
     """
     eigvals, eigvects = np.linalg.eig(A)
-    sortedIndices = np.argsort(eigvals)
-    return [eigvects[:,i] for i in sortedIndices]
+    return eigvects
 
 def getAdjLeadingEigVect(A):
     n = A.shape[0]
@@ -42,7 +41,7 @@ def getLaplEigVals(A):
     """Return a numpy ndarray containing the eigenvalues
     of the Laplacian matrix, sorted in ascending order
     """
-    return np.sort(np.linalg.eigvals(np.diag(getDegrees(A, A.shape[0]))-A))
+    return np.linalg.eigvals(np.diag(getDegrees(A, A.shape[0]))-A)
 
 def getLaplEigVects(A):
     """Return a numpy ndarray containing the eigenvectors
@@ -50,9 +49,7 @@ def getLaplEigVects(A):
     column corresponds to the smallest eigenvalue
     """
     eigvals, eigvects = np.linalg.eig(np.diag(getDegrees(A, A.shape[0]))-A)
-    sortedIndices = np.argsort(eigvals)
-    #return [eigvects[:,i] for i in sortedIndices]
-    return eigvects[:, sortedIndices]
+    return eigvects
 
 def fitXYFunction(X, Y, Z, fns):
     """returns lambda function that represents the linear combination
@@ -90,11 +87,10 @@ def getSVLeadingEigVect(A):
 
 def getEigenReconstruction(A):
     n = A.shape[0]
-    vals = getAdjEigVals(A)
-    vects = np.array(getAdjEigVects(A))
-    u = vects[:,n-1]
+    h = getAdjLeadingEigVals(A)
+    u = np.array(getAdjLeadingEigVect(A))
     u.shape = (1,n)
-    ANew = vals[n-1]*np.dot(np.transpose(u), np.conj(u))
+    ANew = h*np.dot(np.transpose(u), np.conj(u))
     degs = getDegrees(ANew)
     i = np.argsort(degs)
     cpy = ANew
