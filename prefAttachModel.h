@@ -11,9 +11,10 @@ struct graphData {
 class prefAttachModel {
     //clean up what's protected, what's private
  private:
-    const int n, m;
+    const int m;
     const double kappa;
  protected:
+    const int n;
     double rnNormalization;
     int **A;
     int *degs;

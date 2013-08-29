@@ -1,4 +1,4 @@
-toCompile = pamCPI.o fitCurves.o prefAttachModel.o main.o
+toCompile = calcGraphProps.o pamCPI.o fitCurves.o prefAttachModel.o main.o
 
 CXX = g++
 

@@ -48,7 +48,7 @@ int compFlt(const void *p1, const void *p2) {
     }
 }
 
-prefAttachModel::prefAttachModel(const int n, const int m, const double kappa): n(n), m(m), kappa(kappa) {
+prefAttachModel::prefAttachModel(const int n, const int m, const double kappa): m(m), kappa(kappa), n(n) {
   unsigned seed = chrono::system_clock::now().time_since_epoch().count();
   mt = new mt19937(seed);
   rnNormalization = (double) (mt->max()+1);
@@ -100,7 +100,7 @@ void prefAttachModel::initGraph() {
   delete[] edges;
 }
 
-void prefAttachModel::initGraph(const int **newA) {
+void prefAttachModel::initGraph(int **newA) {
     int i, j;
     for(i = 0; i < n; i++) {
 	for(j = 0; j < n; j++) {

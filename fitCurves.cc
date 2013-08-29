@@ -6,7 +6,7 @@
 using namespace std;
 using namespace Eigen;
 
-fnlx fitCurves::fitFx(const vector<double> &xData, const vector<double> &yData, fxs toFit) {
+vector<double> fitCurves::fitFx(const vector<double> &xData, const vector<double> &yData, fxs toFit) {
     //data points are (xData[i], yData[i])
     //"vectors" are here considered to be columnar
     int nFns = toFit.size();
@@ -24,7 +24,14 @@ fnlx fitCurves::fitFx(const vector<double> &xData, const vector<double> &yData, 
     }
     MatrixXd coeffs(nFns, 1);
     coeffs = (((((fxsEval.transpose())*fxsEval).lu()).inverse())*(fxsEval.transpose()))*yDataCpy;
-    function<double(double)> fittedFns = [=] (double x) {
+    vector<double> coeffsCpy;
+    for(i = nFns-1; i >= 0; i--) {
+      coeffsCpy.push_back(coeffs(i));
+    }
+    return coeffsCpy;
+    /**    
+	used when returning fnlx, but need coeffs to project so return vector<double>
+	function<double(double)> fittedFns = [=] (double x) {
 	double eval = 0;
 	int count;
 	for(count = 0; count < nFns; count++) {
@@ -33,4 +40,6 @@ fnlx fitCurves::fitFx(const vector<double> &xData, const vector<double> &yData, 
 	return eval;
     };
     return fittedFns;
+    **/
+    
 }

@@ -13,7 +13,7 @@ class fitCurves {
  public:
   fitCurves() {};
   ~fitCurves() {};
-  fnlx fitFx(const std::vector<double> &xData, const std::vector<double> &yData, fxs toFit);
+  static std::vector<double> fitFx(const std::vector<double> &xData, const std::vector<double> &yData, fxs toFit);
  private:
 };
   

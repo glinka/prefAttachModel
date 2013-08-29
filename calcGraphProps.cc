@@ -53,7 +53,7 @@ double *calcGraphProps::getAdjEigVals(int **A, const int n) {
       M(i,j) = A[i][j];
     }
   }
-  SelfAdjointEigenSolver<Matrix<double, Dynamic, Dynamic>> solver(n);
+  SelfAdjointEigenSolver<Matrix<double, Dynamic, Dynamic> > solver(n);
   solver.compute(M); //will also compute eigvects
   Matrix<double, Dynamic, 1> eigVals = solver.eigenvalues();
   double *eigValsOut = new double[n];
@@ -71,7 +71,7 @@ double **calcGraphProps::getAdjEigVects(int **A, const int n) {
       M(i,j) = A[i][j];
     }
   }
-  SelfAdjointEigenSolver<Matrix<double, Dynamic, Dynamic>> solver(n);
+  SelfAdjointEigenSolver<Matrix<double, Dynamic, Dynamic> > solver(n);
   solver.compute(M); //will also compute eigvects
   /**
      instead of creating a Matrix on the heap, create multidimensional array,
@@ -109,7 +109,7 @@ double *calcGraphProps::getLaplEigVals(int **A, const int n) {
     degs(i,i) = deg;
   }
   Matrix<double, Dynamic, Dynamic> laplacian = degs - adj;
-  SelfAdjointEigenSolver<Matrix<double, Dynamic, Dynamic>> solver(n);
+  SelfAdjointEigenSolver<Matrix<double, Dynamic, Dynamic> > solver(n);
   solver.compute(laplacian); //will also compute eigvects
   Matrix<double, Dynamic, Dynamic> eigVals = solver.eigenvalues();
   double *eigValsOut = new double[n];
@@ -132,7 +132,7 @@ double **calcGraphProps::getLaplEigVects(int **A, const int n) {
     degs(i,i) = deg;
   }
   Matrix<double, Dynamic, Dynamic> laplacian = degs - adj;
-  SelfAdjointEigenSolver<Matrix<double, Dynamic, Dynamic>> solver(n);
+  SelfAdjointEigenSolver<Matrix<double, Dynamic, Dynamic> > solver(n);
   solver.compute(laplacian); //will also compute eigvects
   Matrix<double, Dynamic, Dynamic> eigVects = solver.eigenvectors();
   double **eigVectOut = new double*[n];
