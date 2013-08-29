@@ -1,4 +1,4 @@
-toCompile = prefAttachModel.o main.o
+toCompile = pamCPI.o fitCurves.o prefAttachModel.o main.o
 
 CXX = g++
 

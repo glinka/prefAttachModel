@@ -43,7 +43,9 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  prefAttachModel model(n, m, kappa);
-  model.run(nSteps, dataInterval);
+  /**
+     prefAttachModel model(n, m, kappa);
+     model.run(nSteps, dataInterval);
+  **/
   return 0;
 }

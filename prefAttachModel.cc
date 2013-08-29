@@ -5,7 +5,7 @@
 #include <sstream>
 #include <iomanip>
 #include "prefAttachModel.h"
-#include "calcGraphProps.h"
+#include "fitCurves.h"
 
 using namespace std;
 
@@ -98,6 +98,15 @@ void prefAttachModel::initGraph() {
   }
   **/
   delete[] edges;
+}
+
+void prefAttachModel::initGraph(const int **newA) {
+    int i, j;
+    for(i = 0; i < n; i++) {
+	for(j = 0; j < n; j++) {
+	    A[i][j] = newA[i][j];
+	}
+    }
 }
 
 graphData prefAttachModel::step(bool saveFlag) {
