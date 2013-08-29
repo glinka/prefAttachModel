@@ -87,7 +87,7 @@ def getSVLeadingEigVect(A):
 
 def getEigenReconstruction(A):
     n = A.shape[0]
-    h = getAdjLeadingEigVals(A)
+    h = getAdjLeadingEigVal(A)
     u = np.array(getAdjLeadingEigVect(A))
     u.shape = (1,n)
     ANew = h*np.dot(np.transpose(u), np.conj(u))
