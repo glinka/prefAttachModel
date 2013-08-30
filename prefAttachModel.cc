@@ -100,6 +100,10 @@ void prefAttachModel::initGraph() {
   delete[] edges;
 }
 
+/****************************** TODO ******************************
+must recalc graph properties as in previous initGraph(), otherwise segfault
+******************************* TODO ******************************/
+
 void prefAttachModel::initGraph(int **newA) {
     int i, j;
     for(i = 0; i < n; i++) {

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <stdlib.h>
-#include "prefAttachModel.h"
+#include "pamCPI.h"
 
 using namespace std;
 
@@ -43,6 +43,12 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+  int projStep = 10000;
+  int collectInterval = 100;
+  int offManifoldWait = 1000;
+  int nMicroSteps = 2000;
+  pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps);
+  model.runCPI(nSteps);
   /**
      prefAttachModel model(n, m, kappa);
      model.run(nSteps, dataInterval);
