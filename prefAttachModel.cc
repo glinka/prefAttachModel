@@ -106,11 +106,16 @@ must recalc graph properties as in previous initGraph(), otherwise segfault
 
 void prefAttachModel::initGraph(int **newA) {
     int i, j;
+    m = 0;
     for(i = 0; i < n; i++) {
+	degs[i] = 0;
 	for(j = 0; j < n; j++) {
 	    A[i][j] = newA[i][j];
+	    degs[i] += A[i][j];
 	}
+	m += degs[i];
     }
+    m /= 2;
 }
 
 graphData prefAttachModel::step(bool saveFlag) {
@@ -168,37 +173,55 @@ graphData prefAttachModel::step(bool saveFlag) {
   }
 }
 
+ofstream *prefAttachModel::createFile(string base, vector<double> &addtnlData, vector<string> &addtnlDataLabels) {
+  stringstream ss;
+  ss << base << "_" << n << "_" << m << "_" << kappa;
+  for(unsigned int i = 0; i < addtnlData.size(); i++) {
+      ss << "_" << addtnlData[i];
+  }
+  ss << ".csv";
+  string fileName = ss.str();
+  ofstream *file = new ofstream();
+  file->open(fileName);
+  *file << "n=" << n << ",";
+  *file << "m=" << m << ",";
+  *file << "kappa=" << kappa;
+  for(unsigned int i = 0; i < addtnlData.size(); i++) {
+      *file << "," << addtnlDataLabels[i] << "=" << addtnlData[i];
+  }
+  *file << "\n";
+  return file;
+}
+
 void prefAttachModel::run(long int nSteps, int dataInterval) {
   graphData *data;
   //data will be appended to file every time SAVE_INTERVAL data pts are collected
   const int SAVE_INTERVAL = 10;
   data = new graphData[SAVE_INTERVAL];
   initGraph();
+  vector<double> forFile;
+  forFile.push_back(nSteps);
+  forFile.push_back(dataInterval);
+  vector<string> forFileStrs;
+  forFileStrs.push_back("nSteps");
+  forFileStrs.push_back("dataInterval");
+  ofstream *paData = createFile("paData", forFile, forFileStrs);
   //create filename and make header to csv
-  stringstream ss;
-  ss << "paData_" << n << "_" << m << "_" << kappa << "_" << nSteps << "_" << dataInterval << ".csv";
-  string fileName = ss.str();
-  ofstream paData;
-  paData.open(fileName);
-  paData << "n=" << n << ",";
-  paData << "m=" << m << ",";
-  paData << "kappa=" << kappa << ",";
-  paData << "nSteps=" << nSteps << ",";
-  paData << "dataInterval=" << dataInterval << "\n";
   for(long int i = 0; i < nSteps; i++) {
     if((i+1) % dataInterval == 0) {
       int dataIndex = ((i+1) / dataInterval) % SAVE_INTERVAL;
       data[dataIndex] = step(true);
       //save data every SAVE_INTERVAL times data is collected
       if(dataIndex == 0) {
-	  saveData(data, SAVE_INTERVAL, paData);
+	  saveData(data, SAVE_INTERVAL, *paData);
       }
     }
     else{
       step(false);
     }
   }
-  paData.close();
+  paData->close();
+  delete paData;
   //take out the garbage
   for(int i = 0; i < SAVE_INTERVAL; i++) {
        for(int j = 0; j < n; j++) {

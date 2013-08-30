@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  int projStep = 10000;
+  int projStep = 1;
   int collectInterval = 100;
   int offManifoldWait = 1000;
   int nMicroSteps = 2000;

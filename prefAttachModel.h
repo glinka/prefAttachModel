@@ -2,6 +2,8 @@
 #define PREFATTACH_H
 #include <random>
 #include <fstream>
+#include <string>
+#include <vector>
 
 struct graphData {
     int *degSeq;
@@ -11,7 +13,7 @@ struct graphData {
 class prefAttachModel {
     //clean up what's protected, what's private
  private:
-    const int m;
+    int m;
     const double kappa;
  protected:
     const int n;
@@ -27,6 +29,7 @@ class prefAttachModel {
     void saveData(graphData *data, int nData, std::ofstream &fileHandle);
  public:
     void run(long int nSteps, int dataInterval);
+    std::ofstream *createFile(std::string base, std::vector<double> &addtnlData, std::vector<std::string> &addtnlDataLabels);
     prefAttachModel(int n, int m, double kappa);
     ~prefAttachModel() {
 	for(int i = 0; i < n; i++) {

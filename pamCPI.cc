@@ -9,6 +9,18 @@ pamCPI::pamCPI(const int n, const int m, const int kappa, const int projStep, co
 
 void pamCPI::runCPI(const int nSteps) {
     initGraph();
+    //set up save file and write header
+    vector<double> forFile;
+    forFile.push_back(nSteps);
+    forFile.push_back(projStep);
+    forFile.push_back(offManifoldWait);
+    forFile.push_back(nMicroSteps);
+    vector<string> forFileStrs;
+    forFileStrs.push_back("nSteps");
+    forFileStrs.push_back("projStep");
+    forFileStrs.push_back("offManifoldWait");
+    forFileStrs.push_back("nMicroSteps");
+    ofstream *paDataCPI = createFile("paDataCPI", forFile, forFileStrs);
     //after waiting for the system to reach the slow manifold, collect data every collectInterval number of steps
     int totalSteps = 0;
     int saveDataInterval = nMicroSteps/100;
@@ -65,8 +77,20 @@ void pamCPI::runCPI(const int nSteps) {
 	    }
 	}
 	project(data, time);
+	int nPlotPts = toPlot.size();
+	//hooray for vlas
+	graphData toPlotAry[nPlotPts];
+	int i;
+	for(i = 0; i < nPlotPts; i++) {
+	    toPlotAry[i] = toPlot[i];
+	}
+	saveData(toPlotAry, nPlotPts, *paDataCPI);
+	toPlot.clear();
+	toProject.clear();
 	totalSteps += projStep;
     }
+    paDataCPI->close();
+    delete paDataCPI;
 }
 /**
 ******************** TODO ********************
@@ -98,7 +122,7 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
     fxs toFitCoeffs;
     toFitCoeffs.push_back(constOffset);
     toFitCoeffs.push_back([] (double x) { return x;});
-    for(i = 0; i < nPts; i++) {
+    for(i = 0; i < n; i++) {
 	line.push_back(i);
     }
     for(i = 0; i < nPts; i++) {
@@ -114,8 +138,11 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
 	double *eigVals = calcGraphProps::getAdjEigVals(tempA, n);
 	double **eigVects = calcGraphProps::getAdjEigVects(tempA, n);
 	double maxEigVal = eigVals[n-1];
-	vector<double> leadingEigVect(eigVects[n-1], eigVects[n-1] + n);
-	eigVectFittedCoeffs.push_back(fitCurves::fitFx(leadingEigVect, line, toFitEigVects));
+	vector<double> leadingEigVect;
+	for(j = 0; j < n; j++) {
+	    leadingEigVect.push_back(eigVects[j][n-1]);
+	}
+	eigVectFittedCoeffs.push_back(fitCurves::fitFx(line, leadingEigVect, toFitEigVects));
 	eigVectFittedCoeffs.back().push_back(maxEigVal);
 	for(j = 0; j < n; j++) {
 	    delete[] tempA[j];
@@ -132,15 +159,18 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
 	for(j = 0; j < nPts; j++) {
 	    reshapedCoeffs[i].push_back(eigVectFittedCoeffs[j][i]);
 	}
-	timeEvoCoeffs.push_back(fitCurves::fitFx(reshapedCoeffs[i], time, toFitCoeffs));
+	timeEvoCoeffs.push_back(fitCurves::fitFx(time, reshapedCoeffs[i], toFitCoeffs));
     }
     int newTime = time.back() + projStep;
     int nSecondaryCoeffs = toFitCoeffs.size();
     vector<double> newCoeffs;
+    /**************************************** TODO ****************************************
+decrease time vector to be the same during each projection, else values will become overly large
+    **************************************** TODO ****************************************/
     for(i = 0; i < nCoeffs; i++) {
 	double eval = 0;
 	for(j = 0; j < nSecondaryCoeffs; j++) {
-	    eval += toFitCoeffs[j](newTime)*timeEvoCoeffs[i][j];
+	    eval += (*toFitCoeffs[j])(newTime)*timeEvoCoeffs[i][j];
 	}
 	newCoeffs.push_back(eval);
     }
@@ -152,7 +182,7 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
 	double eval = 0;
 	//eigval appended to end of eigVectFittedCoeffs, iterate only to nCoeffs - 1 as last newCoeff is eigVal
 	for(j = 0; j < nCoeffs; j++) {
-	    eval += toFitEigVects[j](line[i])*newCoeffs[j];
+	    eval += (*toFitEigVects[j])(line[i])*newCoeffs[j];
 	}
 	newEigVect.push_back(eval);
     }
@@ -160,7 +190,15 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
     for(i = 0; i < n; i++) {
 	newA[i] = new int[n];
 	for(j = 0; j < n; j++) {
-	    newA[i][j] = (int) (newEigVal*newEigVect[i]*newEigVect[j] + 0.5);
+	    //need to round to nearest even on diag
+	    if(i == j) {
+		int remainder = ((int) newEigVal*newEigVect[i]*newEigVect[j]);
+		remainder = remainder % 2;
+		newA[i][j] = ((int) newEigVal*newEigVect[i]*newEigVect[j]) + remainder;
+	    }
+	    else {
+		newA[i][j] = (int) (newEigVal*newEigVect[i]*newEigVect[j] + 0.5);
+	    }
 	}
     }
     initGraph(newA);

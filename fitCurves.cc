@@ -1,5 +1,6 @@
 #include <Eigen/Dense>
 #include <Eigen/LU>
+#include <iostream>
 #include "calcGraphProps.h"
 #include "fitCurves.h"
 
@@ -18,14 +19,14 @@ vector<double> fitCurves::fitFx(const vector<double> &xData, const vector<double
     //populate fxsEval with the evaluations of the f(x)s at the given points
     for(i = 0; i < nPts; i++) {
 	for(j = 0; j < nFns; j++) {
-	    fxsEval(i, j) = toFit[j](xData[i]);
+	    fxsEval(i, j) = (*toFit[j])(xData[i]);
 	}
 	yDataCpy(i) = yData[i];
     }
     MatrixXd coeffs(nFns, 1);
     coeffs = (((((fxsEval.transpose())*fxsEval).lu()).inverse())*(fxsEval.transpose()))*yDataCpy;
     vector<double> coeffsCpy;
-    for(i = nFns-1; i >= 0; i--) {
+    for(i = 0; i < nFns; i++) {
       coeffsCpy.push_back(coeffs(i));
     }
     return coeffsCpy;
