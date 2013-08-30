@@ -142,6 +142,11 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
 	for(j = 0; j < n; j++) {
 	    leadingEigVect.push_back(eigVects[j][n-1]);
 	}
+	for(j = 0; j < n; j++) {
+	  delete[] eigVects[j];
+	}
+	delete eigVects;
+	delete[] eigVals;
 	eigVectFittedCoeffs.push_back(fitCurves::fitFx(line, leadingEigVect, toFitEigVects));
 	eigVectFittedCoeffs.back().push_back(maxEigVal);
 	for(j = 0; j < n; j++) {
