@@ -138,6 +138,28 @@ def makeAnimation(inputFilename, inputFolder, fps=50, bitrate=3000000, container
     os.chdir(os.path.realpath(inputFolder))
     call(["ffmpeg", "-i", inputFiles, "-r", str(fps), "-b", str(bitrate), outputFilename])
 
+def plotCRecon(data, params):
+    from mpl_toolkits.mplot3d import Axes3D
+    n = params['n']
+    nData = data.size[0]/(2*n)
+    fig = plt.figure()
+    ax1 = fig.add_subplot(211, projection='3d')
+    ax2 = fig.add_subplot(212, projection='3d')
+    xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
+    maxDeg = np.amax(data)
+    ax1.set_xlim((0, n))
+    ax1.set_ylim((0, n))
+    ax1.set_zlim((0, maxDeg))
+    ax2.set_xlim((0, n))
+    ax2.set_ylim((0, n))
+    ax2.set_zlim((0, maxDeg))
+    for i in range(nData):
+        preRecon = data[n*2*i:n*(2*i+1),:]
+        postRecon = data[n*(2*i+1):n*(2*i+2),:]
+        ax1.scatter(xgrid, ygrid, preRecon)
+        ax2.scatter(xgrid, ygrid, preRecon)
+        plt.show()
+
 def plotFittedData(data, params, fns):
     from mpl_toolkits.mplot3d import Axes3D
     nData = params['nSteps']/params['dataInterval']
@@ -148,7 +170,6 @@ def plotFittedData(data, params, fns):
     spAxes[0].view_init(-2.0, 45.0)
     spAxes[1].view_init(-2, 135)
     spAxes[2].view_init(45, 225)
-    xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
     xyScaling = 100.0
     xgrid = xgrid/xyScaling
     ygrid = ygrid/xyScaling
@@ -279,3 +300,5 @@ if __name__=="__main__":
             fns = []
             fns.append(lambda x,y: x + y)
             plotFittedData(data, params, fns)
+        if 'projData' in fileName:
+            plotCRecon(data, params)

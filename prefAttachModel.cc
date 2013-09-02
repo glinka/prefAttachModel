@@ -263,16 +263,20 @@ void prefAttachModel::saveData(vector<vector<double> > &data, ofstream &fileHand
 	    tempArray[i][j] = data[newIndex][j];
 	}
     }
-    for(i = 0; i < n; i++) {
-	newIndex = sortedDegs[i][1];
-	for(j = 0; j < n; j++) {
+    for(j = 0; j < n; j++) {
+	newIndex = sortedDegs[j][1];
+	for(i = 0; i < n; i++) {
 	    data[i][j] = tempArray[i][newIndex];
-	    fileHandle << data[i][j];
-	    if(j != n-1) {
-		fileHandle << ",";
-	    }
 	}
-	fileHandle << endl;
+    }
+    for(i = 0; i < n; i++) {
+      for(j = 0; j < n; j++) {
+	fileHandle << data[i][j];
+	if(j != n-1) {
+	  fileHandle << ",";
+	}
+      }
+      fileHandle << endl;
     }
 }
 
