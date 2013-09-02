@@ -106,16 +106,24 @@ must recalc graph properties as in previous initGraph(), otherwise segfault
 
 void prefAttachModel::initGraph(int **newA) {
     int i, j;
+    double max = 0, min = 100;
     m = 0;
     for(i = 0; i < n; i++) {
 	degs[i] = 0;
 	for(j = 0; j < n; j++) {
 	    A[i][j] = newA[i][j];
 	    degs[i] += A[i][j];
+	    if(A[i][j] > max) {
+		max = A[i][j];
+	    }
+	    if(A[i][j] < min) {
+		min = A[i][j];
+	    }
 	}
 	m += degs[i];
     }
     m /= 2;
+    cout << max << "," << min << "\n";
 }
 
 graphData prefAttachModel::step(bool saveFlag) {
@@ -200,10 +208,8 @@ void prefAttachModel::run(long int nSteps, int dataInterval) {
   data = new graphData[SAVE_INTERVAL];
   initGraph();
   vector<double> forFile;
-  forFile.push_back(nSteps);
   forFile.push_back(dataInterval);
   vector<string> forFileStrs;
-  forFileStrs.push_back("nSteps");
   forFileStrs.push_back("dataInterval");
   ofstream *paData = createFile("paData", forFile, forFileStrs);
   //create filename and make header to csv
@@ -232,6 +238,44 @@ void prefAttachModel::run(long int nSteps, int dataInterval) {
   }
   delete[] data;
 }
+
+void prefAttachModel::saveData(vector<vector<double> > &data, ofstream &fileHandle) {
+    //assume data is nxn vector
+    int tempDegs[n];
+    int i, j;
+    for(i = 0; i < n; i++) {
+	tempDegs[i] = 0;
+	for(j = 0; j < n; j++) {
+	    tempDegs[i] += data[i][j];
+	}
+    }
+    int sortedDegs[n][2];
+    for(i = 0; i < n; i++) {
+	sortedDegs[i][0] = tempDegs[i];
+	sortedDegs[i][1] = i;
+    }
+    qsort(sortedDegs, n, 2*sizeof(int), compInt);
+    int newIndex;
+    int tempArray[n][n];
+    for(i = 0; i < n; i++) {
+	newIndex = sortedDegs[i][1];
+	for(j = 0; j < n; j++) {
+	    tempArray[i][j] = data[newIndex][j];
+	}
+    }
+    for(i = 0; i < n; i++) {
+	newIndex = sortedDegs[i][1];
+	for(j = 0; j < n; j++) {
+	    data[i][j] = tempArray[i][newIndex];
+	    fileHandle << data[i][j];
+	    if(j != n-1) {
+		fileHandle << ",";
+	    }
+	}
+	fileHandle << endl;
+    }
+}
+
 
 void prefAttachModel::saveData(graphData *data, int nData, ofstream &fileHandle) {
     int i, j, k;

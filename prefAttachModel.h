@@ -27,6 +27,7 @@ class prefAttachModel {
     graphData step(bool saveFlag);
     int consistencyCheck();
     void saveData(graphData *data, int nData, std::ofstream &fileHandle);
+    void saveData(std::vector<std::vector<double> > &data, std::ofstream &fileHandle);
  public:
     void run(long int nSteps, int dataInterval);
     std::ofstream *createFile(std::string base, std::vector<double> &addtnlData, std::vector<std::string> &addtnlDataLabels);

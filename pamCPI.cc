@@ -1,26 +1,26 @@
+#include <algorithm>
 #include "pamCPI.h"
 #include "calcGraphProps.h"
 #include "fitCurves.h"
 
 using namespace std;
 
-pamCPI::pamCPI(const int n, const int m, const int kappa, const int projStep, const int collectInterval, const int offManifoldWait, const int nMicroSteps) : prefAttachModel(n, m, kappa), projStep(projStep), collectInterval(collectInterval), offManifoldWait(offManifoldWait), nMicroSteps(nMicroSteps) {
+pamCPI::pamCPI(const int n, const int m, const double kappa, const int projStep, const int collectInterval, const int offManifoldWait, const int nMicroSteps) : prefAttachModel(n, m, kappa), projStep(projStep), collectInterval(collectInterval), offManifoldWait(offManifoldWait), nMicroSteps(nMicroSteps) {
 };
 
 void pamCPI::runCPI(const int nSteps) {
     initGraph();
     //set up save file and write header
     vector<double> forFile;
-    forFile.push_back(nSteps);
     forFile.push_back(projStep);
     forFile.push_back(offManifoldWait);
     forFile.push_back(nMicroSteps);
     vector<string> forFileStrs;
-    forFileStrs.push_back("nSteps");
     forFileStrs.push_back("projStep");
     forFileStrs.push_back("offManifoldWait");
     forFileStrs.push_back("nMicroSteps");
     ofstream *paDataCPI = createFile("paDataCPI", forFile, forFileStrs);
+    ofstream *projData = createFile("projData", forFile, forFileStrs);
     //after waiting for the system to reach the slow manifold, collect data every collectInterval number of steps
     int totalSteps = 0;
     int saveDataInterval = nMicroSteps/100;
@@ -76,7 +76,7 @@ void pamCPI::runCPI(const int nSteps) {
 		}
 	    }
 	}
-	project(data, time);
+	project(data, time, *projData);
 	int nPlotPts = toPlot.size();
 	//hooray for vlas
 	graphData toPlotAry[nPlotPts];
@@ -101,7 +101,7 @@ typedef vector<vector<double>> graph;
 and pass all calcGraphProps fns a 'graph'
 **********************************************
 **/
-void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &time) {
+void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &time, ofstream &projData) {
     //assert data.size() == time.size()
     int nPts = time.size();
     int i, j, k;
@@ -145,6 +145,7 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
 	for(j = 0; j < n; j++) {
 	  delete[] eigVects[j];
 	}
+	sort(leadingEigVect.begin(), leadingEigVect.end());
 	delete eigVects;
 	delete[] eigVals;
 	eigVectFittedCoeffs.push_back(fitCurves::fitFx(line, leadingEigVect, toFitEigVects));
@@ -192,8 +193,10 @@ decrease time vector to be the same during each projection, else values will bec
 	newEigVect.push_back(eval);
     }
     int **newA = new int*[n];
+    vector<vector<double> > toSaveRecon;
     for(i = 0; i < n; i++) {
 	newA[i] = new int[n];
+	toSaveRecon.push_back(v);
 	for(j = 0; j < n; j++) {
 	    //need to round to nearest even on diag
 	    if(i == j) {
@@ -204,6 +207,7 @@ decrease time vector to be the same during each projection, else values will bec
 	    else {
 		newA[i][j] = (int) (newEigVal*newEigVect[i]*newEigVect[j] + 0.5);
 	    }
+	    toSaveRecon[i].push_back(newA[i][j]);
 	}
     }
     initGraph(newA);
@@ -211,7 +215,8 @@ decrease time vector to be the same during each projection, else values will bec
 	delete[] newA[i];
     }
     delete newA;
+    //save data for visual comparison of reconstructions:
+    vector<vector<double> > toSavePreRecon = data.back();
+    saveData(toSavePreRecon, projData);
+    saveData(toSaveRecon, projData);
 }
- 
-
-
