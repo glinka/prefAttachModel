@@ -1,0 +1,17 @@
+\documentclass[11pt]{article}
+\setlength{\textheight}{240mm}
+%\setlength{\voffset}{0mm}
+\addtolength{\topmargin}{-30mm}
+\setlength{\textwidth}{155mm}
+\setlength{\oddsidemargin}{5mm}
+\usepackage{graphicx, subfig}
+\pagestyle{plain}
+\begin{document}
+\title{Preferential Attachment Coarse Projective Integration}
+\author{Alexander Holiday\vspace{-2ex}}
+\date{09/01/2013}
+\maketitle
+\section*{Introduction}
+The preferential attachment model, detailed in \cite{balasz:rsa12}, was implemented in C++. The system naturally converges to a limiting ``graphon'' (see \cite{lovasz:jcombth06}), and, in order to increase the rate of convergence, coarse projective integration was implemented. This brief outlines the model dynamics and reviews current simulation progress.
+\section*{Preferential Attachment Model}
+This vertex- and edge-conservative model begins with an Erd\H{o}s-R\'{e}nyi random graph in which $m$ edges are randomly assigned to $n$ vertices. 

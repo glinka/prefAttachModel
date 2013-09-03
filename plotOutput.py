@@ -86,8 +86,8 @@ def animateRawData(data, params, fps=10, bitrate=14400, containerType='.mkv'):
 def animateReconstruction(data, params, fps=10, bitrate=1600, containerType='.mkv'):
     import matplotlib.animation as animation
     from mpl_toolkits.mplot3d import Axes3D
-    nData = params['nSteps']/params['dataInterval']
     n = params['n']
+    nData = data.shape[0]/n
     fig = plt.figure()
     ax1 = fig.add_subplot(211, projection='3d')
     ax2 = fig.add_subplot(212, projection='3d')
@@ -103,6 +103,7 @@ def animateReconstruction(data, params, fps=10, bitrate=1600, containerType='.mk
     ax2.set_zlim3d(bottom=0, top=maxDeg)
     xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
     newFolder = makeFolder('reconstruction')
+    print newFolder
     fileName = ""
     for i in range(nData):
         z = data[(i)*n:(i+1)*n,:n]
@@ -141,24 +142,57 @@ def makeAnimation(inputFilename, inputFolder, fps=50, bitrate=3000000, container
 def plotCRecon(data, params):
     from mpl_toolkits.mplot3d import Axes3D
     n = params['n']
-    nData = data.size[0]/(2*n)
+    nData = data.shape[0]/(2*n)
+    print nData
     fig = plt.figure()
     ax1 = fig.add_subplot(211, projection='3d')
     ax2 = fig.add_subplot(212, projection='3d')
     xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
     maxDeg = np.amax(data)
-    ax1.set_xlim((0, n))
-    ax1.set_ylim((0, n))
-    ax1.set_zlim((0, maxDeg))
-    ax2.set_xlim((0, n))
-    ax2.set_ylim((0, n))
-    ax2.set_zlim((0, maxDeg))
+    ax1.set_xlim(left=0, right=n)
+    ax1.set_ylim(bottom=0, top=n)
+    ax1.set_zlim(bottom=0, top=maxDeg)
+    ax2.set_xlim(left=0, right=n)
+    ax2.set_ylim(bottom=0, top=n)
+    ax2.set_zlim(bottom=0, top=maxDeg)
+    newFolder = makeFolder('CRecon')
+    fileName = ''
     for i in range(nData):
         preRecon = data[n*2*i:n*(2*i+1),:]
         postRecon = data[n*(2*i+1):n*(2*i+2),:]
-        ax1.scatter(xgrid, ygrid, preRecon)
-        ax2.scatter(xgrid, ygrid, preRecon)
-        plt.show()
+        ax1.scatter(xgrid, ygrid, preRecon, c=preRecon, cmap='jet')
+        ax2.scatter(xgrid, ygrid, postRecon, c=postRecon, cmap='jet')
+        plt.draw()
+        fileName = genFileName('CRecon', params, uniqueID=str(i))
+        plt.savefig(newFolder + fileName + '.png')
+        ax1.cla()
+        ax2.cla()
+        ax1.grid(b=False)
+        ax2.grid(b=False)
+        ax1.set_xlim3d(left=0, right=n)
+        ax1.set_ylim3d(bottom=0, top=n)
+        ax1.set_zlim3d(bottom=0, top=maxDeg)
+        ax2.set_xlim3d(left=0, right=n)
+        ax2.set_ylim3d(bottom=0, top=n)
+        ax2.set_zlim3d(bottom=0, top=maxDeg)
+    makeAnimation(fileName, newFolder)
+
+def plotEigVectRecon(data, params):
+    n = params['n']
+    nData = data.shape[0]/(2*n)
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+    yMin = np.amin(data)
+    yMax = np.amax(data)
+    ax1.set_ylim((yMin, yMax))
+    xData = np.linspace(1, n, n)
+    folderName = makeFolder("eigVectRecon")
+    for i in range(nData):
+        ax1.plot(xData, data[2*i*n: n*(2*i+1)])
+        ax1.plot(xData, data[n*(2*i+1): 2*n*(i+1)], c='g')
+        plt.draw()
+        plt.savefig(folderName + genFileName("eigVectRecon", params, uniqueID=str(i)) + '.png')
+        ax1.cla()
 
 def plotFittedData(data, params, fns):
     from mpl_toolkits.mplot3d import Axes3D
@@ -194,8 +228,8 @@ def plotFittedData(data, params, fns):
 
 def animateVector(data, params, fn, fps=10, bitrate=14400, containerType='.mkv'):
     import matplotlib.animation as animation
-    nData = params['nSteps']/params['dataInterval']
     n = params['n']
+    nData = data.shape[0]/n
     fig = plt.figure()
     ax = fig.add_subplot(111)
     newFolder = makeFolder('vector')
@@ -302,3 +336,5 @@ if __name__=="__main__":
             plotFittedData(data, params, fns)
         if 'projData' in fileName:
             plotCRecon(data, params)
+        if 'eigVectData' in fileName:
+            plotEigVectRecon(data, params)

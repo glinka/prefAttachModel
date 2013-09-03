@@ -19,8 +19,9 @@ void pamCPI::runCPI(const int nSteps) {
     forFileStrs.push_back("projStep");
     forFileStrs.push_back("offManifoldWait");
     forFileStrs.push_back("nMicroSteps");
-    ofstream *paDataCPI = createFile("paDataCPI", forFile, forFileStrs);
-    ofstream *projData = createFile("projData", forFile, forFileStrs);
+    ofstream &paDataCPI = createFile("paDataCPI", forFile, forFileStrs);
+    ofstream &projData = createFile("projData", forFile, forFileStrs);
+    ofstream &eigVectData = createFile("eigVectData", forFile, forFileStrs);
     //after waiting for the system to reach the slow manifold, collect data every collectInterval number of steps
     int totalSteps = 0;
     int saveDataInterval = nMicroSteps/100;
@@ -76,7 +77,7 @@ void pamCPI::runCPI(const int nSteps) {
 		}
 	    }
 	}
-	project(data, time, *projData);
+	project(data, time, projData, eigVectData);
 	int nPlotPts = toPlot.size();
 	//hooray for vlas
 	graphData toPlotAry[nPlotPts];
@@ -84,13 +85,18 @@ void pamCPI::runCPI(const int nSteps) {
 	for(i = 0; i < nPlotPts; i++) {
 	    toPlotAry[i] = toPlot[i];
 	}
-	saveData(toPlotAry, nPlotPts, *paDataCPI);
+	saveData(toPlotAry, nPlotPts, paDataCPI);
 	toPlot.clear();
 	toProject.clear();
 	totalSteps += projStep;
     }
-    paDataCPI->close();
-    delete paDataCPI;
+    eigVectData << endl;
+    paDataCPI.close();
+    projData.close();
+    eigVectData.close();
+    delete &paDataCPI;
+    delete &projData;
+    delete &eigVectData;
 }
 /**
 ******************** TODO ********************
@@ -101,7 +107,8 @@ typedef vector<vector<double>> graph;
 and pass all calcGraphProps fns a 'graph'
 **********************************************
 **/
-void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &time, ofstream &projData) {
+void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &time, ofstream &projData, ofstream &eigVectData) {
+  //save data. this can be deleted after the damn thing runs properly
     //assert data.size() == time.size()
     int nPts = time.size();
     int i, j, k;
@@ -154,6 +161,10 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
 	    delete[] tempA[j];
 	}
 	delete tempA;
+	//save last eigvect
+	if(i == nPts-1) {
+	  saveData(leadingEigVect, eigVectData);
+	}
     }
     int nCoeffs = eigVectFittedCoeffs[0].size();
     vector<vector<double> > reshapedCoeffs;
@@ -219,4 +230,7 @@ decrease time vector to be the same during each projection, else values will bec
     vector<vector<double> > toSavePreRecon = data.back();
     saveData(toSavePreRecon, projData);
     saveData(toSaveRecon, projData);
+    //save new eigvect
+    sort(newEigVect.begin(), newEigVect.end());
+    saveData(newEigVect, eigVectData);
 }

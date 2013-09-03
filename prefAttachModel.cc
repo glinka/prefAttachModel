@@ -181,7 +181,7 @@ graphData prefAttachModel::step(bool saveFlag) {
   }
 }
 
-ofstream *prefAttachModel::createFile(string base, vector<double> &addtnlData, vector<string> &addtnlDataLabels) {
+ofstream &prefAttachModel::createFile(string base, vector<double> &addtnlData, vector<string> &addtnlDataLabels) {
   stringstream ss;
   ss << base << "_" << n << "_" << m << "_" << kappa;
   for(unsigned int i = 0; i < addtnlData.size(); i++) {
@@ -198,7 +198,7 @@ ofstream *prefAttachModel::createFile(string base, vector<double> &addtnlData, v
       *file << "," << addtnlDataLabels[i] << "=" << addtnlData[i];
   }
   *file << "\n";
-  return file;
+  return *file;
 }
 
 void prefAttachModel::run(long int nSteps, int dataInterval) {
@@ -211,7 +211,7 @@ void prefAttachModel::run(long int nSteps, int dataInterval) {
   forFile.push_back(dataInterval);
   vector<string> forFileStrs;
   forFileStrs.push_back("dataInterval");
-  ofstream *paData = createFile("paData", forFile, forFileStrs);
+  ofstream &paData = createFile("paData", forFile, forFileStrs);
   //create filename and make header to csv
   for(long int i = 0; i < nSteps; i++) {
     if((i+1) % dataInterval == 0) {
@@ -219,15 +219,15 @@ void prefAttachModel::run(long int nSteps, int dataInterval) {
       data[dataIndex] = step(true);
       //save data every SAVE_INTERVAL times data is collected
       if(dataIndex == 0) {
-	  saveData(data, SAVE_INTERVAL, *paData);
+	  saveData(data, SAVE_INTERVAL, paData);
       }
     }
     else{
       step(false);
     }
   }
-  paData->close();
-  delete paData;
+  paData.close();
+  delete &paData;
   //take out the garbage
   for(int i = 0; i < SAVE_INTERVAL; i++) {
        for(int j = 0; j < n; j++) {
@@ -237,6 +237,13 @@ void prefAttachModel::run(long int nSteps, int dataInterval) {
       delete[] data[i].degSeq;
   }
   delete[] data;
+}
+
+void prefAttachModel::saveData(vector<double> &data, ofstream &fileHandle) {
+  int nData = data.size();
+  for(int i = 0; i < nData; i++) {
+    fileHandle << data[i] << endl;
+  }
 }
 
 void prefAttachModel::saveData(vector<vector<double> > &data, ofstream &fileHandle) {

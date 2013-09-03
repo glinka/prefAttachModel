@@ -11,6 +11,12 @@ int main(int argc, char *argv[]) {
   long int nSteps = 10000000;
   int dataInterval = 1000;
   int i;
+  bool project = false;
+  //CPI vars
+  int projStep = 1000;
+  int collectInterval = 1000;
+  int offManifoldWait = 5000;
+  int nMicroSteps = 20000;
   //parse command line args, could be moved to separate fn?
   for(i = 1; i < argc; i++) {
     if(argv[i][0] == '-') {
@@ -41,17 +47,34 @@ int main(int argc, char *argv[]) {
       else if(currentLabel == "-di" || currentLabel == "-dataInterval" || currentLabel == "-ci" || currentLabel == "-collection_interval") {
 	dataInterval = atoi(currentArg);
       }
+      else if(currentLabel == "-project") {
+	project = true;
+      }
+      else if(currentLabel == "-projStep" || currentLabel == "-pStep" || currentLabel == "-projInterval") {
+	project = true;
+	projStep = atoi(currentArg);
+      }
+      else if(currentLabel == "-collectInterval" || currentLabel == "-ci" || currentLabel == "-collectionInterval") {
+	project = true;
+	collectInterval = atoi(currentArg);
+      }
+      else if(currentLabel == "-offManifoldWait" || currentLabel == "-omw") {
+	project = true;
+	offManifoldWait = atoi(currentArg);
+      }
+      else if(currentLabel == "-nMicroSteps" || currentLabel == "-nms") {
+	project = true;
+	nMicroSteps = atoi(currentArg);
+      }
     }
   }
-  int projStep = 1;
-  int collectInterval = 100;
-  int offManifoldWait = 1000;
-  int nMicroSteps = 2000;
-  pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps);
+  if(project) {
+    pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps);
   model.runCPI(nSteps);
-  /**
+  }
+  else {
      prefAttachModel model(n, m, kappa);
      model.run(nSteps, dataInterval);
-  **/
+  }
   return 0;
 }
