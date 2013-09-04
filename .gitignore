@@ -28,3 +28,10 @@ prefAttachModel
 #animation files
 *.avi
 *.mkv
+#tex files
+*.bbl
+*.blg
+*.aux
+*.log
+#folders
+CRecon*

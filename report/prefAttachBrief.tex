@@ -12,6 +12,19 @@
 \date{09/01/2013}
 \maketitle
 \section*{Introduction}
-The preferential attachment model, detailed in \cite{balasz:rsa12}, was implemented in C++. The system naturally converges to a limiting ``graphon'' (see \cite{lovasz:jcombth06}), and, in order to increase the rate of convergence, coarse projective integration was implemented. This brief outlines the model dynamics and reviews current simulation progress.
+The preferential attachment model, detailed in \cite{balasz:rsa12}, was implemented in C++. The system naturally converges to a limiting ``graphon'' (see \cite{lovasz:jcombth06}), and in order to increase the rate of convergence, coarse projective integration was implemented. This brief outlines the model dynamics and reviews current simulation progress.
 \section*{Preferential Attachment Model}
-This vertex- and edge-conservative model begins with an Erd\H{o}s-R\'{e}nyi random graph in which $m$ edges are randomly assigned to $n$ vertices. 
+The initial state of the preferential attachment model is an Erd\H{o}s-R\'{e}nyi random graph with $n$ vertices and $m\sim O(n^{2})$ edges. The system evolves as a discrete-time Markov chain, in which the following actions are performed during each step:
+\begin{enumerate}
+\item An edge $e_{old}$ is chosen uniformly at random from the set of all possible edges, $E(G)$.
+\item A vertex end of $e_{old}$, $v_{1}$, is chosen uniformly from the two ends.
+\item $e_{old}$ is removed from the graph, and a vertex $v_{2}$ is chosen from $V(G)$ with a probability determined based on linear preferential attachment:
+\[
+P(v_{2}=v_{i})=\frac{deg(v_{i})+\kappa}{2m+n\kappa}
+\]
+where \kappa is a model parameter and $deg(v_{i})$ denotes the degree of vertex $i$ in $V$.
+\item An edge $e_{new}$ is added between $v_{1}$ is connected to $v_{2}$.
+\end{enumerate}
+Two distinct timescales arise from these dynamics, $T\asymp n^{2}$ and $T\asymp n^{3}$ where $T$ is the number of steps.
+\end{document}
+
