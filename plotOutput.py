@@ -227,12 +227,12 @@ def plotFittedData(data, params, fns):
         plt.savefig(newFolder + fileName + '.png')
 
 def animateVector(data, params, fn, fps=10, bitrate=14400, containerType='.mkv'):
-    import matplotlib.animation as animation
     n = params['n']
     nData = data.shape[0]/n
     fig = plt.figure()
     ax = fig.add_subplot(111)
     newFolder = makeFolder('vector')
+    print newFolder
     fileName = ""
     #find y upper and lower limits
     yMin = np.min([fn(data[(i)*n:(i+1)*n,:n]) for i in range(nData)])
@@ -262,7 +262,6 @@ def scalarEvolution(data, params, fn):
     
 
 def plotReconstruction((x, y, z, zlim, xylim, folder, fileName)):
-    import matplotlib.animation as animation
     from mpl_toolkits.mplot3d import Axes3D
     fig = plt.figure()
     ax1 = fig.add_subplot(211, projection='3d')
@@ -279,6 +278,28 @@ def plotReconstruction((x, y, z, zlim, xylim, folder, fileName)):
     ax2.scatter(x, y, gGP.getEigenReconstruction(z), c=z, cmap = 'jet')
     plt.savefig(folder + fileName + ".png")
     plt.close(fig)
+
+def makeSurface(data, params, fn):
+    from mpl_toolkits.mplot3d import Axes3D
+    n = params['n']
+    nData = data.shape[0]/n
+    fig = plt.figure()
+    fig.hold(True)
+    spAxes = [fig.add_subplot(i, projection='3d') for i in range(221, 225)]
+    spAxes[0].view_init(-2.0, 45.0)
+    spAxes[1].view_init(-2, 135)
+    spAxes[2].view_init(45, 225)
+    maxZ = np.max([np.max(fn(data[i*n:(i+1)*n,:])) for i in range(nData)])
+    [ax.set_xlim((0, n)) for ax in spAxes]
+    [ax.set_ylim((0, nData)) for ax in spAxes]
+    [ax.set_zlim((0, maxZ)) for ax in spAxes]
+    xData = np.linspace(1, n, n)
+    for i in range(nData):
+        ys = i*np.ones(n)
+        [ax.scatter(xData, ys, fn(data[i*n:(i+1)*n]), c='b', alpha=0.5) for ax in spAxes]
+        print 1.0*i/nData
+    newFolder = makeFolder('vectorSurface')
+    plt.savefig(newFolder + 'degreeSurface.png')
 
 if __name__=="__main__":
     import argparse
@@ -299,6 +320,7 @@ if __name__=="__main__":
     parser.add_argument('-svEig', '--plot-svsEig', action='store_true', default=False)
     parser.add_argument('-pr', '--plot-reconstruction', action='store_true', default=False)
     parser.add_argument('-ppr', '--parallel-plot-reconstruction', action='store_true', default=False)
+    parser.add_argument('-pd', '--plot-degrees', action='store_true', default=False)
     args = parser.parse_args()
     for fileName in args.inputFiles:
         params, data = genData(fileName)
@@ -329,6 +351,8 @@ if __name__=="__main__":
             newFolder = makeFolder('reconstruction')
             xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
             result = p.map(plotReconstruction, [(xgrid, ygrid, data[i*n:(i+1)*n,:], maxDeg, n, newFolder, genFileName('rawData', params, str(i))) for i in range(nData)])
+        if args.plot_degrees:
+            makeSurface(data, params, gGP.getDegrees)
         if args.fit:
             epsilon = 0.1
             fns = []
