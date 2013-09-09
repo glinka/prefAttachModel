@@ -285,18 +285,31 @@ def makeSurface(data, params, fn):
     nData = data.shape[0]/n
     fig = plt.figure()
     fig.hold(True)
-    spAxes = [fig.add_subplot(i, projection='3d') for i in range(221, 225)]
-    spAxes[0].view_init(-2.0, 45.0)
-    spAxes[1].view_init(-2, 135)
-    spAxes[2].view_init(45, 225)
+    #spAxes = [fig.add_subplot(i, projection='3d') for i in range(211, 213)]
+    spAxes = [fig.add_subplot(111, projection='3d')]
+    spAxes[0].view_init(30, -135)
     maxZ = np.max([np.max(fn(data[i*n:(i+1)*n,:])) for i in range(nData)])
+    #set various axis properties
+    [ax.grid(b=False) for ax in spAxes]
     [ax.set_xlim((0, n)) for ax in spAxes]
+    [ax.set_xticklabels([str(n)]) for ax in spAxes]
+    [ax.set_xticks([n]) for ax in spAxes]
+    [ax.set_xlabel('vertex index') for ax in spAxes]
     [ax.set_ylim((0, nData)) for ax in spAxes]
+    [ax.set_yticklabels([str(0), str(nData*params['dataInterval'])]) for ax in spAxes]
+    [ax.set_yticks([str(0), str(nData)]) for ax in spAxes]
+    [ax.set_ylabel('simulation step') for ax in spAxes]
     [ax.set_zlim((0, maxZ)) for ax in spAxes]
+    [ax.set_zticklabels([str(maxZ)]) for ax in spAxes]
+    [ax.set_zticks([maxZ]) for ax in spAxes]
+    [ax.set_zlabel('degree') for ax in spAxes]
     xData = np.linspace(1, n, n)
     for i in range(nData):
+        color = 'b'
+        if (i+1)*params['dataInterval'] % (np.power(params['m'], 3)) == 0:
+            color = 'r'
         ys = i*np.ones(n)
-        [ax.scatter(xData, ys, fn(data[i*n:(i+1)*n]), c='b', alpha=0.5) for ax in spAxes]
+        [ax.plot(xData, ys, fn(data[i*n:(i+1)*n]), c=color, alpha=0.5) for ax in spAxes]
         print 1.0*i/nData
     newFolder = makeFolder('vectorSurface')
     plt.savefig(newFolder + 'degreeSurface.png')
