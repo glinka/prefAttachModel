@@ -15,16 +15,18 @@ void pamCPI::runCPI(const int nSteps) {
     forFile.push_back(projStep);
     forFile.push_back(offManifoldWait);
     forFile.push_back(nMicroSteps);
+    forFile.push_back(collectInterval);
     vector<string> forFileStrs;
     forFileStrs.push_back("projStep");
     forFileStrs.push_back("offManifoldWait");
     forFileStrs.push_back("nMicroSteps");
+    forFileStrs.push_back("collectInterval");
     ofstream &paDataCPI = createFile("paDataCPI", forFile, forFileStrs);
     ofstream &projData = createFile("projData", forFile, forFileStrs);
     ofstream &eigVectData = createFile("eigVectData", forFile, forFileStrs);
     //after waiting for the system to reach the slow manifold, collect data every collectInterval number of steps
     int totalSteps = 0;
-    int saveDataInterval = nMicroSteps/100;
+    int saveDataInterval = 1000;
     while(totalSteps < nSteps) {
 	int microStep;
 	vector<graphData> toPlot;
@@ -41,7 +43,7 @@ void pamCPI::runCPI(const int nSteps) {
 	    }
 	    else {
 		int nOnManifoldSteps = microStep - offManifoldWait;
-		if((nOnManifoldSteps+1)%collectInterval == 0) {
+		if((nOnManifoldSteps)%collectInterval == 0) {
 		    time.push_back(totalSteps);
 		    if((microStep+1)%saveDataInterval == 0) {
 			graphData d = step(true);

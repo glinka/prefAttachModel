@@ -188,6 +188,8 @@ def plotEigVectRecon(data, params):
     xData = np.linspace(1, n, n)
     folderName = makeFolder("eigVectRecon")
     for i in range(nData):
+        ax1.set_xlabel('index')
+        ax1.set_ylabel('vector value')
         ax1.plot(xData, data[2*i*n: n*(2*i+1)])
         ax1.plot(xData, data[n*(2*i+1): 2*n*(i+1)], c='g')
         plt.draw()
@@ -283,6 +285,46 @@ def plotReconstruction((x, y, z, zlim, xylim, folder, fileName)):
     plt.savefig(folder + fileName + ".png")
     plt.close(fig)
 
+def compareProjection(fullData, fullParams, cpiData, cpiParams):
+    #3d plot of full simulation and cpi, degree evolution vs time
+    from mpl_toolkits.mplot3d import Axes3D
+    n = fullParams['n']
+    nFullData = fullData.shape[0]/n
+    nCPIData = cpiData.shape[0]/n
+    #full collection interval
+    fullCI = fullParams['dataInterval']
+    #cpi collection interval
+    cpiCI = cpiParams['collectInterval']
+    cpiNMS = cpiParams['nMicroSteps']
+    cpiOMW = cpiParams['offManifoldWait']
+    cpiProjStep = cpiParams['projStep']
+    #on manifold steps, with any luck is an integer
+    cpiOMS = (cpiNMS - cpiOMW)/cpiCI
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_zlabel('degree')
+    ax.set_ylabel('steps')
+    ax.set_xlabel('vertex index')
+    xData = np.linspace(1,n,n)
+    for i in range(nFullData):
+        time = i*fullCI*np.ones(n)
+        ax.plot(xData, time, gGP.getDegrees(fullData[i*n:(i+1)*n,:]), c='r', alpha=0.1)
+    t = cpiOMW
+    onManifoldCount = 0
+    for i in range(nCPIData):
+        time = t*np.ones(n)
+        if onManifoldCount < cpiOMS:
+            t = t + cpiCI
+            onManifoldCount = onManifoldCount + 1
+        else:
+            t = t + cpiProjStep + cpiOMW
+            onManifoldCount = 0
+        ax.plot(xData, time, gGP.getDegrees(cpiData[i*n:(i+1)*n,:]), c='b', alpha=0.1)
+    newFolder = makeFolder('compProj')
+    plt.savefig(newFolder + 'compProj.png')
+            
+
+
 def makeSurface(data, params, fn):
     from mpl_toolkits.mplot3d import Axes3D
     n = params['n']
@@ -338,44 +380,58 @@ if __name__=="__main__":
     parser.add_argument('-pr', '--plot-reconstruction', action='store_true', default=False)
     parser.add_argument('-ppr', '--parallel-plot-reconstruction', action='store_true', default=False)
     parser.add_argument('-pd', '--plot-degrees', action='store_true', default=False)
+    parser.add_argument('-cp', '--compare-projection', '--comp-proj', action='store_true', default=False)
     args = parser.parse_args()
-    for fileName in args.inputFiles:
-        params, data = genData(fileName)
-        if args.contour:
-            animateContour(data, params, args.cmap, args.fps, args.bitrate, args.container_type)
-        if args.threed:
-            animateRawData(data, params, args.fps, args.bitrate, args.container_type)
-        if args.plot_adj_eigvals:
-            animateVector(data, params, gGP.getAdjEigVals, args.fps, args.bitrate, args.container_type)
-        if args.plot_adj_leading_eigval:
-            scalarEvolution(data, params, gGP.getAdjLeadingEigVal)
-        if args.plot_adj_leading_eigvect:
-            animateVector(data, params, gGP.getAdjLeadingEigVect, args.fps, args.bitrate, args.container_type)
-        if args.plot_lapl_eigvals:
-            animateVector(data, params, gGP.getLaplEigVals, args.fps, args.bitrate, args.container_type)
-        if args.plot_svs:
-            animateVector(data, params, gGP.getSVs, args.fps, args.bitrate, args.container_type)
-        if args.plot_svsEig:
-            animateVector(data, params, gGP.getSVLeadingEigVect, args.fps, args.bitrate, args.container_type)
-        if args.plot_reconstruction:
-            animateReconstruction(data, params, args.fps, args.bitrate, args.container_type)
-        if args.parallel_plot_reconstruction:
-            p = Pool(processes=2)
-            nData = params['nSteps']/params['dataInterval']
-            n = params['n']
-            #find max degree to set z limits:
-            maxDeg = np.amax(data[:,:])
-            newFolder = makeFolder('reconstruction')
-            xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
-            result = p.map(plotReconstruction, [(xgrid, ygrid, data[i*n:(i+1)*n,:], maxDeg, n, newFolder, genFileName('rawData', params, str(i))) for i in range(nData)])
-        if args.plot_degrees:
-            makeSurface(data, params, gGP.getDegrees)
-        if args.fit:
-            epsilon = 0.1
-            fns = []
-            fns.append(lambda x,y: x + y)
-            plotFittedData(data, params, fns)
-        if 'projData' in fileName:
-            plotCRecon(data, params)
-        if 'eigVectData' in fileName:
-            plotEigVectRecon(data, params)
+    if args.compare_projection:
+        #must have args.inputFiles.size === 2
+        fullFile = ''
+        cpiFile = ''
+        for fileName in args.inputFiles:
+            if 'paData_' in fileName:
+                fullFile = fileName
+            elif 'paDataCPI' in fileName:
+                cpiFile = fileName
+        paramsFull, dataFull = genData(fullFile)
+        paramsCPI, dataCPI = genData(cpiFile)
+        compareProjection(dataFull, paramsFull, dataCPI, paramsCPI)
+    else:
+        for fileName in args.inputFiles:
+            params, data = genData(fileName)
+            if args.contour:
+                animateContour(data, params, args.cmap, args.fps, args.bitrate, args.container_type)
+            if args.threed:
+                animateRawData(data, params, args.fps, args.bitrate, args.container_type)
+            if args.plot_adj_eigvals:
+                animateVector(data, params, gGP.getAdjEigVals, args.fps, args.bitrate, args.container_type)
+            if args.plot_adj_leading_eigval:
+                scalarEvolution(data, params, gGP.getAdjLeadingEigVal)
+            if args.plot_adj_leading_eigvect:
+                animateVector(data, params, gGP.getAdjLeadingEigVect, args.fps, args.bitrate, args.container_type)
+            if args.plot_lapl_eigvals:
+                animateVector(data, params, gGP.getLaplEigVals, args.fps, args.bitrate, args.container_type)
+            if args.plot_svs:
+                animateVector(data, params, gGP.getSVs, args.fps, args.bitrate, args.container_type)
+            if args.plot_svsEig:
+                animateVector(data, params, gGP.getSVLeadingEigVect, args.fps, args.bitrate, args.container_type)
+            if args.plot_reconstruction:
+                animateReconstruction(data, params, args.fps, args.bitrate, args.container_type)
+            if args.parallel_plot_reconstruction:
+                p = Pool(processes=2)
+                nData = params['nSteps']/params['dataInterval']
+                n = params['n']
+                #find max degree to set z limits:
+                maxDeg = np.amax(data[:,:])
+                newFolder = makeFolder('reconstruction')
+                xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
+                result = p.map(plotReconstruction, [(xgrid, ygrid, data[i*n:(i+1)*n,:], maxDeg, n, newFolder, genFileName('rawData', params, str(i))) for i in range(nData)])
+            if args.plot_degrees:
+                makeSurface(data, params, gGP.getDegrees)
+            if args.fit:
+                epsilon = 0.1
+                fns = []
+                fns.append(lambda x,y: x + y)
+                plotFittedData(data, params, fns)
+            if 'projData' in fileName:
+                plotCRecon(data, params)
+            if 'eigVectData' in fileName:
+                plotEigVectRecon(data, params)
