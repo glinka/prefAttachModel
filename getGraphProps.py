@@ -12,7 +12,7 @@ def getAdjEigVals(A):
     """Return a numpy ndarray containing the eigenvalues
     of the adjacency matrix, sorted in ascending order
     """
-    return np.linalg.eigvals(A)
+    return np.absolute(np.linalg.eigvals(A))
 
 def getAdjLeadingEigVal(A):
     n = A.shape[0]

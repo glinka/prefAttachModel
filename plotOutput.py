@@ -231,6 +231,8 @@ def animateVector(data, params, fn, fps=10, bitrate=14400, containerType='.mkv')
     nData = data.shape[0]/n
     fig = plt.figure()
     ax = fig.add_subplot(111)
+    ax.set_xlabel('Vector index')
+    ax.set_ylabel('Vector value')
     newFolder = makeFolder('vector')
     print newFolder
     fileName = ""
@@ -239,6 +241,8 @@ def animateVector(data, params, fn, fps=10, bitrate=14400, containerType='.mkv')
     yMax = np.max([fn(data[(i)*n:(i+1)*n,:n]) for i in range(nData)])
     for i in range(nData):    
         ax.cla()
+        ax.set_xlabel('Vector index')
+        ax.set_ylabel('Vector value')
         ax.set_ylim((yMin, yMax))
         ax.plot(np.linspace(1,n,n), fn(data[(i)*n:(i+1)*n,:n]), marker='o', c=[1,0.5,0.5])
         fileName = genFileName('eigVals', params, str(i))
