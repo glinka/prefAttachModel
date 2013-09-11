@@ -29,24 +29,24 @@ where $\kappa$ is a model parameter and $deg(v_{i})$ denotes the degree of verte
 \item An edge, $e_{new}$, is added between $v_{1}$ and $v_{2}$.
 \end{enumerate}
 
-Two distinct timescales arise from these dynamics, $T\asymp n^{2}$ and $T\asymp n^{3}$ where $T$ is the number of steps. On the faster, $O(n^{2})$ scale, the degrees of the vertices may be considered constant, while the number of parallel edges between vertices changes. On the slower $O(n^{3})$ scale, the degree distribution evolves to a steady state value. While this separation of timescales has been proven in \cite{balazs:rsa12}, identifying them through numerical simulations is complicated by a couple of factors. First, the exact timescales themselves are difficult to discern. Both scales are really $O(\rho_{1} n^{2})$ and $O(\rho_{2} n^{3})$, where the constants $\rho_{i}$ are evaluated at the limit of infinite-sized graphs ($n\rightarrow \infty$). This hints at the second, larger, problem: many of the results on the existence of these timescales in the first place are only valid in this large-$n$ limit. Simulation time then becomes problematic. Figs. \ref{fig:degSurf100} and \ref{fig:degSurf500} illustrate attempts to visualize these separate scales of evolution. The degree distribution is plotted every $n^{2}$ steps in thse figures, with a total number of $n^{3}$ steps in each. The changes appear quite gradual, and no distinct timescales are evident.\\
+Two distinct timescales arise from these dynamics, $T\asymp n^{2}$ and $T\asymp n^{3}$ where $T$ is the number of steps. On the faster, $O(n^{2})$ scale, the degrees of the vertices may be considered constant, while the number of parallel edges between vertices changes. On the slower $O(n^{3})$ scale, the degree distribution evolves to a steady state value. While this separation of timescales has been proven in \cite{balazs:rsa12}, identifying them through numerical simulations is complicated by a couple of factors. First, the exact timescales themselves are difficult to discern. Both scales are really $O(\rho_{1} n^{2})$ and $O(\rho_{2} n^{3})$, where the constants $\rho_{i}$ are evaluated at the limit of infinite-sized graphs ($n\rightarrow \infty$). This hints at the second, larger, problem: many of the results on the existence of these timescales in the first place are only valid in this large-$n$ limit. Simulation time then becomes problematic. Figs. \ref{fig:nSquaredTimescale} and \ref{fig:nCubedTimescale} illustrate attempts to visualize these separate scales of evolution. The degree distribution is plotted every $n^{2}$ steps in thse figures, with a total number of $n^{3}$ steps in each. The changes appear quite gradual, and no distinct timescales are evident.\\
 \indent In spite of the difficulties in accurately locating these different regions, progress has been made towards performing CPI on the system. Current work to this end is outlined below.
 \clearpage
 
 \begin{figure}[h]
   \begin{minipage}[c][11cm][t]{.9\textwidth}
     \centering
-    \includegraphics[width=127mm]{degSurf100}
-    \subcaption{$n=100$}
-    \label{fig:degSurf100}\par\vfill
+    \includegraphics[width=127mm]{nSquaredTimescale}
+    \subcaption{Evolution over $n^{3}$ steps, plotted every $n^{2}$ iterations.}
+    \label{fig:nSquaredTimescale}\par\vfill
   \end{minipage}
   \begin{minipage}[c][11cm][t]{.9\textwidth}
     \centering
-    \includegraphics[width=127mm]{degSurf500}
-    \subcaption{$n=500$}
-    \label{fig:degSurf500}
+    \includegraphics[width=127mm]{nCubedTimescale}
+    \subcaption{Evolution over $10 n^{3}$ steps, plotted every $n^{3}$ iterations.}
+    \label{fig:nCubedTimescale}
   \end{minipage}
-  \caption{Evolution of degree distribution for $n^{3}$ steps}
+  \caption{Evolution of degree distribution on different timescales.}
 \end{figure}
 \vspace{10cm}
 
@@ -74,7 +74,7 @@ Fig. \ref{fig:adjRecon} illustrates the reconstruction of the adjacency matrix a
     \includegraphics[width=12cm]{adjReconLong100}
     \subcaption{\centering Further into simulation (preferential attachment causes a few vertices to attain very large degrees)}
   \end{minipage}
-  \caption{Original adjacency matrices taken from simulations (top of each subfigure) and their reconstruction from the leading eigenvalue/eigenvector pair (bottom), $n=100$. Please note: the color adds no information to the plots: it scales directly with the z-axis and can (probably should) be taken out of the image}
+  \caption{Original adjacency matrices taken from simulations (top of each subfigure) and their reconstruction from the leading eigenvalue/eigenvector pair (bottom of each subfigure), $n=100$. The x and y axis correspond to  vertex indices, while the z axis represents the number of edges between vertices x and y (the plots are a 3D projection of the adjacency matrix). Please note: the color adds no information: it scales directly with the z-axis and can (probably should) be taken out of the image}
   \label{fig:adjRecon}
 \end{figure}
  

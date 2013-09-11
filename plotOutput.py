@@ -330,35 +330,49 @@ def makeSurface(data, params, fn):
     n = params['n']
     nData = data.shape[0]/n
     fig = plt.figure()
+    fig2 = plt.figure()
+    ax2 = fig2.add_subplot(111, projection='3d')
     fig.hold(True)
     #spAxes = [fig.add_subplot(i, projection='3d') for i in range(211, 213)]
     spAxes = [fig.add_subplot(111, projection='3d')]
     spAxes[0].view_init(30, -135)
+    ax2.view_init(30, -135)
     maxZ = np.max([np.max(fn(data[i*n:(i+1)*n,:])) for i in range(nData)])
+    ci = params['dataInterval']
+    tSpan = nData*ci
+    nNCubedSteps = tSpan/np.power(n, 3)
+    nNSqSteps = np.power(n, 2)/ci
     #set various axis properties
-    [ax.grid(b=False) for ax in spAxes]
+    #[ax.grid(b=False) for ax in spAxes]
     [ax.set_xlim((0, n)) for ax in spAxes]
     [ax.set_xticklabels([str(n)]) for ax in spAxes]
     [ax.set_xticks([n]) for ax in spAxes]
     [ax.set_xlabel('vertex index') for ax in spAxes]
-    [ax.set_ylim((0, nData)) for ax in spAxes]
-    [ax.set_yticklabels([str(0), str(nData*params['dataInterval'])]) for ax in spAxes]
-    [ax.set_yticks([str(0), str(nData)]) for ax in spAxes]
+    [ax.set_ylim((1, tSpan)) for ax in spAxes]
+    [ax.set_yticks([str(i) for i in (np.power(n, 3)*np.arange(nNCubedSteps))]) for ax in spAxes]
+    [ax.set_yticklabels([str(i) for i in (np.power(n, 3)*np.arange(nNCubedSteps))]) for ax in spAxes]
     [ax.set_ylabel('simulation step') for ax in spAxes]
-    [ax.set_zlim((0, maxZ)) for ax in spAxes]
-    [ax.set_zticklabels([str(maxZ)]) for ax in spAxes]
-    [ax.set_zticks([maxZ]) for ax in spAxes]
+    ax2.set_xlabel('vertex index')
+    ax2.set_ylabel('simulation step')
+    ax2.set_zlabel('degree')
+    # [ax.set_zlim((0, maxZ)) for ax in spAxes]
+    # [ax.set_zticklabels([str(maxZ)]) for ax in spAxes]
+    # [ax.set_zticks([maxZ]) for ax in spAxes]
     [ax.set_zlabel('degree') for ax in spAxes]
+    # [ax.set_zscale('log') for ax in spAxes]
     xData = np.linspace(1, n, n)
     for i in range(nData):
+        ys = ci*(i+1)*np.ones(n)
         color = 'b'
         if (i+1)*params['dataInterval'] % (np.power(params['m'], 3)) == 0:
             color = 'r'
-        ys = i*np.ones(n)
-        [ax.plot(xData, ys, fn(data[i*n:(i+1)*n]), c=color, alpha=0.5) for ax in spAxes]
-        print 1.0*i/nData
+        if((i+1)*ci % np.power(n, 3) == 0):
+            [ax.plot(xData, ys, np.log(1+fn(data[i*n:(i+1)*n])), c=color, alpha=0.5) for ax in spAxes]
+        if(i*ci < np.power(n, 3)):
+            ax2.plot(xData, ys, np.log(1+fn(data[i*n:(i+1)*n])), c=color, alpha=0.5)
     newFolder = makeFolder('vectorSurface')
-    plt.savefig(newFolder + 'degreeSurface.png')
+    fig.savefig(newFolder + 'degreeSurfacen3.png')
+    fig2.savefig(newFolder + 'degreeSurfacen2.png')
 
 if __name__=="__main__":
     import argparse
