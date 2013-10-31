@@ -347,6 +347,7 @@ def compareProjection(fullData, fullParams, cpiData, cpiParams):
             t = t + cpiProjStep + cpiOMW
             onManifoldCount = 0
         ax.plot(xData, time, gGP.getDegrees(cpiData[i*n:(i+1)*n,:]), c='b', alpha=0.1)
+    plt.show()
     newFolder = makeFolder('compProj')
     plt.savefig(newFolder + 'compProj.png')
             

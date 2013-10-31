@@ -8,15 +8,15 @@ int main(int argc, char *argv[]) {
   int n = 100;
   int m = 10000;
   double kappa = 0.5;
-  long int nSteps = 10000000;
+  long int nSteps = 20000000;
   int dataInterval = 1000;
   int i;
   bool project = false;
   //CPI vars
-  int projStep = 1000;
+  int projStep = 10000;
   int collectInterval = 1000;
-  int offManifoldWait = 5000;
-  int nMicroSteps = 20000;
+  int offManifoldWait = 10000;
+  int nMicroSteps = 50000;
   //parse command line args, could be moved to separate fn?
   for(i = 1; i < argc; i++) {
     if(argv[i][0] == '-') {

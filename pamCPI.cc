@@ -131,6 +131,7 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
     fxs toFitCoeffs;
     toFitCoeffs.push_back(constOffset);
     toFitCoeffs.push_back([] (double x) { return x;});
+    toFitCoeffs.push_back([] (double x) { return x*x;});
     for(i = 0; i < n; i++) {
 	line.push_back(i);
     }
@@ -219,6 +220,9 @@ decrease time vector to be the same during each projection, else values will bec
 	    }
 	    else {
 		newA[i][j] = (int) (newEigVal*newEigVect[i]*newEigVect[j] + 0.5);
+	    }
+	    if(newA[i][j] < 0) {
+	      newA[i][j] = 0;
 	    }
 	    toSaveRecon[i].push_back(newA[i][j]);
 	}
