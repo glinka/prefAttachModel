@@ -139,29 +139,54 @@ def makeAnimation(inputFilename, inputFolder, fps=50, bitrate=3000000, container
     os.chdir(os.path.realpath(inputFolder))
     call(["ffmpeg", "-i", inputFiles, "-r", str(fps), "-b", str(bitrate), outputFilename])
 
+def plot_planar_adj(data, params):
+    fig = plt.figure()
+    ax1 = fig.add_subplot(211)
+    ax2 = fig.add_subplot(212)
+    n = params['n']
+    ndata = data.shape[0]/n
+    newFolder = makeFolder('mesh')
+    print newFolder
+    fileName = ''
+    for i in range(ndata):
+        adj = data[i*n:(i+1)*n,:]
+        rand_indices = np.arange(n)
+        np.random.shuffle(rand_indices)
+        print adj
+        print rand_indices
+        ax1.pcolormesh(adj[rand_indices,:], cmap = 'jet')
+        ax2.pcolormesh(adj, cmap='jet')
+        fileName = genFileName('mesh', params, uniqueID=str(i))
+        plt.savefig(newFolder + fileName + '.png')
+
 def plotCRecon(data, params):
     from mpl_toolkits.mplot3d import Axes3D
     n = params['n']
     nData = data.shape[0]/(2*n)
-    print nData
     fig = plt.figure()
     ax1 = fig.add_subplot(211, projection='3d')
     ax2 = fig.add_subplot(212, projection='3d')
     xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
     maxDeg = np.amax(data)
+    textsize = 24
     ax1.set_xlim(left=0, right=n)
     ax1.set_ylim(bottom=0, top=n)
     ax1.set_zlim(bottom=0, top=maxDeg)
+    ax1.set_zlabel('Degree', fontsize=textsize)
+    #plt.tick_params(axis='both', which='major', labelsize=18)
     ax2.set_xlim(left=0, right=n)
     ax2.set_ylim(bottom=0, top=n)
     ax2.set_zlim(bottom=0, top=maxDeg)
+    ax2.set_zlabel('Degree', fontsize=textsize)
+    #plt.tick_params(axis='both', which='major', labelsize=18)
     newFolder = makeFolder('CRecon')
+    print newFolder
     fileName = ''
     for i in range(nData):
         preRecon = data[n*2*i:n*(2*i+1),:]
         postRecon = data[n*(2*i+1):n*(2*i+2),:]
-        ax1.scatter(xgrid, ygrid, preRecon, c=preRecon, cmap='jet')
-        ax2.scatter(xgrid, ygrid, postRecon, c=postRecon, cmap='jet')
+        ax1.scatter(xgrid, ygrid, preRecon, c='#554DA1')
+        ax2.scatter(xgrid, ygrid, postRecon, c='#554DA1')
         plt.draw()
         fileName = genFileName('CRecon', params, uniqueID=str(i))
         plt.savefig(newFolder + fileName + '.png')
@@ -172,10 +197,12 @@ def plotCRecon(data, params):
         ax1.set_xlim3d(left=0, right=n)
         ax1.set_ylim3d(bottom=0, top=n)
         ax1.set_zlim3d(bottom=0, top=maxDeg)
+        ax1.set_zlabel('Degree', fontsize=textsize)
         ax2.set_xlim3d(left=0, right=n)
         ax2.set_ylim3d(bottom=0, top=n)
         ax2.set_zlim3d(bottom=0, top=maxDeg)
-    makeAnimation(fileName, newFolder)
+        ax2.set_zlabel('Degree', fontsize=textsize)
+    #makeAnimation(fileName, newFolder)
 
 def plotEigVectRecon(data, params):
     n = params['n']
@@ -395,6 +422,7 @@ if __name__=="__main__":
     parser.add_argument('-ppr', '--parallel-plot-reconstruction', action='store_true', default=False)
     parser.add_argument('-pd', '--plot-degrees', action='store_true', default=False)
     parser.add_argument('-cp', '--compare-projection', '--comp-proj', action='store_true', default=False)
+    parser.add_argument('-mesh', '--plot-mesh', action='store_true', default=False)
     args = parser.parse_args()
     if args.compare_projection:
         #must have args.inputFiles.size === 2
@@ -411,6 +439,8 @@ if __name__=="__main__":
     else:
         for fileName in args.inputFiles:
             params, data = genData(fileName)
+            if args.plot_mesh:
+                plot_planar_adj(data, params)
             if args.contour:
                 animateContour(data, params, args.cmap, args.fps, args.bitrate, args.container_type)
             if args.threed:

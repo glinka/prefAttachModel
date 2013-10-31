@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   }
   if(project) {
     pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps);
-  model.runCPI(nSteps);
+    model.runCPI(nSteps);
   }
   else {
      prefAttachModel model(n, m, kappa);
