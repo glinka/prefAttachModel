@@ -179,20 +179,23 @@ def plotCRecon(data, params):
 
 def plotEigVectRecon(data, params):
     n = params['n']
-    nData = data.shape[0]/(2*n)
+    nData = data.shape[0]/(2)
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     yMin = np.amin(data)
     yMax = np.amax(data)
-    ax1.set_ylim((yMin, yMax))
+    #ax1.set_ylim((yMin, yMax))
     xData = np.linspace(1, n, n)
     folderName = makeFolder("eigVectRecon")
+    print folderName
     for i in range(nData):
         ax1.set_xlabel('index')
         ax1.set_ylabel('vector value')
-        ax1.plot(xData, data[2*i*n: n*(2*i+1)])
-        ax1.plot(xData, data[n*(2*i+1): 2*n*(i+1)], c='g')
-        plt.draw()
+        # ax1.plot(xData, data[2*i*n: n*(2*i+1)])
+        # ax1.plot(xData, data[n*(2*i+1): 2*n*(i+1)], c='g')
+        ax1.hold(True)
+        ax1.plot(xData, data[i,:], c='k')
+        ax1.plot(xData, data[nData+i,:], c='g')
         plt.savefig(folderName + genFileName("eigVectRecon", params, uniqueID=str(i)) + '.png')
         ax1.cla()
 
@@ -322,8 +325,6 @@ def compareProjection(fullData, fullParams, cpiData, cpiParams):
         ax.plot(xData, time, gGP.getDegrees(cpiData[i*n:(i+1)*n,:]), c='b', alpha=0.1)
     newFolder = makeFolder('compProj')
     plt.savefig(newFolder + 'compProj.png')
-            
-
 
 def makeSurface(data, params, fn):
     from mpl_toolkits.mplot3d import Axes3D
@@ -374,6 +375,25 @@ def makeSurface(data, params, fn):
     fig.savefig(newFolder + 'degreeSurfacen3.png')
     fig2.savefig(newFolder + 'degreeSurfacen2.png')
 
+def plot_vectors_tc(data, params):
+    """ Assumes data is arranged as:
+
+    vector1   vector2   vector3 ... vectorN     times
+    data[0]   data[1]   data[2]     data[N-2]   data[N-1]
+
+    and plots vectors against times
+    """
+    nvects = data.shape[1]
+    nyvects = nvects - 1
+    print data.shape
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.hold(False)
+    for i in range(nyvects-1):
+        ax.scatter(data[:,nyvects], data[:,i], color=(np.sin(i/nyvects), np.cos(1-i/nyvects), 1-i/nyvects), label="coeff: " + str(i+1), lw=0)
+        plt.savefig("coeffs/coeff" + str(i) + ".png")
+    #ax.legend(loc=6)
+
 if __name__=="__main__":
     import argparse
     parser = argparse.ArgumentParser()
@@ -395,6 +415,7 @@ if __name__=="__main__":
     parser.add_argument('-ppr', '--parallel-plot-reconstruction', action='store_true', default=False)
     parser.add_argument('-pd', '--plot-degrees', action='store_true', default=False)
     parser.add_argument('-cp', '--compare-projection', '--comp-proj', action='store_true', default=False)
+    parser.add_argument('-coeffs', '--plot-coeffs', action='store_true', default=False)
     args = parser.parse_args()
     if args.compare_projection:
         #must have args.inputFiles.size === 2
@@ -440,6 +461,8 @@ if __name__=="__main__":
                 result = p.map(plotReconstruction, [(xgrid, ygrid, data[i*n:(i+1)*n,:], maxDeg, n, newFolder, genFileName('rawData', params, str(i))) for i in range(nData)])
             if args.plot_degrees:
                 makeSurface(data, params, gGP.getDegrees)
+            if args.plot_coeffs:
+                plot_vectors_tc(data, params)
             if args.fit:
                 epsilon = 0.1
                 fns = []
@@ -447,5 +470,5 @@ if __name__=="__main__":
                 plotFittedData(data, params, fns)
             if 'projData' in fileName:
                 plotCRecon(data, params)
-            if 'eigVectData' in fileName:
-                plotEigVectRecon(data, params)
+            # if 'eigVectData' in fileName:
+                # plotEigVectRecon(data, params)

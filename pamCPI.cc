@@ -134,6 +134,7 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
     for(i = 0; i < n; i++) {
 	line.push_back(i);
     }
+    vector< vector< double > > coeffs_to_save;
     for(i = 0; i < nPts; i++) {
 	vector<vector<double> > currentAdjMat = data[i];
 	//want last column, corresponds to eigenvector with largest eigenvalue
@@ -154,19 +155,17 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
 	for(j = 0; j < n; j++) {
 	  delete[] eigVects[j];
 	}
-	sort(leadingEigVect.begin(), leadingEigVect.end());
-	delete eigVects;
+	delete[] eigVects;
 	delete[] eigVals;
+	sort(leadingEigVect.begin(), leadingEigVect.end());
 	eigVectFittedCoeffs.push_back(fitCurves::fitFx(line, leadingEigVect, toFitEigVects));
+	coeffs_to_save.push_back(eigVectFittedCoeffs.back());
 	eigVectFittedCoeffs.back().push_back(maxEigVal);
+	coeffs_to_save.back().push_back(time[i]);
 	for(j = 0; j < n; j++) {
 	    delete[] tempA[j];
 	}
 	delete tempA;
-	//save last eigvect
-	if(i == nPts-1) {
-	  saveData(leadingEigVect, eigVectData);
-	}
     }
     int nCoeffs = eigVectFittedCoeffs[0].size();
     vector<vector<double> > reshapedCoeffs;
@@ -234,5 +233,5 @@ decrease time vector to be the same during each projection, else values will bec
     saveData(toSaveRecon, projData);
     //save new eigvect
     sort(newEigVect.begin(), newEigVect.end());
-    saveData(newEigVect, eigVectData);
+    save_coeffs(coeffs_to_save, eigVectData);
 }

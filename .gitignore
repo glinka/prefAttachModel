@@ -36,3 +36,6 @@ prefAttachModel
 #folders
 CRecon*
 eigVectRecon*
+a.out
+test.cc
+.nfs*

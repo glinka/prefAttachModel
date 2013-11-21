@@ -375,7 +375,15 @@ void prefAttachModel::saveData(graphData *data, int nData, ofstream &fileHandle)
     fileHandle.flush();
 }
 
-
+void prefAttachModel::save_coeffs(const vector< vector< double > > &data, ofstream &fileHandle) {
+  vector< double >::const_iterator val;
+  for(vector< vector< double > >::const_iterator v = data.begin(); v != data.end(); v++) {
+    for(val = (*v).begin(); val != (*v).end()-1; val++) {
+      fileHandle << *val << ",";
+    }
+    fileHandle << *val << endl;
+  }
+}
 
 int prefAttachModel::consistencyCheck() {
     int sum, i , j;
