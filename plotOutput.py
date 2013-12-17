@@ -397,7 +397,7 @@ def makeDegSurface(data, params, fn):
             [ax.plot(xData, ys, np.log(1+fn(data[i*n:(i+1)*n])), c=color, alpha=0.5) for ax in spAxes]
         if(i*ci < np.power(n, 3)):
             ax2.plot(xData, ys, np.log(1+fn(data[i*n:(i+1)*n])), c=color, alpha=0.5)
-    newFolder = makeFolder('vectorSurface')
+    newFolder =makeFolder('vectorSurface')
     fig.savefig(newFolder + 'degreeSurfacen3.png')
     fig2.savefig(newFolder + 'degreeSurfacen2.png')
 
@@ -424,25 +424,120 @@ def plot_vectors_tc(data, params):
     #ax.legend(loc=6)
 
 def plot_degree_surface(degs, times):
+    # this method has become overly specialized: it plots many different things, none of which, in fact, is a degree surface
     from mpl_toolkits.mplot3d import Axes3D
-    fig = plt.figure()
-    ax1 = fig.add_subplot(211, projection='3d')
-    ax2 = fig.add_subplot(212, projection='3d')
-    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    import matplotlib.cm as cm
+    import matplotlib.colors as colors
+    import matplotlib.colorbar as colorbar
+    import matplotlib.gridspec as gs
     n = params['n']
     ci = params['dataInterval']
     indices = np.linspace(1, n, n)
     #add ones vector
     data_count = 0
-    for time in times:
-        if time % np.power(n, 3) == 0:
-            ax2.plot(indices, time, degs[data_count])
-        else:
-            ax1.plot(indices, time, degs[data_count])
-        data_count = data_count + 1
+    ntimes = times.shape[0]
+    max_degs = [np.max(degs[i,:]) for i in range(ntimes)]
+    # fig = plt.figure()
+    # ax1 = fig.add_subplot(211, projection='3d')
+    # ax2 = fig.add_subplot(212, projection='3d')
+    # FONTSIZE = 20
+    # ax1.set_xlabel('vertex index', fontsize=FONTSIZE)
+    # ax1.set_ylabel('time', fontsize=FONTSIZE)
+    # ax1.set_zlabel('degree', fontsize=FONTSIZE)
+    # ax2.set_xlabel('vertex index', fontsize=FONTSIZE)
+    # ax2.set_ylabel('time', fontsize=FONTSIZE)
+    # ax2.set_zlabel('degree', fontsize=FONTSIZE)
+    # plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    # ones = np.ones(n)
+    # for time in times:
+    #     if time % np.power(n, 3) == 0:
+    #         ax2.plot(indices, ones*time, np.sort(degs[data_count,:]), c='b')
+    #     else:
+    #         ax1.plot(indices, ones*time, np.sort(degs[data_count,:]), c='g')
+    #     data_count = data_count + 1
+    FONTSIZE = 20
+    LABELSIZE = 16
+    fig1 = plt.figure()
+    ax1_ = fig1.add_subplot(111, projection='3d')
+    ax1_.set_xlabel('pseudo vertex label', fontsize=FONTSIZE)
+    ax1_.set_ylabel('simulation step', fontsize=FONTSIZE)
+    ax1_.set_zlabel('vertex degree', fontsize=FONTSIZE)
+    sorted_degs = np.sort(degs, 1)
+    ones = np.ones(ntimes)
+    colornorm = colors.Normalize(vmin=0, vmax=n-1)
+    colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
+    # for v in range(n):
+    #     ax1_.plot(v*ones, times, sorted_degs[:,v], c=colormap.to_rgba(1.0*v))
     plt.show()
-                  
-    
+    fig2 = plt.figure()
+    ax2_ = fig2.add_subplot(111)
+    ax2_.set_xlabel('simulation step', fontsize=FONTSIZE)
+    ax2_.set_ylabel('max vertex degree', fontsize=FONTSIZE)
+    ax2_.plot(times, max_degs)
+    plt.show()
+    #fig 3 is a mess in order to get the colormap and colobars working, requires many of the imports seen at the beginning of the fn
+    fig3 = plt.figure()
+    gspec = gs.GridSpec(6,6)
+    ax31_ = fig3.add_subplot(gspec[:6,:5])
+    maxtime = times[-1]
+    ax31_.set_xticks([i*maxtime/10.0 for i in range(11)])
+    ax32_ = fig3.add_subplot(gspec[:,5])
+    ax31_.set_xlabel('simulation step', fontsize=FONTSIZE)
+    ax31_.set_ylabel('vertex degree', fontsize=FONTSIZE)
+    ax31_.hold(True)
+    artist = []
+    for v in range(n):
+        ax31_.plot(times, sorted_degs[:,v], c=colormap.to_rgba(1.0*v))
+    cb = colorbar.ColorbarBase(ax32_, cmap='jet', norm=colornorm, orientation='vertical')
+    ax31_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
+    ax31_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
+    ax32_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
+    ax32_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
+    # cb.set_label('pseudo vertex label')
+    fig3.text(0.8, 0.93, 'percentile', fontsize=FONTSIZE-4)
+    plt.show()
+
+    max_index = 0
+    while times[max_index] < np.power(n, 3):
+        max_index = max_index + 1
+    fig4 = plt.figure()
+    ax41_ = fig4.add_subplot(gspec[:6,:5])
+    ax41_.set_xticks([i*maxtime/10.0 for i in range(11)])
+    ax42_ = fig4.add_subplot(gspec[:,5])
+    ax41_.set_xlabel('simulation step', fontsize=FONTSIZE)
+    ax41_.set_ylabel('vertex degree', fontsize=FONTSIZE)
+    ax41_.hold(True)
+    for v in range(n):
+        ax41_.plot(times[:max_index], sorted_degs[:max_index,v], c=colormap.to_rgba(1.0*v))
+    cb = colorbar.ColorbarBase(ax42_, cmap='jet', norm=colornorm, orientation='vertical')
+    ax41_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
+    ax41_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
+    ax42_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
+    ax42_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
+    # cb.set_label('pseudo vertex label')
+    fig4.text(0.8, 0.93, 'percentile', fontsize=FONTSIZE-4)
+    plt.show()
+
+    max_index = 0
+    while times[max_index] < np.power(n, 2):
+        max_index = max_index + 1
+    fig5 = plt.figure()
+    ax51_ = fig5.add_subplot(gspec[:6,:5])
+    ax51_.set_xticks([i*maxtime/10.0 for i in range(11)])
+    ax52_ = fig5.add_subplot(gspec[:,5])
+    ax51_.set_xlabel('simulation step', fontsize=FONTSIZE)
+    ax51_.set_ylabel('vertex degree', fontsize=FONTSIZE)
+    ax51_.hold(True)
+    for v in range(n):
+        ax51_.plot(times[:max_index], sorted_degs[:max_index,v], c=colormap.to_rgba(1.0*v))
+    cb = colorbar.ColorbarBase(ax52_, cmap='jet', norm=colornorm, orientation='vertical')
+    ax51_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
+    ax51_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
+    ax52_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
+    ax52_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
+    # cb.set_label('pseudo vertex label')
+    fig5.text(0.8, 0.93, 'percentile', fontsize=FONTSIZE-4)
+    plt.show()
 
 if __name__=="__main__":
     import argparse
