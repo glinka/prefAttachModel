@@ -26,13 +26,15 @@ class prefAttachModel {
     void initGraph(int **newA);
     graphData step(bool saveFlag);
     int consistencyCheck();
+    void save_degrees(const std::vector< std::vector<int> > &degs, std::ofstream &fileHandle);
     void saveData(graphData *data, int nData, std::ofstream &fileHandle);
     void saveData(std::vector<std::vector<double> > &data, std::ofstream &fileHandle);
-    void saveData(std::vector<double> &data, std::ofstream &fileHandle);
+    template <typename T>
+      void saveData(std::vector< T > &data, std::ofstream &fileHandle);
     void save_coeffs(const std::vector< std::vector< double > > &data, std::ofstream &fileHandle);
  public:
     void run(long int nSteps, int dataInterval);
-    std::ofstream &createFile(std::string base, std::vector<double> &addtnlData, std::vector<std::string> &addtnlDataLabels);
+    std::ofstream &createFile(const std::string base, const std::string dir, std::vector<double> &addtnlData, std::vector<std::string> &addtnlDataLabels);
     prefAttachModel(int n, int m, double kappa);
     ~prefAttachModel() {
 	for(int i = 0; i < n; i++) {

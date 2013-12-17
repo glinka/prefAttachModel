@@ -1,3 +1,7 @@
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sstream>
 #include <algorithm>
 #include "pamCPI.h"
 #include "calcGraphProps.h"
@@ -17,13 +21,33 @@ void pamCPI::runCPI(const int nSteps) {
     forFile.push_back(nMicroSteps);
     forFile.push_back(collectInterval);
     vector<string> forFileStrs;
-    forFileStrs.push_back("projStep");
-    forFileStrs.push_back("offManifoldWait");
-    forFileStrs.push_back("nMicroSteps");
-    forFileStrs.push_back("collectInterval");
-    ofstream &paDataCPI = createFile("paDataCPI", forFile, forFileStrs);
-    ofstream &projData = createFile("projData", forFile, forFileStrs);
-    ofstream &eigVectData = createFile("eigVectData", forFile, forFileStrs);
+    forFileStrs.push_back("proj_step");
+    forFileStrs.push_back("off_manifold_wait");
+    forFileStrs.push_back("nms");
+    forFileStrs.push_back("collection_interval");
+    //open all the files
+    stringstream ss;
+    int folder_counter = 0;
+    string dir_base = "./csv_data";
+    string dir;
+    bool isdir = true;
+    struct stat stat_dir;
+    do {
+      ss.str("");
+      ss << dir_base << folder_counter << "/";
+      folder_counter++;
+      dir = ss.str();
+      int check = stat(dir.c_str(), &stat_dir);
+      if(check == -1) {
+	mkdir(dir.c_str(), 0700);
+	isdir = false;
+      }
+    } while (isdir);
+    ofstream &paDataCPI = createFile("paDataCPI", dir, forFile, forFileStrs);
+    ofstream &projData = createFile("projData", dir, forFile, forFileStrs);
+    ofstream &eigVectData = createFile("eigVectData", dir, forFile, forFileStrs);
+    ofstream &deg_data = createFile("deg_data", dir, forFile, forFileStrs);
+    ofstream &time_data = createFile("time_data", dir , forFile, forFileStrs);
     //after waiting for the system to reach the slow manifold, collect data every collectInterval number of steps
     int totalSteps = 0;
     int saveDataInterval = 1000;
@@ -32,10 +56,15 @@ void pamCPI::runCPI(const int nSteps) {
 	vector<graphData> toPlot;
 	vector<graphData> toProject;
 	vector<double> time;
+	vector< vector<int> > degs_to_save;
+	vector< int > times_to_save;
 	for(microStep = 0; microStep < nMicroSteps; microStep++) {
 	    if(microStep < offManifoldWait) {
 		if((microStep+1)%saveDataInterval == 0) {
-		    toPlot.push_back(step(true));
+		  graphData d = step(true);
+		  toPlot.push_back(d);
+		  degs_to_save.push_back(vector<int>(d.degSeq, d.degSeq+n));
+		  times_to_save.push_back(totalSteps);
 		}
 		else {
 		    step(false);
@@ -49,6 +78,8 @@ void pamCPI::runCPI(const int nSteps) {
 			graphData d = step(true);
 			toPlot.push_back(d);
 			toProject.push_back(d);
+			degs_to_save.push_back(vector<int>(d.degSeq, d.degSeq+n));
+			times_to_save.push_back(totalSteps);
 		    }
 		    else {
 			toProject.push_back(step(true));
@@ -56,7 +87,10 @@ void pamCPI::runCPI(const int nSteps) {
 		}
 		else {
 		    if((microStep+1)%saveDataInterval == 0) {
-			toPlot.push_back(step(true));
+		      graphData d = step(true);
+		      toPlot.push_back(d);
+		      degs_to_save.push_back(vector<int>(d.degSeq, d.degSeq+n));
+		      times_to_save.push_back(totalSteps);
 		    }
 		    else {
 			step(false);
@@ -88,6 +122,10 @@ void pamCPI::runCPI(const int nSteps) {
 	    toPlotAry[i] = toPlot[i];
 	}
 	saveData(toPlotAry, nPlotPts, paDataCPI);
+	save_degrees(degs_to_save, deg_data);
+	saveData<int>(times_to_save, time_data);
+	degs_to_save.clear();
+	times_to_save.clear();
 	toPlot.clear();
 	toProject.clear();
 	totalSteps += projStep;

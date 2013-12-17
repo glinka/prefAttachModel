@@ -6,6 +6,32 @@ import os
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+def get_data(filename, header_rows=1, **kwargs):
+    path_to_file = os.path.realpath(filename)
+    f = open(path_to_file, "r")
+    params_str = f.readline()
+    params = get_header_data(params_str)
+    f.close()
+    data = np.genfromtxt(path_to_file, delimiter=",", skip_header=header_rows, **kwargs)
+    return data, params
+
+def get_header_data(header_str):
+    BEGIN = 0
+    comma = 1
+    #create dict from header, based on key=value format in csv
+    params = {}
+    while comma > 0:
+        equals = header_str.find("=")
+        comma = header_str.find(",")
+        params[header_str[BEGIN:equals]] = float(header_str[equals+1:comma])
+        header_str = header_str[comma+1:]
+    params[header_str[BEGIN:equals]] = float(header_str[equals+1:comma])
+    #make integer, may not work especially well
+    for key in params:
+        if(params[key] % 1 == 0):
+            params[key] = int(params[key])
+    return params
+
 def genData(fileName):
     pathToFile = os.path.realpath(fileName)
     f = open(pathToFile, "r")
@@ -326,7 +352,7 @@ def compareProjection(fullData, fullParams, cpiData, cpiParams):
     newFolder = makeFolder('compProj')
     plt.savefig(newFolder + 'compProj.png')
 
-def makeSurface(data, params, fn):
+def makeDegSurface(data, params, fn):
     from mpl_toolkits.mplot3d import Axes3D
     n = params['n']
     nData = data.shape[0]/n
@@ -391,8 +417,32 @@ def plot_vectors_tc(data, params):
     ax.hold(False)
     for i in range(nyvects-1):
         ax.scatter(data[:,nyvects], data[:,i], color=(np.sin(i/nyvects), np.cos(1-i/nyvects), 1-i/nyvects), label="coeff: " + str(i+1), lw=0)
+        ax.set_xlabel('simulation step')
+        ax.set_ylabel('coefficient value')
+        ax.set_xlim(left=0)
         plt.savefig("coeffs/coeff" + str(i) + ".png")
     #ax.legend(loc=6)
+
+def plot_degree_surface(degs, times):
+    from mpl_toolkits.mplot3d import Axes3D
+    fig = plt.figure()
+    ax1 = fig.add_subplot(211, projection='3d')
+    ax2 = fig.add_subplot(212, projection='3d')
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    n = params['n']
+    ci = params['dataInterval']
+    indices = np.linspace(1, n, n)
+    #add ones vector
+    data_count = 0
+    for time in times:
+        if time % np.power(n, 3) == 0:
+            ax2.plot(indices, time, degs[data_count])
+        else:
+            ax1.plot(indices, time, degs[data_count])
+        data_count = data_count + 1
+    plt.show()
+                  
+    
 
 if __name__=="__main__":
     import argparse
@@ -416,6 +466,7 @@ if __name__=="__main__":
     parser.add_argument('-pd', '--plot-degrees', action='store_true', default=False)
     parser.add_argument('-cp', '--compare-projection', '--comp-proj', action='store_true', default=False)
     parser.add_argument('-coeffs', '--plot-coeffs', action='store_true', default=False)
+    parser.add_argument('-ds', '--plot-degree-surface', action='store_true', default=False)
     args = parser.parse_args()
     if args.compare_projection:
         #must have args.inputFiles.size === 2
@@ -429,6 +480,16 @@ if __name__=="__main__":
         paramsFull, dataFull = genData(fullFile)
         paramsCPI, dataCPI = genData(cpiFile)
         compareProjection(dataFull, paramsFull, dataCPI, paramsCPI)
+    elif args.plot_degree_surface:
+        time_data = []
+        deg_data = []
+        params = []
+        for fileName in args.inputFiles:
+            if 'deg' in fileName:
+                deg_data, params = get_data(fileName)
+            elif 'time' in fileName:
+                time_data, params = get_data(fileName)
+        plot_degree_surface(deg_data, time_data)
     else:
         for fileName in args.inputFiles:
             params, data = genData(fileName)
@@ -460,7 +521,7 @@ if __name__=="__main__":
                 xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
                 result = p.map(plotReconstruction, [(xgrid, ygrid, data[i*n:(i+1)*n,:], maxDeg, n, newFolder, genFileName('rawData', params, str(i))) for i in range(nData)])
             if args.plot_degrees:
-                makeSurface(data, params, gGP.getDegrees)
+                makeDegSurface(data, params, gGP.getDegrees)
             if args.plot_coeffs:
                 plot_vectors_tc(data, params)
             if args.fit:

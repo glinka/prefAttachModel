@@ -181,9 +181,9 @@ graphData prefAttachModel::step(bool saveFlag) {
   }
 }
 
-ofstream &prefAttachModel::createFile(string base, vector<double> &addtnlData, vector<string> &addtnlDataLabels) {
+ofstream &prefAttachModel::createFile(const string base, const string dir, vector<double> &addtnlData, vector<string> &addtnlDataLabels) {
   stringstream ss;
-  ss << base << "_" << n << "_" << m << "_" << kappa;
+  ss << dir << base << "_" << n << "_" << m << "_" << kappa;
   for(unsigned int i = 0; i < addtnlData.size(); i++) {
       ss << "_" << addtnlData[i];
   }
@@ -208,18 +208,29 @@ void prefAttachModel::run(long int nSteps, int dataInterval) {
   data = new graphData[SAVE_INTERVAL];
   initGraph();
   vector<double> forFile;
+  vector< vector<int> > degs_to_save;
+  vector< int > times_to_save;
   forFile.push_back(dataInterval);
   vector<string> forFileStrs;
   forFileStrs.push_back("dataInterval");
-  ofstream &paData = createFile("paData", forFile, forFileStrs);
+  ofstream &paData = createFile("paData", "nocpi_csv_data/", forFile, forFileStrs);
+  ofstream &deg_data = createFile("deg_data", "nocpi_csv_data/" , forFile, forFileStrs);
+  ofstream &time_data = createFile("time_data", "nocpi_csv_data/" , forFile, forFileStrs);
   //create filename and make header to csv
   for(long int i = 0; i < nSteps; i++) {
     if((i+1) % dataInterval == 0) {
       int dataIndex = ((i+1) / dataInterval) % SAVE_INTERVAL;
-      data[dataIndex] = step(true);
+      graphData d = step(true);
+      data[dataIndex] = d;
+      degs_to_save.push_back(vector<int>(d.degSeq, d.degSeq+n));
+      times_to_save.push_back(i+1);
       //save data every SAVE_INTERVAL times data is collected
       if(dataIndex == 0) {
 	  saveData(data, SAVE_INTERVAL, paData);
+	  save_degrees(degs_to_save, deg_data);
+	  saveData<int>(times_to_save, time_data);
+	  degs_to_save.clear();
+	  times_to_save.clear();
       }
     }
     else{
@@ -227,6 +238,8 @@ void prefAttachModel::run(long int nSteps, int dataInterval) {
     }
   }
   paData.close();
+  deg_data.close();
+  time_data.close();
   delete &paData;
   //take out the garbage
   for(int i = 0; i < SAVE_INTERVAL; i++) {
@@ -239,10 +252,23 @@ void prefAttachModel::run(long int nSteps, int dataInterval) {
   delete[] data;
 }
 
-void prefAttachModel::saveData(vector<double> &data, ofstream &fileHandle) {
+template<typename T>
+void prefAttachModel::saveData(vector < T > &data, ofstream &fileHandle) {
   int nData = data.size();
   for(int i = 0; i < nData; i++) {
     fileHandle << data[i] << endl;
+  }
+}
+template void prefAttachModel::saveData<int>(vector < int > &data, ofstream &fileHandle);
+template void prefAttachModel::saveData<double>(vector < double > &data, ofstream &fileHandle);
+
+void prefAttachModel::save_degrees(const vector< vector<int> > &degs, ofstream &fileHandle) {
+  vector<int>::const_iterator val;
+  for(vector< vector<int> >::const_iterator v = degs.begin(); v != degs.end(); v++) {
+    for(val = (*v).begin(); val != (*v).end() - 1; val++) {
+      fileHandle << *val << ",";
+    }
+    fileHandle << *val << endl;
   }
 }
 
