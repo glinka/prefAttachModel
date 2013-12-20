@@ -217,14 +217,14 @@ void prefAttachModel::run(long int nSteps, int dataInterval) {
   ofstream &time_data = createFile("time_data", "nocpi_csv_data/" , forFile, forFileStrs);
   //create filename and make header to csv
   for(long int i = 0; i < nSteps; i++) {
-    if(((i+1) % dataInterval == 0) || (i = 0)){
-      int dataIndex = ((i+1) / dataInterval) % SAVE_INTERVAL;
+    if(i % dataInterval == 0) {
+      int dataIndex = (i / dataInterval) % SAVE_INTERVAL;
       graphData d = step(true);
       data[dataIndex] = d;
       degs_to_save.push_back(vector<int>(d.degSeq, d.degSeq+n));
       times_to_save.push_back(i+1);
       //save data every SAVE_INTERVAL times data is collected
-      if(dataIndex == 0) {
+      if((dataIndex == SAVE_INTERVAL-1) && (i != 0)) {
 	  saveData(data, SAVE_INTERVAL, paData);
 	  save_degrees(degs_to_save, deg_data);
 	  saveData<int>(times_to_save, time_data);
