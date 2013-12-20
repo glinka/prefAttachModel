@@ -1,6 +1,6 @@
-toCompile = calcGraphProps.o pamCPI.o fitCurves.o prefAttachModel.o main.o
+toCompile = prefAttachModel.o main.o
 
-CXX = g++
+CXX = g++44
 
 CXXFLAGS = -g -Wall -std=c++0x -O3 #-fPIC
 

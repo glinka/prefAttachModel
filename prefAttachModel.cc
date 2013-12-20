@@ -5,7 +5,6 @@
 #include <sstream>
 #include <iomanip>
 #include "prefAttachModel.h"
-#include "fitCurves.h"
 
 using namespace std;
 
@@ -218,7 +217,7 @@ void prefAttachModel::run(long int nSteps, int dataInterval) {
   ofstream &time_data = createFile("time_data", "nocpi_csv_data/" , forFile, forFileStrs);
   //create filename and make header to csv
   for(long int i = 0; i < nSteps; i++) {
-    if((i+1) % dataInterval == 0) {
+    if(((i+1) % dataInterval == 0) || (i = 0)){
       int dataIndex = ((i+1) / dataInterval) % SAVE_INTERVAL;
       graphData d = step(true);
       data[dataIndex] = d;
