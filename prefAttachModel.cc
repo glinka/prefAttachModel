@@ -200,7 +200,7 @@ ofstream &prefAttachModel::createFile(const string base, const string dir, vecto
   return *file;
 }
 
-void prefAttachModel::run(long int nSteps, int dataInterval) {
+void prefAttachModel::run(long int nSteps, long int dataInterval) {
   graphData *data;
   //data will be appended to file every time SAVE_INTERVAL data pts are collected
   const int SAVE_INTERVAL = 10;
@@ -212,9 +212,9 @@ void prefAttachModel::run(long int nSteps, int dataInterval) {
   forFile.push_back(dataInterval);
   vector<string> forFileStrs;
   forFileStrs.push_back("dataInterval");
-  ofstream &paData = createFile("paData", "nocpi_csv_data/", forFile, forFileStrs);
-  ofstream &deg_data = createFile("deg_data", "nocpi_csv_data/" , forFile, forFileStrs);
-  ofstream &time_data = createFile("time_data", "nocpi_csv_data/" , forFile, forFileStrs);
+  ofstream &paData = createFile("paData", "/tigress/holiday/data/prefAttachModel/nocpi_csv_data/", forFile, forFileStrs);
+  ofstream &deg_data = createFile("deg_data", "/tigress/holiday/data/prefAttachModel/nocpi_csv_data/" , forFile, forFileStrs);
+  ofstream &time_data = createFile("time_data", "/tigress/holiday/data/prefAttachModel/nocpi_csv_data/" , forFile, forFileStrs);
   //create filename and make header to csv
   for(long int i = 0; i < nSteps; i++) {
     if(i % dataInterval == 0) {
@@ -222,10 +222,10 @@ void prefAttachModel::run(long int nSteps, int dataInterval) {
       graphData d = step(true);
       data[dataIndex] = d;
       degs_to_save.push_back(vector<int>(d.degSeq, d.degSeq+n));
-      times_to_save.push_back(i+1);
+      times_to_save.push_back(i);
       //save data every SAVE_INTERVAL times data is collected
       if((dataIndex == SAVE_INTERVAL-1) && (i != 0)) {
-	  saveData(data, SAVE_INTERVAL, paData);
+	// saveData(data, SAVE_INTERVAL, paData);
 	  save_degrees(degs_to_save, deg_data);
 	  saveData<int>(times_to_save, time_data);
 	  degs_to_save.clear();

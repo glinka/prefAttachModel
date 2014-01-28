@@ -440,11 +440,11 @@ def plot_degree_surface(degs, times):
     data_count = 0
     ntimes = times.shape[0]
     max_degs = [np.max(degs[i,:]) for i in range(ntimes)]
-    fig = plt.figure()
-    ax1 = fig.add_subplot(211, projection='3d')
-    ax2 = fig.add_subplot(212, projection='3d')
     NPLOTTED_PTS = 10
     PLOT_INTERVAL = int(ntimes/NPLOTTED_PTS)
+#     fig = plt.figure()
+#     ax1 = fig.add_subplot(211, projection='3d')
+#     ax2 = fig.add_subplot(212, projection='3d')
 #     FONTSIZE = 20
 #     ax1.set_xlabel('vertex index', fontsize=FONTSIZE)
 #     ax1.set_ylabel('time', fontsize=FONTSIZE)
@@ -473,10 +473,12 @@ def plot_degree_surface(degs, times):
     ax1_.set_ylabel('simulation step', fontsize=FONTSIZE)
     ax1_.set_zlabel('vertex degree', fontsize=FONTSIZE)
     sorted_degs = np.sort(degs, 1)
+    # NPLOTTED_PTS = NPLOTTED_PTS + 1
     ones = np.ones(NPLOTTED_PTS)
     trimmed_degs = sorted_degs
     for v in range(n):
         ax1_.scatter(100.0*v*ones/n, times[[i*PLOT_INTERVAL for i in range(NPLOTTED_PTS)]], trimmed_degs[[i*PLOT_INTERVAL for i in range(NPLOTTED_PTS)],v], linewidths=0, c=colormap.to_rgba(1.0*v))
+        ax1_.scatter(100.0*v/n, times[-1], trimmed_degs[-1, v], linewidths=0, c=colormap.to_rgba(1.0*v))
     ax1_.set_xlim(left=0, right = 100)
     ax1_.set_ylim(bottom=0)
     ax1_.set_zlim(bottom=0)
@@ -498,8 +500,7 @@ def plot_degree_surface(degs, times):
     plt.show()
 #     for v in range(n):
 #         ax6_.scatter(100.0*v*ones/n, trimmed_degs[[i*PLOT_INTERVAL for i in range(NPLOTTED_PTS)],v], linewidths=0, c=colormap.to_rgba(1.0*v), alpha= 1.0*v/n)
-    
-def holdout():
+# def holdout():
     fig2 = plt.figure()
     ax2_ = fig2.add_subplot(111)
     ax2_.set_xlabel('simulation step', fontsize=FONTSIZE)
@@ -529,7 +530,7 @@ def holdout():
     plt.show()
 
     max_index = 0
-    while times[max_index] < np.power(n, 3):
+    while times[max_index] <= np.power(n, 3):
         max_index = max_index + 1
     fig4 = plt.figure()
     ax41_ = fig4.add_subplot(gspec[:6,:5])
