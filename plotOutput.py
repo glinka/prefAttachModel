@@ -498,7 +498,7 @@ def plot_degree_surface(degs, times):
     plt.show()
 
     max_index = 0
-    while times[max_index] < np.power(n, 3):
+    while times[max_index] < 10*np.power(n, 3):
         max_index = max_index + 1
     fig4 = plt.figure()
     ax41_ = fig4.add_subplot(gspec[:6,:5])
@@ -519,7 +519,7 @@ def plot_degree_surface(degs, times):
     plt.show()
 
     max_index = 0
-    while times[max_index] < np.power(n, 2):
+    while times[max_index] < np.power(n, 3):
         max_index = max_index + 1
     fig5 = plt.figure()
     ax51_ = fig5.add_subplot(gspec[:6,:5])
