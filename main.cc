@@ -55,10 +55,10 @@ int main(int argc, char *argv[]) {
 	kappa = atof(currentArg);
       }
       else if(currentLabel == "-s" || currentLabel == "-nSteps" || currentLabel == "-steps") {
-	nSteps = parse_longint(currentArg);
+	nSteps = (long int) (atof(currentArg) + 0.5);// parse_longint(currentArg);
       }
       else if(currentLabel == "-di" || currentLabel == "-dataInterval" || currentLabel == "-ci" || currentLabel == "-collection_interval") {
-	dataInterval = parse_longint(currentArg);
+	dataInterval = (long int) (atof(currentArg) + 0.5);// parse_longint(currentArg);
       }
       else if(currentLabel == "-project") {
 	project = true;
