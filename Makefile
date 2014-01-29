@@ -1,6 +1,6 @@
 toCompile = prefAttachModel.o main.o
 
-CXX = g++44
+CXX = g++
 
 CXXFLAGS = -g -Wall -std=c++0x -O3 #-fPIC
 
