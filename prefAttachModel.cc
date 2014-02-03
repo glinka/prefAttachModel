@@ -180,7 +180,7 @@ graphData prefAttachModel::step(bool saveFlag) {
   }
 }
 
-ofstream& prefAttachModel::createFile(const string base, const string dir, vector<double> &addtnlData, vector<string> &addtnlDataLabels) {
+ofstream* prefAttachModel::createFile(const string base, const string dir, vector<double> &addtnlData, vector<string> &addtnlDataLabels) {
   stringstream ss;
   ss << dir << base << "_" << n << "_" << m << "_" << kappa;
   for(unsigned int i = 0; i < addtnlData.size(); i++) {
@@ -197,7 +197,7 @@ ofstream& prefAttachModel::createFile(const string base, const string dir, vecto
       *file << "," << addtnlDataLabels[i] << "=" << addtnlData[i];
   }
   *file << "\n";
-  return *file;
+  return file;
 }
 
 void prefAttachModel::run(long int nSteps, long int dataInterval) {
@@ -211,9 +211,9 @@ void prefAttachModel::run(long int nSteps, long int dataInterval) {
   forFile.push_back(dataInterval);
   vector<string> forFileStrs;
   forFileStrs.push_back("dataInterval");
-  ofstream &paData = createFile("paData", "/tigress/holiday/data/prefAttachModel/nocpi_csv_data/", forFile, forFileStrs);
-  ofstream &deg_data = createFile("deg_data", "/tigress/holiday/data/prefAttachModel/nocpi_csv_data/" , forFile, forFileStrs);
-  ofstream &time_data = createFile("time_data", "/tigress/holiday/data/prefAttachModel/nocpi_csv_data/" , forFile, forFileStrs);
+  ofstream* paData = createFile("paData", "datadefault/", forFile, forFileStrs);
+  ofstream* deg_data = createFile("deg_data", "datadefault/" , forFile, forFileStrs);
+  ofstream* time_data = createFile("time_data", "datadefault/" , forFile, forFileStrs);
   //create filename and make header to csv
   int current_index = 0;
   for(long int i = 0; i < nSteps; i++) {
@@ -225,8 +225,8 @@ void prefAttachModel::run(long int nSteps, long int dataInterval) {
       current_index++;
       if(current_index % SAVE_INTERVAL == 0) {
 	// saveData(data, SAVE_INTERVAL, paData);
-	  save_degrees(degs_to_save, deg_data);
-	  saveData<long int>(times_to_save, time_data);
+	  save_degrees(degs_to_save, *deg_data);
+	  saveData<long int>(times_to_save, *time_data);
 	  current_index = 0;
       }
     }
@@ -234,13 +234,13 @@ void prefAttachModel::run(long int nSteps, long int dataInterval) {
       step(false);
     }
   }
-  paData.close();
-  deg_data.close();
-  time_data.close();
+  paData->close();
+  deg_data->close();
+  time_data->close();
   delete paData;
   delete deg_data;
   delete time_data;
-  delete &paData;
+  // delete &paData;
   //take out the garbage
 }
 
