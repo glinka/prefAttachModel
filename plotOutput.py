@@ -804,8 +804,8 @@ def plot_degree_surface_v2(degs, times):
     max_degs = [np.max(degs[i,:]) for i in range(ntimes)]
     NPLOTTED_PTS = 15
     PLOT_INTERVAL = int(ntimes/NPLOTTED_PTS)
-    FONTSIZE = 20
-    LABELSIZE = 16
+    FONTSIZE = 48
+    LABELSIZE = 36
     fig1 = plt.figure()
     ax1_ = fig1.add_subplot(111, projection='3d')
     ax1_.set_xlabel('percentile', fontsize=FONTSIZE)
@@ -834,6 +834,8 @@ def plot_degree_surface_v2(degs, times):
     ax1_.set_xlim(left=0, right = 100)
     ax1_.set_ylim(bottom=0)
     ax1_.set_zlim(bottom=0)
+    ax1_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
+    ax1_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
 #    plt.show()
     fig2 = plt.figure()
     ax1_ = fig2.add_subplot(111, projection='3d')
@@ -857,6 +859,8 @@ def plot_degree_surface_v2(degs, times):
     ax1_.set_xlim(left=0, right = 100)
     ax1_.set_ylim(bottom=0)
     ax1_.set_zlim(bottom=0)
+    ax1_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
+    ax1_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
     #n3
     deg_diff = []
     for i in range(NPLOTTED_PTS):
@@ -864,8 +868,10 @@ def plot_degree_surface_v2(degs, times):
     deg_diff = np.array(deg_diff)
     fig13 = plt.figure()
     ax = fig13.add_subplot(111)
+    colornorm = colors.Normalize(vmin=0, vmax=NPLOTTED_PTS-1)
+    colormap = cm.ScalarMappable(norm=colornorm, cmap='RdBu')
     for time in range(NPLOTTED_PTS):
-        ax.scatter(indices, deg_diff[time], linewidths=0, c=indices, alpha=1.0*time/NPLOTTED_PTS/5.0)
+        ax.scatter(indices, deg_diff[time], linewidths=0, c=colormap.to_rgba(1.0*time), alpha=0.3)
     ax.set_xlabel('percentile', fontsize=FONTSIZE)
     ax.set_ylabel('change in degree', fontsize=FONTSIZE)
     ax.set_xlim((0, n))
@@ -881,7 +887,7 @@ def plot_degree_surface_v2(degs, times):
     fig14 = plt.figure()
     ax = fig14.add_subplot(111)
     for time in range(NPLOTTED_PTS):
-        ax.scatter(indices, deg_diff[time], linewidths=0, c=indices, alpha=1.0*time/NPLOTTED_PTS/5.0)
+        ax.scatter(indices, deg_diff[time], linewidths=0, c=colormap.to_rgba(1.0*time), alpha=0.3)
     ax.set_xlabel('percentile', fontsize=FONTSIZE)
     ax.set_ylabel('change in degree', fontsize=FONTSIZE)
     ax.set_xlim((0, n))
@@ -894,7 +900,7 @@ def plot_degree_surface_v2(degs, times):
     ax6_ = fig6.add_subplot(111)
     PLOT_INTERVAL = int(npoints/NPLOTTED_PTS)
     for time in range(NPLOTTED_PTS):
-        ax6_.scatter(indices , trimmed_degs[time*PLOT_INTERVAL,:], linewidths=0, c=indices, alpha=1.0*time/NPLOTTED_PTS/5.0)
+        ax6_.scatter(indices , trimmed_degs[time*PLOT_INTERVAL,:], linewidths=0, c=colormap.to_rgba(1.0*time), alpha=0.3)
     ax6_.set_xlabel('percentile', fontsize=FONTSIZE)
     ax6_.set_ylabel('degree', fontsize=FONTSIZE)
     ax6_.set_xlim((0, n))
@@ -902,19 +908,27 @@ def plot_degree_surface_v2(degs, times):
     ax6_.set_xticks([i for i in np.linspace(0, n, 11)])
     ax6_.set_xticklabels([str(i) for i in np.linspace(0, 100, 11)])
     ax6_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
-    plt.show()
+    # plt.show()
+    gspec = gs.GridSpec(6,6)
     fig7 = plt.figure()
-    ax6_ = fig7.add_subplot(111)
+    ax6_ = fig7.add_subplot(gspec[:6,:5])
+    ax62_ = fig7.add_subplot(gspec[:,5])
     PLOT_INTERVAL = int(ntimes/NPLOTTED_PTS)
     for time in range(NPLOTTED_PTS):
-        ax6_.scatter(indices , sorted_degs[time*PLOT_INTERVAL,:], linewidths=0, c=indices, alpha=1.0*time/NPLOTTED_PTS/5.0)
+        ax6_.scatter(indices , sorted_degs[time*PLOT_INTERVAL,:], linewidths=0, c=colormap.to_rgba(1.0*time), alpha=0.3)
+    colorbarnorm = colors.Normalize(vmin=0, vmax=times[-1])
+    cb = colorbar.ColorbarBase(ax62_, cmap='RdBu', norm=colorbarnorm, orientation='vertical')
+    fig7.text(0.8, 0.93, 'time', fontsize=FONTSIZE-4)
     ax6_.set_xlabel('percentile', fontsize=FONTSIZE)
     ax6_.set_ylabel('degree', fontsize=FONTSIZE)
     ax6_.set_xlim((0, n))
     ax6_.set_ylim(bottom=0)
     ax6_.set_xticks([i for i in np.linspace(0, n, 11)])
     ax6_.set_xticklabels([str(i) for i in np.linspace(0, 100, 11)])
+    ax62_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
+    ax62_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
     ax6_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
+    ax6_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
     plt.show()
 #     for v in range(n):
 #         ax6_.scatter(100.0*v*ones/n, trimmed_degs[[i*PLOT_INTERVAL for i in range(NPLOTTED_PTS)],v], linewidths=0, c=colormap.to_rgba(1.0*v), alpha= 1.0*v/n)
@@ -926,8 +940,10 @@ def plot_degree_surface_v2(degs, times):
     # ax2_.plot(times, max_degs)
     # plt.show()
     #fig 3 is a mess in order to get the colormap and colobars working, requires many of the imports seen at the beginning of the fn
+    colornorm = colors.Normalize(vmin=0, vmax=n-1)
+    colorbarnorm = colors.Normalize(vmin=0, vmax=100)
+    colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
     fig3 = plt.figure()
-    gspec = gs.GridSpec(6,6)
     ax31_ = fig3.add_subplot(gspec[:6,:5])
     maxtime = times[-1]
     ax31_.set_xticks([i*maxtime/10.0 for i in range(11)])

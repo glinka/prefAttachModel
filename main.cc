@@ -8,13 +8,14 @@ const int ASCII_CHAR_OFFSET = 48;
 
 long int parse_longint(const char* number) {
   int ndigits = strlen(number);
-  for(int i = 0; i < ndigits; i++) {
+  if(ndigits > 0) {
     long int base = 1;
-    for(int j = 0; j < ndigits-i-1; j++) {
+    for(int j = 0; j < ndigits-1; j++) {
       base *= 10;
     }
-    return base*(number[i] - ASCII_CHAR_OFFSET) + parse_longint(number + i + 1);
+    return base*(number[0] - ASCII_CHAR_OFFSET) + parse_longint(number + 1);
   }
+  return 0;
 }
 
 int main(int argc, char *argv[]) {
