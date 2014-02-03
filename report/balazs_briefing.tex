@@ -1,5 +1,5 @@
 \documentclass[11pt]{article}
-\usepackage{graphicx, subfig}
+\usepackage{graphicx, subcaption}
 \usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
 \graphicspath{ {./figs/} }
 \pagestyle{plain}
@@ -14,122 +14,11 @@ We are attempting to numerically locate the separate timescales present in the e
 \bibliographystyle{abbrv}
 \bibliography{$HOME/Documents/bibTex/library}
 
-\clearpage
 \begin{changemargin}{0.0cm}{0.0cm}
 \centering
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=130mm]{n_100_short_3d}
-  \caption{$n^{2}$ timescale, $n=100$, $m=10000$}
-  \label{fig:100s3}
-\end{figure}
-\centering
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=130mm]{n_100_short_time}
-  \caption{$n^{2}$ timescale, $n=100$, $m=10000$}
-  \label{fig:100st}
-\end{figure}
-\centering
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=100mm]{n_100_short}
-  \caption{$n^{2}$ timescale, $n=100$, $m=10000$}
-  \label{fig:100sv}
-\end{figure}
 
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=130mm]{n_100_long_3d}
-  \caption{$n^{3}$ timescale, $n=100$, $m=10000$}
-  \label{fig:100l3}
-\end{figure}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=130mm]{n_100_long_time}
-  \caption{$n^{3}$ timescale, $n=100$, $m=10000$}
-  \label{fig:100lt}
-\end{figure}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=100mm]{n_100_long}
-  \caption{$n^{3}$ timescale, $n=100$, $m=10000$}
-  \label{fig:100lv}
-\end{figure}
+\include{balazs_briefing_figs}
 
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=130mm]{n_500_short_3d}
-  \caption{$n^{2}$ timescale, $n=500$, $m=250000$}
-  \label{fig:500s3}
-\end{figure}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=130mm]{n_500_short_time}
-  \caption{$n^{2}$ timescale, $n=500$, $m=250000$}
-  \label{fig:500st}
-\end{figure}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=100mm]{n_500_short}
-  \caption{$n^{2}$ timescale, $n=500$, $m=250000$}
-  \label{fig:500sv}
-\end{figure}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=130mm]{n_500_long_3d}
-  \caption{$n^{3}$ timescale, $n=500$, $m=250000$}
-  \label{fig:500l3}
-\end{figure}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=130mm]{n_500_long_time}
-  \caption{$n^{3}$ timescale, $n=500$, $m=250000$}
-  \label{fig:500lt}
-\end{figure}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=100mm]{n_500_long}
-  \caption{$n^{3}$ timescale, $n=500$, $m=250000$}
-  \label{fig:500lv}
-\end{figure}
-
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=130mm]{n_1000_short_3d}
-  \caption{$n^{2}$ timescale, $n=1000$, $m=1000000$}
-  \label{fig:1000s3}
-\end{figure}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=130mm]{n_1000_short_time}
-  \caption{$n^{2}$ timescale, $n=1000$, $m=1000000$}
-  \label{fig:1000st}
-\end{figure}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=100mm]{n_1000_short}
-  \caption{$n^{2}$ timescale, $n=1000$, $m=1000000$}
-  \label{fig:1000sv}
-\end{figure}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=130mm]{n_1000_long_3d}
-  \caption{$n^{3}$ timescale, $n=1000$, $m=1000000$}
-  \label{fig:1000l3}
-\end{figure}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=130mm]{n_1000_long_time}
-  \caption{$n^{3}$ timescale, $n=1000$, $m=1000000$}
-  \label{fig:1000lt}
-\end{figure}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=100mm]{n_1000_long}
-  \caption{$n^{3}$ timescale, $n=1000$, $m=1000000$}
-  \label{fig:1000lv}
-\end{figure}
 \end{changemargin}
 
 \end{document}

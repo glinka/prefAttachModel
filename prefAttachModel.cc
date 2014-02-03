@@ -129,7 +129,7 @@ graphData prefAttachModel::step(bool saveFlag) {
   int i = 0, degCount = 0;
   int oldEdge = ((int) floor(2*m*genURN())) + 1;
   while(degCount < oldEdge) {
-    degCount = degCount + degs[i++];
+    degCount += degs[i++];
   }
   degCount -= degs[--i];
   int j = 0;
@@ -154,12 +154,12 @@ graphData prefAttachModel::step(bool saveFlag) {
     sum += (degs[i++]+kappa)/(2*m+n*kappa);
   }
   int uNew = --i;
-  A[uOld][v] = A[uOld][v] - 1;
-  A[v][uOld] = A[v][uOld] - 1;
-  A[uNew][v] = A[uNew][v] + 1;
-  A[v][uNew] = A[v][uNew] + 1;
-  degs[uOld] = degs[uOld] - 1;
-  degs[uNew] = degs[uNew] + 1;
+  A[uOld][v]--;
+  A[v][uOld]--;
+  A[uNew][v]++;
+  A[v][uNew]++;
+  degs[uOld]--;
+  degs[uNew]++;
   /**
   if(consistencyCheck() == 1) {
       cout << "step error" << endl;
@@ -180,7 +180,7 @@ graphData prefAttachModel::step(bool saveFlag) {
   }
 }
 
-ofstream &prefAttachModel::createFile(const string base, const string dir, vector<double> &addtnlData, vector<string> &addtnlDataLabels) {
+ofstream& prefAttachModel::createFile(const string base, const string dir, vector<double> &addtnlData, vector<string> &addtnlDataLabels) {
   stringstream ss;
   ss << dir << base << "_" << n << "_" << m << "_" << kappa;
   for(unsigned int i = 0; i < addtnlData.size(); i++) {
@@ -203,12 +203,11 @@ ofstream &prefAttachModel::createFile(const string base, const string dir, vecto
 void prefAttachModel::run(long int nSteps, long int dataInterval) {
   graphData *data;
   //data will be appended to file every time SAVE_INTERVAL data pts are collected
-  const int SAVE_INTERVAL = 10;
-  data = new graphData[SAVE_INTERVAL];
+  const int SAVE_INTERVAL = 1000;
   initGraph();
   vector<double> forFile;
-  vector< vector<int> > degs_to_save;
-  vector< int > times_to_save;
+  vector< vector<int> > degs_to_save(SAVE_INTERVAL);
+  vector< long int > times_to_save(SAVE_INTERVAL);
   forFile.push_back(dataInterval);
   vector<string> forFileStrs;
   forFileStrs.push_back("dataInterval");
@@ -216,20 +215,19 @@ void prefAttachModel::run(long int nSteps, long int dataInterval) {
   ofstream &deg_data = createFile("deg_data", "/tigress/holiday/data/prefAttachModel/nocpi_csv_data/" , forFile, forFileStrs);
   ofstream &time_data = createFile("time_data", "/tigress/holiday/data/prefAttachModel/nocpi_csv_data/" , forFile, forFileStrs);
   //create filename and make header to csv
+  int current_index = 0;
   for(long int i = 0; i < nSteps; i++) {
     if(i % dataInterval == 0) {
-      int dataIndex = (i / dataInterval) % SAVE_INTERVAL;
       graphData d = step(true);
-      data[dataIndex] = d;
-      degs_to_save.push_back(vector<int>(d.degSeq, d.degSeq+n));
-      times_to_save.push_back(i);
+      degs_to_save[current_index] = vector<int>(d.degSeq, d.degSeq+n);
+      times_to_save[current_index] = i;
       //save data every SAVE_INTERVAL times data is collected
-      if((dataIndex == SAVE_INTERVAL-1) && (i != 0)) {
+      current_index++;
+      if(current_index % SAVE_INTERVAL == 0) {
 	// saveData(data, SAVE_INTERVAL, paData);
 	  save_degrees(degs_to_save, deg_data);
-	  saveData<int>(times_to_save, time_data);
-	  degs_to_save.clear();
-	  times_to_save.clear();
+	  saveData<long int>(times_to_save, time_data);
+	  current_index = 0;
       }
     }
     else{
@@ -239,16 +237,11 @@ void prefAttachModel::run(long int nSteps, long int dataInterval) {
   paData.close();
   deg_data.close();
   time_data.close();
+  delete paData;
+  delete deg_data;
+  delete time_data;
   delete &paData;
   //take out the garbage
-  for(int i = 0; i < SAVE_INTERVAL; i++) {
-       for(int j = 0; j < n; j++) {
-	  delete[] data[i].A[j];
-      }
-      delete[] data[i].A;
-      delete[] data[i].degSeq;
-  }
-  delete[] data;
 }
 
 template<typename T>
