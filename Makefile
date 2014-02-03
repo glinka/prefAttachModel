@@ -1,8 +1,8 @@
 toCompile = prefAttachModel.o main.o
 
-CXX = g++
+CXX = g++44
 
-CXXFLAGS = -g -Wall -std=c++0x #-O3 #-fPIC
+CXXFLAGS = -g -Wall -std=c++0x -O3 #-fPIC
 
 all: prefAttachModel
 

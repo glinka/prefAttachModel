@@ -150,7 +150,7 @@ graphData prefAttachModel::step(bool saveFlag) {
   double p = genURN();
   double sum = 0;
   i = 0;
-  while(sum < p) {
+  while(sum <= p) {
     sum += (degs[i++]+kappa)/(2*m+n*kappa);
   }
   int uNew = --i;
