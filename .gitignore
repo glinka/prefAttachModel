@@ -40,3 +40,4 @@ a.out
 test.cc
 .nfs*
 *from_here
+*.pdf

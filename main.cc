@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
   int collectInterval = 1000;
   int offManifoldWait = 5000;
   int nMicroSteps = 20000;
+  string init_type = "complete";
   //parse command line args, could be moved to separate fn?
   for(i = 1; i < argc; i++) {
     if(argv[i][0] == '-') {
@@ -80,6 +81,10 @@ int main(int argc, char *argv[]) {
 	project = true;
 	nMicroSteps = atoi(currentArg);
       }
+      else if(currentLabel == "-init_type" || currentLabel == "-init") {
+	init_type.assign(currentArg);
+	cout << "initial graph is type: " << init_type << endl;
+      }
     }
   }
   if(project) {
@@ -88,7 +93,7 @@ int main(int argc, char *argv[]) {
   }
   else {
      prefAttachModel model(n, m, kappa);
-     model.run(nSteps, dataInterval);
+     model.run(nSteps, dataInterval, init_type);
   }
   return 0;
 }
