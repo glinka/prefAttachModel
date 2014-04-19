@@ -696,7 +696,7 @@ def plot_time_projection(degs, times):
     # plt.show()
     plt.show()
 
-def plot_vertex_projection(degs, times, n3=False):
+def plot_vertex_projection(degs, times, n3=True):
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.cm as cm
     import matplotlib.colors as colors
@@ -737,12 +737,13 @@ def plot_vertex_projection(degs, times, n3=False):
         ax.hold(True)
         for v in range(n):
             ax.scatter(times, sorted_degs[:,v], c=colormap.to_rgba(1.0*v), lw=0, alpha=0.7)
-        ax.axvline(x=n3_times[0], c='0.6', label=r'$n^3$ markers')
+        ax.axvline(x=n3_times[0], c='0.85', label=r'$n^3$ markers')
         for i in range(n_n3s):
-            ax.axvline(x=n3_times[i], c='0.6')
+            ax.axvline(x=n3_times[i], c='0.85')
         ax.set_xlim((times[0], times[-1]))
-        ax.set_ylim((0, 1.05*np.amax(sorted_degs)))
-        ax.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+        # ax.set_ylim((0, 1.05*np.amax(sorted_degs)))
+        ax.set_ylim((0, 2100))
+        ax.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
         ax.legend(fontsize=LEGENDSIZE, frameon=True, shadow=True)
         cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colorbarnorm, orientation='vertical')
         ax.tick_params(axis='both', which='major', labelsize=LABELSIZE)
@@ -780,9 +781,9 @@ def plot_vertex_projection(degs, times, n3=False):
     ax.hold(True)
     for v in range(n):
         ax.scatter(interval_times, trimmed_degs[:,v], c=colormap.to_rgba(1.0*v), lw=0, alpha=0.7)
-    ax.axvline(x=n2_times[0], c='0.6', label=r'$n^2$ markers')
+    ax.axvline(x=n2_times[0], c='0.85', label=r'$n^2$ markers')
     for i in range(n_n2s):
-        ax.axvline(x=n2_times[i], c='0.6')
+        ax.axvline(x=n2_times[i], c='0.85')
     ax.set_xlim((interval_times[0], interval_times[-1]))
     ax.set_ylim((0, 1.05*np.amax(trimmed_degs)))
     ax.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
@@ -892,9 +893,7 @@ def plot_densities(densities, times, params):
     n_ncubeds = float(times[-1]/np.power(n, 3))
     spacing = int(times.shape[0]/n_ncubeds)
     n_ncubeds = int(n_ncubeds)
-    print n_ncubeds, spacing
     ncubed_times = np.array([i*spacing for i in range(1, n_ncubeds+1)]) - 1
-    print ncubed_times.shape
     fig = plt.figure()
     ax = fig.add_subplot(111)
     textsize=32
