@@ -59,17 +59,19 @@ double prefAttachModel::genURN() {
 
 void prefAttachModel::init_complete_graph() {
   // init a complete graph with loops
-  m = n*n/2;
+  m = (n*n + n)/2;
   A = new int*[n];
   degs = new int[n];
   for(int i = 0; i < n; i++) {
     A[i] = new int[n];
   }
   for(int i = 0; i < n; i++) {
-    for(int j = 0; j < n; j++) {
+    A[i][i] = 2;
+    for(int j = i+1; j < n; j++) {
       A[i][j] = 1;
+      A[j][i] = 1;
     }
-    degs[i] = n;
+    degs[i] = n+1;
   }
 }
 
@@ -219,7 +221,7 @@ ofstream* prefAttachModel::createFile(const string base, const string dir, vecto
 void prefAttachModel::run(long int nSteps, long int dataInterval, string init_type) {
   graphData *data;
   //data will be appended to file every time SAVE_INTERVAL data pts are collected
-  const int SAVE_INTERVAL = 1000;
+  const int SAVE_INTERVAL = 10;
   if(init_type == "erdos") {
     initGraph();
   }
@@ -274,6 +276,12 @@ void prefAttachModel::run(long int nSteps, long int dataInterval, string init_ty
       step(false);
     }
   }
+
+  save_degrees(degs_to_save, *deg_data);
+  saveData<long int>(times_to_save, *time_data);
+  saveData<double>(densities_to_save, *density_data);
+  saveData<double>(selfloop_densities_to_save, *selfloop_density_data);
+
   paData->close();
   deg_data->close();
   time_data->close();

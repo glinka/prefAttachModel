@@ -7,7 +7,8 @@ def getDegrees(A):
     >>>>getDegrees(np.identity(10))
     array([ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.])
     """
-    return np.array([A[i,:].sum() for i in range(A.shape[0])])
+    return sum(A, axis=1)
+
 def getAdjEigVals(A):
     """Return a numpy ndarray containing the eigenvalues
     of the adjacency matrix, sorted in ascending order
