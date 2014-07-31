@@ -1,0 +1,45 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx, subcaption}
+\usepackage[top=0.25in, bottom=0.25in, left=1in, right=1in]{geometry}
+\graphicspath{ {./figs/} }
+\pagestyle{plain}
+\let\endchangemargin=\endlist 
+\begin{document}
+\title{\vspace{-20mm}Comparison of analytical results with simulations}
+\author{}
+\date{}
+\maketitle
+
+\centering
+\begin{figure}[h!]
+  \vspace{-15mm}
+  \includegraphics[height=100mm]{n_500_k_1_deg_step_2n3}
+  \caption{Evolution of degrees from direct simulation, $n=500 \; \kappa=1 \; \rho=2$, axis scale is $10^8$.}
+\end{figure}
+
+
+\centering
+\begin{figure}[h!]
+  \vspace{-5mm}
+  \includegraphics[height=100mm]{n_500_fullsimulation_analytical_2n3ish}
+  \caption{Evolution of degrees from analytical C.I.R. equation $n=500 \; \kappa=1 \; \rho=2$, 500 trajectories are shown}
+\end{figure}
+
+\clearpage
+
+\centering
+\begin{figure}[h!]
+  \includegraphics[height=100mm]{n_500_simulation_analytical_samples_50_2}
+  \caption{Difference in equilibrium degree distribution, $n=500 \; \kappa=1 \; \rho=2$, axis scale is $10^9$. To obtain an approximation of the analytical distribution, the poisson distribution, (36) in \cite{Rath2012}, was sampled to create an $n \; \times n$ adjacency matrix $A_i$. The degrees distribution $deg(A_i)$ was then calculated. This process was repeated fifty times, and the sorted degree distributions, $deg(A_i) \; i=1,2,...,50$ were averaged to obtain one final, average, steady state distribution. These sorted, analytically-based degrees were then subtracted from the sorted degrees arising from the simulation. Taking this difference at each time-step results in the above figure.}
+\end{figure}
+
+\centering
+\begin{figure}[h!]
+  \includegraphics[height=100mm]{n_500_simulation_analytical_samples_50_fullrange}
+  \caption{Difference in equilibrium degree distribution over entire simulation, $n=500 \; \kappa=1 \; \rho=2$, axis scale is $10^9$.}
+\end{figure}
+\vspace{20mm}
+\bibliographystyle{abbrv}
+\bibliography{$HOME/Documents/bibTex/library}
+
+\end{document}

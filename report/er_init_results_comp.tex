@@ -1,0 +1,47 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx, subcaption}
+\usepackage[top=0.25in, bottom=0.25in, left=1in, right=1in]{geometry}
+\graphicspath{ {./figs/} }
+\pagestyle{plain}
+\let\endchangemargin=\endlist 
+\begin{document}
+\title{\vspace{-5mm}Comparison with analytical results}
+\author{}
+\date{}
+\maketitle
+\vspace{-15mm}
+Here we compare the analytical predictions for simplified edge density evolution given at the bottom of the first page you sent over (although this is the number of verticex pairs who have at least one connection between them, so $1-v^n$), plotted against the simulation results. This first figure is a blow-up of the very beginning of the second figure. The agreement is very good initially, as expected, but deviates at longer times. Note that all simulation results here are for $n=200, \; \kappa = 1$, and with the initial configuration being a complete graph. \\
+
+\begin{center}
+\begin{figure}[h!]
+  \vspace{-7mm}
+  \includegraphics[height=100mm]{simple_edge_density_n2_n200}
+\end{figure}
+
+On the other hand, the $n^3$ deviates from the predicted final value of $\approx 0.4$ quite significantly.
+
+\centering
+\begin{figure}[h!]
+  \vspace{-3mm}
+  \includegraphics[height=100mm]{simple_edge_density_n3_n200}
+\end{figure}
+\end{center}
+
+\pagebreak
+
+Below is another graph showing the agreement between prediction and simulation on the $n^2$ scale. We see that the predicted percentiles, taken from the bottom of the last page you sent, closely match those arising from simulations at small times.
+
+\begin{figure}[h!]
+  \vspace{-0mm}
+  \includegraphics[height=100mm]{vertex_deg_n2_n200_analyticalpercentiles}
+\end{figure}
+
+
+
+\centering
+\begin{figure}[h!]
+  \includegraphics[height=100mm]{vertex_deg_n3_n200_analyticalpercentiles}
+\end{figure}
+
+\clearpage
+\end{document}
