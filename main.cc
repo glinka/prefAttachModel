@@ -1,15 +1,29 @@
 #include <iostream>
 #include <stdlib.h>
-#include "pamCPI.h"
+#include "prefAttachModel.h"
+#include <cstring>
 
 using namespace std;
+const int ASCII_CHAR_OFFSET = 48;
+
+long int parse_longint(const char* number) {
+  int ndigits = strlen(number);
+  if(ndigits > 0) {
+    long int base = 1;
+    for(int j = 0; j < ndigits-1; j++) {
+      base *= 10;
+    }
+    return base*(number[0] - ASCII_CHAR_OFFSET) + parse_longint(number + 1);
+  }
+  return 0;
+}
 
 int main(int argc, char *argv[]) {
   int n = 100;
   int m = 10000;
   double kappa = 0.5;
   long int nSteps = 10000000;
-  int dataInterval = 1000;
+  long int dataInterval = 1000;
   int i;
   bool project = false;
   //CPI vars
@@ -17,6 +31,7 @@ int main(int argc, char *argv[]) {
   int collectInterval = 1000;
   int offManifoldWait = 5000;
   int nMicroSteps = 20000;
+  string init_type = "complete";
   //parse command line args, could be moved to separate fn?
   for(i = 1; i < argc; i++) {
     if(argv[i][0] == '-') {
@@ -42,10 +57,10 @@ int main(int argc, char *argv[]) {
 	kappa = atof(currentArg);
       }
       else if(currentLabel == "-s" || currentLabel == "-nSteps" || currentLabel == "-steps") {
-	nSteps = atoi(currentArg);
+	nSteps = (long int) (atof(currentArg) + 0.5);// parse_longint(currentArg);
       }
       else if(currentLabel == "-di" || currentLabel == "-dataInterval" || currentLabel == "-ci" || currentLabel == "-collection_interval") {
-	dataInterval = atoi(currentArg);
+	dataInterval = (long int) (atof(currentArg) + 0.5);// parse_longint(currentArg);
       }
       else if(currentLabel == "-project") {
 	project = true;
@@ -66,15 +81,19 @@ int main(int argc, char *argv[]) {
 	project = true;
 	nMicroSteps = atoi(currentArg);
       }
+      else if(currentLabel == "-init_type" || currentLabel == "-init") {
+	init_type.assign(currentArg);
+	cout << "initial graph is type: " << init_type << endl;
+      }
     }
   }
   if(project) {
-    pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps);
-  model.runCPI(nSteps);
+    //    pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps);
+    //    model.runCPI(nSteps);
   }
   else {
      prefAttachModel model(n, m, kappa);
-     model.run(nSteps, dataInterval);
+     model.run(nSteps, dataInterval, init_type);
   }
   return 0;
 }
