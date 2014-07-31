@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sstream>
 #include <algorithm>
+#include <cmath>
 #include "pamCPI.h"
 #include "calcGraphProps.h"
 #include "fitCurves.h"
@@ -197,8 +198,8 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
 	delete[] eigVals;
 	sort(leadingEigVect.begin(), leadingEigVect.end());
 	eigVectFittedCoeffs.push_back(fitCurves::fitFx(line, leadingEigVect, toFitEigVects));
-	coeffs_to_save.push_back(eigVectFittedCoeffs.back());
 	eigVectFittedCoeffs.back().push_back(maxEigVal);
+	coeffs_to_save.push_back(eigVectFittedCoeffs.back());
 	coeffs_to_save.back().push_back(time[i]);
 	for(j = 0; j < n; j++) {
 	    delete[] tempA[j];
@@ -236,7 +237,6 @@ decrease time vector to be the same during each projection, else values will bec
     vector<double> newEigVect;
     for(i = 0; i < n; i++) {
 	double eval = 0;
-	//eigval appended to end of eigVectFittedCoeffs, iterate only to nCoeffs - 1 as last newCoeff is eigVal
 	for(j = 0; j < nCoeffs; j++) {
 	    eval += (*toFitEigVects[j])(line[i])*newCoeffs[j];
 	}
@@ -260,7 +260,7 @@ decrease time vector to be the same during each projection, else values will bec
 	    toSaveRecon[i].push_back(newA[i][j]);
 	}
     }
-    initGraph(newA);
+    // initGraph(newA);
     for(i = 0; i < n; i++) {
 	delete[] newA[i];
     }

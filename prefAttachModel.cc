@@ -5,7 +5,6 @@
 #include <sstream>
 #include <iomanip>
 #include "prefAttachModel.h"
-#include "fitCurves.h"
 
 using namespace std;
 
@@ -56,6 +55,24 @@ prefAttachModel::prefAttachModel(const int n, const int m, const double kappa): 
 
 double prefAttachModel::genURN() {
     return (*mt)()/(rnNormalization);
+}
+
+void prefAttachModel::init_complete_graph() {
+  // init a complete graph with loops
+  m = (n*n + n)/2;
+  A = new int*[n];
+  degs = new int[n];
+  for(int i = 0; i < n; i++) {
+    A[i] = new int[n];
+  }
+  for(int i = 0; i < n; i++) {
+    A[i][i] = 2;
+    for(int j = i+1; j < n; j++) {
+      A[i][j] = 1;
+      A[j][i] = 1;
+    }
+    degs[i] = n+1;
+  }
 }
 
 void prefAttachModel::initGraph() {
@@ -126,11 +143,11 @@ void prefAttachModel::initGraph(int **newA) {
     cout << max << "," << min << "\n";
 }
 
-graphData prefAttachModel::step(bool saveFlag) {
+graphData *prefAttachModel::step(bool saveFlag) {
   int i = 0, degCount = 0;
   int oldEdge = ((int) floor(2*m*genURN())) + 1;
   while(degCount < oldEdge) {
-    degCount = degCount + degs[i++];
+    degCount += degs[i++];
   }
   degCount -= degs[--i];
   int j = 0;
@@ -151,37 +168,37 @@ graphData prefAttachModel::step(bool saveFlag) {
   double p = genURN();
   double sum = 0;
   i = 0;
-  while(sum < p) {
+  while(sum <= p) {
     sum += (degs[i++]+kappa)/(2*m+n*kappa);
   }
   int uNew = --i;
-  A[uOld][v] = A[uOld][v] - 1;
-  A[v][uOld] = A[v][uOld] - 1;
-  A[uNew][v] = A[uNew][v] + 1;
-  A[v][uNew] = A[v][uNew] + 1;
-  degs[uOld] = degs[uOld] - 1;
-  degs[uNew] = degs[uNew] + 1;
+  A[uOld][v]--;
+  A[v][uOld]--;
+  A[uNew][v]++;
+  A[v][uNew]++;
+  degs[uOld]--;
+  degs[uNew]++;
   /**
   if(consistencyCheck() == 1) {
       cout << "step error" << endl;
   }
   **/
   if(saveFlag) {
-      graphData data;
-      data.degSeq = new int[n];
-      data.A = new int*[n];
+      graphData *data = new graphData;
+      data->degSeq = new int[n];
+      data->A = new int*[n];
       for(i = 0; i < n; i++) {
-	  data.A[i] = new int[n];
-	  data.degSeq[i] = degs[i];
+	  data->A[i] = new int[n];
+	  data->degSeq[i] = degs[i];
 	  for(j = 0; j < n; j++) {
-	      data.A[i][j] = A[i][j];
+	      data->A[i][j] = A[i][j];
 	  }
       }
       return data;
   }
 }
 
-ofstream &prefAttachModel::createFile(const string base, const string dir, vector<double> &addtnlData, vector<string> &addtnlDataLabels) {
+ofstream* prefAttachModel::createFile(const string base, const string dir, vector<double> &addtnlData, vector<string> &addtnlDataLabels) {
   stringstream ss;
   ss << dir << base << "_" << n << "_" << m << "_" << kappa;
   for(unsigned int i = 0; i < addtnlData.size(); i++) {
@@ -198,58 +215,83 @@ ofstream &prefAttachModel::createFile(const string base, const string dir, vecto
       *file << "," << addtnlDataLabels[i] << "=" << addtnlData[i];
   }
   *file << "\n";
-  return *file;
+  return file;
 }
 
-void prefAttachModel::run(long int nSteps, int dataInterval) {
+void prefAttachModel::run(long int nSteps, long int dataInterval, string init_type) {
   graphData *data;
   //data will be appended to file every time SAVE_INTERVAL data pts are collected
   const int SAVE_INTERVAL = 10;
-  data = new graphData[SAVE_INTERVAL];
-  initGraph();
+  if(init_type == "erdos") {
+    initGraph();
+  }
+  else if(init_type == "complete") {
+    init_complete_graph();
+  }
+  // initGraph() is default
+  else {
+    initGraph();
+  }
   vector<double> forFile;
-  vector< vector<int> > degs_to_save;
-  vector< int > times_to_save;
+  vector< vector<int> > degs_to_save(SAVE_INTERVAL);
+  vector< long int > times_to_save(SAVE_INTERVAL);
+  vector< double > densities_to_save(SAVE_INTERVAL);
+  vector< double > selfloop_densities_to_save(SAVE_INTERVAL);
   forFile.push_back(dataInterval);
   vector<string> forFileStrs;
   forFileStrs.push_back("dataInterval");
-  ofstream &paData = createFile("paData", "nocpi_csv_data/", forFile, forFileStrs);
-  ofstream &deg_data = createFile("deg_data", "nocpi_csv_data/" , forFile, forFileStrs);
-  ofstream &time_data = createFile("time_data", "nocpi_csv_data/" , forFile, forFileStrs);
+  ofstream* paData = createFile("paData", "datadefault/", forFile, forFileStrs);
+  ofstream* deg_data = createFile("deg_data", "datadefault/" , forFile, forFileStrs);
+  ofstream* time_data = createFile("time_data", "datadefault/" , forFile, forFileStrs);
+  ofstream* density_data = createFile("density_data", "datadefault/" , forFile, forFileStrs);
+  ofstream* selfloop_density_data = createFile("selfloop_density_data", "datadefault/" , forFile, forFileStrs);
   //create filename and make header to csv
+  int current_index = 0;
   for(long int i = 0; i < nSteps; i++) {
-    if((i+1) % dataInterval == 0) {
-      int dataIndex = ((i+1) / dataInterval) % SAVE_INTERVAL;
-      graphData d = step(true);
-      data[dataIndex] = d;
-      degs_to_save.push_back(vector<int>(d.degSeq, d.degSeq+n));
-      times_to_save.push_back(i+1);
+    if(i % dataInterval == 0) {
+      graphData *d = step(true);
+      degs_to_save[current_index] = vector<int>(d->degSeq, d->degSeq+n);
+      // delete returned data
+      for(int j = 0; j < n; j++) {
+	delete[] d->A[j];
+      }
+      delete[] d->A;
+      delete[] d->degSeq;
+      delete d;
+      times_to_save[current_index] = i;
+      densities_to_save[current_index] = simplified_edge_density();
+      selfloop_densities_to_save[current_index] = compute_selfloop_density();
       //save data every SAVE_INTERVAL times data is collected
-      if(dataIndex == 0) {
-	  saveData(data, SAVE_INTERVAL, paData);
-	  save_degrees(degs_to_save, deg_data);
-	  saveData<int>(times_to_save, time_data);
-	  degs_to_save.clear();
-	  times_to_save.clear();
+      current_index++;
+      if(current_index % SAVE_INTERVAL == 0) {
+	// saveData(data, SAVE_INTERVAL, paData);
+	  save_degrees(degs_to_save, *deg_data);
+	  saveData<long int>(times_to_save, *time_data);
+	  saveData< double >(densities_to_save, *density_data);
+	  saveData< double >(selfloop_densities_to_save, *selfloop_density_data);
+	  current_index = 0;
       }
     }
     else{
       step(false);
     }
   }
-  paData.close();
-  deg_data.close();
-  time_data.close();
-  delete &paData;
+
+  save_degrees(degs_to_save, *deg_data);
+  saveData<long int>(times_to_save, *time_data);
+  saveData<double>(densities_to_save, *density_data);
+  saveData<double>(selfloop_densities_to_save, *selfloop_density_data);
+
+  paData->close();
+  deg_data->close();
+  time_data->close();
+  delete paData;
+  delete deg_data;
+  delete time_data;
+  delete density_data;
+  delete selfloop_density_data;
+  // delete &paData;
   //take out the garbage
-  for(int i = 0; i < SAVE_INTERVAL; i++) {
-       for(int j = 0; j < n; j++) {
-	  delete[] data[i].A[j];
-      }
-      delete[] data[i].A;
-      delete[] data[i].degSeq;
-  }
-  delete[] data;
 }
 
 template<typename T>
@@ -437,4 +479,26 @@ int prefAttachModel::consistencyCheck() {
 	return 1;
     }
     return 0;
+}
+
+double prefAttachModel::simplified_edge_density() {
+  int zero_count = 0;
+  for(int i = 0; i < n; i++) {
+    for(int j = 0; j < n; j++) {
+      if(A[i][j] == 0) {
+	zero_count++;
+      }
+    }
+  }
+  return (n*n - zero_count)/((double) n*n);
+}
+
+double prefAttachModel::compute_selfloop_density() {
+  int selfloop_count = 0;
+  for(int i = 0; i < n; i++) {
+    if(A[i][i] > 0) {
+      selfloop_count++;
+    }
+  }
+  return ((double) selfloop_count)/n;
 }
