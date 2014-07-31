@@ -1,4 +1,4 @@
-SRCS=main.cc prefAttachModel.cc pamCPI.cc calcGraphProps.cc fitCurves.cc
+SRCS=main.cc prefAttachModel.cc pamCPI.cc calcGraphProps.cc fitCurves.cc util_fns.cc
 OBJECTS=$(SRCS:.cc=.o)
 
 CXX = g++

@@ -124,7 +124,7 @@ must recalc graph properties as in previous initGraph(), otherwise segfault
 void prefAttachModel::initGraph(int **newA) {
     int i, j;
     double max = 0, min = 100;
-    m = 0;
+    int temp_m = 0;
     for(i = 0; i < n; i++) {
 	degs[i] = 0;
 	for(j = 0; j < n; j++) {
@@ -137,10 +137,11 @@ void prefAttachModel::initGraph(int **newA) {
 		min = A[i][j];
 	    }
 	}
-	m += degs[i];
+	temp_m += degs[i];
     }
-    m /= 2;
-    cout << max << "," << min << "\n";
+    temp_m /= 2;
+    cout << max << "," << min << "," << m-temp_m << "\n";
+    m = temp_m;
 }
 
 graphData *prefAttachModel::step(bool saveFlag) {

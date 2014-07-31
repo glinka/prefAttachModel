@@ -4,9 +4,11 @@
 #include <sstream>
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 #include "pamCPI.h"
 #include "calcGraphProps.h"
 #include "fitCurves.h"
+#include "util_fns.h"
 
 using namespace std;
 
@@ -49,6 +51,7 @@ void pamCPI::runCPI(const int nSteps) {
     ofstream* eigVectData = createFile("eigVectData", dir, forFile, forFileStrs);
     ofstream* deg_data = createFile("deg_data", dir, forFile, forFileStrs);
     ofstream* time_data = createFile("time_data", dir , forFile, forFileStrs);
+    cout << "-->saving files into " << dir << endl;
     //after waiting for the system to reach the slow manifold, collect data every collectInterval number of steps
     int totalSteps = 0;
     int saveDataInterval = 1000;
@@ -59,7 +62,13 @@ void pamCPI::runCPI(const int nSteps) {
 	vector<double> time;
 	vector< vector<int> > degs_to_save;
 	vector< int > times_to_save;
-	for(microStep = 0; microStep < nMicroSteps; microStep++) {
+
+	// take one step and save this data, start microStep at 1
+	graphData* d = step(true);
+	toPlot.push_back(*d);
+	degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
+	times_to_save.push_back(totalSteps);
+	for(microStep = 1; microStep < nMicroSteps; microStep++) {
 	    if(microStep < offManifoldWait) {
 		if((microStep+1)%saveDataInterval == 0) {
 		  graphData* d = step(true);
@@ -72,31 +81,31 @@ void pamCPI::runCPI(const int nSteps) {
 		}
 	    }
 	    else {
-		int nOnManifoldSteps = microStep - offManifoldWait;
-		if((nOnManifoldSteps)%collectInterval == 0) {
-		    time.push_back(totalSteps);
-		    if((microStep+1)%saveDataInterval == 0) {
-		      graphData* d = step(true);
-		      toPlot.push_back(*d);
-		      degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
-		      times_to_save.push_back(totalSteps);
-		      toProject.push_back(*d);
-		    }
-		    else {
-			toProject.push_back(*step(true));
-		    }
+	      int nOnManifoldSteps = microStep - offManifoldWait;
+	      if((nOnManifoldSteps)%collectInterval == 0) {
+		time.push_back(totalSteps);
+		if((microStep+1)%saveDataInterval == 0) {
+		  graphData* d = step(true);
+		  toPlot.push_back(*d);
+		  degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
+		  times_to_save.push_back(totalSteps);
+		  toProject.push_back(*d);
 		}
 		else {
-		    if((microStep+1)%saveDataInterval == 0) {
-		      graphData* d = step(true);
-		      toPlot.push_back(*d);
-		      degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
-		      times_to_save.push_back(totalSteps);
-		    }
-		    else {
-			step(false);
-		    }
+		  toProject.push_back(*step(true));
 		}
+	      }
+	      else {
+		if((microStep+1)%saveDataInterval == 0) {
+		  graphData* d = step(true);
+		  toPlot.push_back(*d);
+		  degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
+		  times_to_save.push_back(totalSteps);
+		}
+		else {
+		  step(false);
+		}
+	      }
 	    }
 	    totalSteps++;
 	}
@@ -231,6 +240,18 @@ decrease time vector to be the same during each projection, else values will bec
 	}
 	newCoeffs.push_back(eval);
     }
+
+    // TESTING
+    // attempt to project only first coefficient (the offset) and eigenvalue
+    // while averaging the others
+    vector<double> to_average(nPts);
+    for(i = 1; i < nCoeffs-1; i++) {
+      for(j = 0; j < nPts; j++) {
+	to_average[j] = (eigVectFittedCoeffs[j][i]);
+      }
+      newCoeffs[i] = utils::average(to_average);
+    }
+
     double newEigVal = newCoeffs.back();
     newCoeffs.pop_back();
     nCoeffs = newCoeffs.size();
@@ -260,7 +281,7 @@ decrease time vector to be the same during each projection, else values will bec
 	    toSaveRecon[i].push_back(newA[i][j]);
 	}
     }
-    // initGraph(newA);
+    initGraph(newA);
     for(i = 0; i < n; i++) {
 	delete[] newA[i];
     }

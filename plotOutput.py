@@ -246,6 +246,11 @@ def plotCRecon(data, params):
     makeAnimation(fileName, newFolder)
 
 def compare_recon(data_list, params):
+    # expects a bunch of projData csv files in which
+    # data is layered in before_proj, after_proj
+    # adjacency matrices, the degree distributions of which
+    # are subtracted and plotted to give a sense of the errors
+    # in the reconstruction process
     import matplotlib.cm as cm
     import matplotlib.colors as colors
     n = params['n']
@@ -270,7 +275,7 @@ def compare_recon(data_list, params):
         postRecon = postRecon / float(ndata)
         pre_recon_degs = np.sum(preRecon, 0)
         post_recon_degs = np.sum(postRecon, 0)
-        ax.scatter(range(n), pre_recon_degs - (post_recon_degs, lw=0, c=colormap.to_rgba(float(i)), alpha=0.3)
+        ax.scatter(range(n), pre_recon_degs - post_recon_degs, lw=0, c=colormap.to_rgba(float(i)), alpha=0.3)
         pre_sort = np.argsort(pre_recon_degs)
         post_sort = np.argsort(post_recon_degs)
         preRecon = preRecon[pre_sort, :]
