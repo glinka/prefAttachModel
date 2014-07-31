@@ -169,7 +169,6 @@ def plotCRecon(data, params):
     from mpl_toolkits.mplot3d import Axes3D
     n = params['n']
     nData = data.shape[0]/(2*n)
-    print nData
     fig = plt.figure()
     ax1 = fig.add_subplot(211, projection='3d')
     ax2 = fig.add_subplot(212, projection='3d')
@@ -182,6 +181,7 @@ def plotCRecon(data, params):
     ax2.set_ylim(bottom=0, top=n)
     ax2.set_zlim(bottom=0, top=maxDeg)
     newFolder = makeFolder('CRecon')
+    print '--> saving', nData, 'images in', newFolder
     fileName = ''
     for i in range(nData):
         preRecon = data[n*2*i:n*(2*i+1),:]
@@ -202,6 +202,54 @@ def plotCRecon(data, params):
         ax2.set_ylim3d(bottom=0, top=n)
         ax2.set_zlim3d(bottom=0, top=maxDeg)
     makeAnimation(fileName, newFolder)
+
+def compare_recon(data_list, params):
+    import matplotlib.cm as cm
+    import matplotlib.colors as colors
+    n = params['n']
+    ndata = len(data_list)
+    print ndata
+    npts = (data_list[0]).shape[0]/(2*n)
+    err = np.empty(npts)
+    max_err = np.empty(npts)
+    avg_err = np.empty(npts)
+    # avg the data, then plot
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    colornorm = colors.Normalize(vmin=0, vmax=npts-1)
+    colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
+    for i in range(npts):
+        preRecon = np.zeros((n,n))
+        postRecon = np.zeros((n,n))
+        for k in range(ndata):
+            preRecon = preRecon + data_list[k][n*2*i:n*(2*i+1),:]
+            postRecon = postRecon + data_list[k][n*(2*i+1):n*(2*i+2),:]
+        preRecon = preRecon / float(ndata)
+        postRecon = postRecon / float(ndata)
+        pre_recon_degs = np.sum(preRecon, 0)
+        post_recon_degs = np.sum(postRecon, 0)
+        ax.scatter(range(n), pre_recon_degs - (post_recon_degs, lw=0, c=colormap.to_rgba(float(i)), alpha=0.3)
+        pre_sort = np.argsort(pre_recon_degs)
+        post_sort = np.argsort(post_recon_degs)
+        preRecon = preRecon[pre_sort, :]
+        preRecon = preRecon[:, pre_sort]
+        postRecon = postRecon[post_sort, :]
+        postRecon = postRecon[:, post_sort]
+        err[i] = np.linalg.norm(preRecon - postRecon)
+        max_err[i] = np.max(preRecon - postRecon)
+        avg_err[i] = np.average(preRecon - postRecon)
+    plt.show()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(range(npts), err, c='c', label='cumulative')
+    ax.plot(range(npts), avg_err, c='g', label='average')
+    ax.plot(range(npts), max_err, c='r', label='maximum single-degree')
+    ax.set_ylim(bottom=0)
+    ax.set_xlabel('approximate time')
+    ax.set_ylabel('reconstruction error')
+    print '--> saving images in recon_comp'
+    plt.savefig('./recon_comp/recon_comp.png')
+    
 
 def plotEigVectRecon(data, params):
     n = params['n']
@@ -411,11 +459,10 @@ def plot_vectors_tc(data, params):
     """
     nvects = data.shape[1]
     nyvects = nvects - 1
-    print data.shape
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.hold(False)
-    for i in range(nyvects-1):
+    for i in range(nyvects):
         ax.scatter(data[:,nyvects], data[:,i], color=(np.sin(i/nyvects), np.cos(1-i/nyvects), 1-i/nyvects), label="coeff: " + str(i+1), lw=0)
         ax.set_xlabel('simulation step')
         ax.set_ylabel('coefficient value')
@@ -809,6 +856,11 @@ if __name__=="__main__":
     parser.add_argument('-coeffs', '--plot-coeffs', action='store_true', default=False)
     parser.add_argument('-ds', '--plot-degree-surface', action='store_true', default=False)
     args = parser.parse_args()
+    # this whole file is a huge piece of
+    # the atrocities below won't be noticed
+    data_list = []
+    params = None
+    comp = False
     if args.compare_projection:
         #must have args.inputFiles.size === 2
         fullFile = ''
@@ -871,6 +923,9 @@ if __name__=="__main__":
                 fns.append(lambda x,y: x + y)
                 plotFittedData(data, params, fns)
             if 'projData' in fileName:
-                plotCRecon(data, params)
+                data_list.append(data)
+                comp = True
             # if 'eigVectData' in fileName:
                 # plotEigVectRecon(data, params)
+    if comp:
+        compare_recon(data_list, params)
