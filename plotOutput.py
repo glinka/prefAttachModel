@@ -1301,8 +1301,5 @@ if __name__=="__main__":
                 comp = True
             # if 'eigVectData' in fileName:
                 # plotEigVectRecon(data, params)
-            if args.plot_degrees_analytic:
-                degs, params = get_data(fileName, header_rows=1)
-                plot_degrees(degs[-1,:])
     if comp:
         compare_recon(data_list, params)

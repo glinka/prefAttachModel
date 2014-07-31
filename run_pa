@@ -1,0 +1,6 @@
+#! /bin/bash
+
+for i in 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+do
+    ./prefAttachModel -n 100 -m 10000 -s 1000000 -project -projStep 0 -offManifoldWait 10000 -nMicroSteps 20000 -dataInterval 10000 -collectionInterval 1000 -kappa 1
+done
