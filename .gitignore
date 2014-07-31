@@ -18,6 +18,7 @@
 #"compiled" python
 *.pyc
 #executable
+pref_attach
 prefAttachModel
 #png of plots
 *.png
@@ -41,3 +42,5 @@ test.cc
 .nfs*
 *from_here
 *.pdf
+.depend
+err

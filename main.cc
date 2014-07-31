@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdlib.h>
-#include "prefAttachModel.h"
 #include <cstring>
+#include "pamCPI.h"
 
 using namespace std;
 const int ASCII_CHAR_OFFSET = 48;
@@ -88,8 +88,8 @@ int main(int argc, char *argv[]) {
     }
   }
   if(project) {
-    //    pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps);
-    //    model.runCPI(nSteps);
+       pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps);
+       model.runCPI(nSteps);
   }
   else {
      prefAttachModel model(n, m, kappa);

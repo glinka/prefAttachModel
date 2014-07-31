@@ -44,11 +44,11 @@ void pamCPI::runCPI(const int nSteps) {
 	isdir = false;
       }
     } while (isdir);
-    ofstream &paDataCPI = createFile("paDataCPI", dir, forFile, forFileStrs);
-    ofstream &projData = createFile("projData", dir, forFile, forFileStrs);
-    ofstream &eigVectData = createFile("eigVectData", dir, forFile, forFileStrs);
-    ofstream &deg_data = createFile("deg_data", dir, forFile, forFileStrs);
-    ofstream &time_data = createFile("time_data", dir , forFile, forFileStrs);
+    ofstream* paDataCPI = createFile("paDataCPI", dir, forFile, forFileStrs);
+    ofstream* projData = createFile("projData", dir, forFile, forFileStrs);
+    ofstream* eigVectData = createFile("eigVectData", dir, forFile, forFileStrs);
+    ofstream* deg_data = createFile("deg_data", dir, forFile, forFileStrs);
+    ofstream* time_data = createFile("time_data", dir , forFile, forFileStrs);
     //after waiting for the system to reach the slow manifold, collect data every collectInterval number of steps
     int totalSteps = 0;
     int saveDataInterval = 1000;
@@ -62,9 +62,9 @@ void pamCPI::runCPI(const int nSteps) {
 	for(microStep = 0; microStep < nMicroSteps; microStep++) {
 	    if(microStep < offManifoldWait) {
 		if((microStep+1)%saveDataInterval == 0) {
-		  graphData d = step(true);
-		  toPlot.push_back(d);
-		  degs_to_save.push_back(vector<int>(d.degSeq, d.degSeq+n));
+		  graphData* d = step(true);
+		  toPlot.push_back(*d);
+		  degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
 		  times_to_save.push_back(totalSteps);
 		}
 		else {
@@ -76,21 +76,21 @@ void pamCPI::runCPI(const int nSteps) {
 		if((nOnManifoldSteps)%collectInterval == 0) {
 		    time.push_back(totalSteps);
 		    if((microStep+1)%saveDataInterval == 0) {
-			graphData d = step(true);
-			toPlot.push_back(d);
-			toProject.push_back(d);
-			degs_to_save.push_back(vector<int>(d.degSeq, d.degSeq+n));
-			times_to_save.push_back(totalSteps);
+		      graphData* d = step(true);
+		      toPlot.push_back(*d);
+		      degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
+		      times_to_save.push_back(totalSteps);
+		      toProject.push_back(*d);
 		    }
 		    else {
-			toProject.push_back(step(true));
+			toProject.push_back(*step(true));
 		    }
 		}
 		else {
 		    if((microStep+1)%saveDataInterval == 0) {
-		      graphData d = step(true);
-		      toPlot.push_back(d);
-		      degs_to_save.push_back(vector<int>(d.degSeq, d.degSeq+n));
+		      graphData* d = step(true);
+		      toPlot.push_back(*d);
+		      degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
 		      times_to_save.push_back(totalSteps);
 		    }
 		    else {
@@ -122,22 +122,22 @@ void pamCPI::runCPI(const int nSteps) {
 	for(i = 0; i < nPlotPts; i++) {
 	    toPlotAry[i] = toPlot[i];
 	}
-	saveData(toPlotAry, nPlotPts, paDataCPI);
-	save_degrees(degs_to_save, deg_data);
-	saveData<int>(times_to_save, time_data);
+	saveData(toPlotAry, nPlotPts, *paDataCPI);
+	save_degrees(degs_to_save, *deg_data);
+	saveData<int>(times_to_save, *time_data);
 	degs_to_save.clear();
 	times_to_save.clear();
 	toPlot.clear();
 	toProject.clear();
 	totalSteps += projStep;
     }
-    eigVectData << endl;
-    paDataCPI.close();
-    projData.close();
-    eigVectData.close();
-    delete &paDataCPI;
-    delete &projData;
-    delete &eigVectData;
+    *eigVectData << endl;
+    paDataCPI->close();
+    projData->close();
+    eigVectData->close();
+    delete paDataCPI;
+    delete projData;
+    delete eigVectData;
 }
 /**
 ******************** TODO ********************
@@ -148,7 +148,7 @@ typedef vector<vector<double>> graph;
 and pass all calcGraphProps fns a 'graph'
 **********************************************
 **/
-void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &time, ofstream &projData, ofstream &eigVectData) {
+void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &time, ofstream* projData, ofstream* eigVectData) {
   //save data. this can be deleted after the damn thing runs properly
     //assert data.size() == time.size()
     int nPts = time.size();
@@ -267,9 +267,9 @@ decrease time vector to be the same during each projection, else values will bec
     delete newA;
     //save data for visual comparison of reconstructions:
     vector<vector<double> > toSavePreRecon = data.back();
-    saveData(toSavePreRecon, projData);
-    saveData(toSaveRecon, projData);
+    saveData(toSavePreRecon, *projData);
+    saveData(toSaveRecon, *projData);
     //save new eigvect
     sort(newEigVect.begin(), newEigVect.end());
-    save_coeffs(coeffs_to_save, eigVectData);
+    save_coeffs(coeffs_to_save, *eigVectData);
 }

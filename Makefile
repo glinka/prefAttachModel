@@ -1,16 +1,25 @@
-toCompile = prefAttachModel.o main.o
+SRCS=main.cc prefAttachModel.cc pamCPI.cc calcGraphProps.cc fitCurves.cc
+OBJECTS=$(SRCS:.cc=.o)
 
 CXX = g++
 
-CXXFLAGS = -g -Wall -std=c++0x -O3 #-fPIC
+CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x -O3
 
-all: prefAttachModel
+all: pref_attach
 
 %.o: %.c
-	$(CXX) $(CXXFLAGS) -c $<
+	$(CXX) -c $<  $(CXXFLAGS)
 
-prefAttachModel: $(toCompile)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+pref_attach: $(OBJECTS)
+	$(CXX) -o $@ $^  $(CXXFLAGS)
+
+depend: .depend
+
+.depend: $(SRCS)
+	rm -f ./.depend
+	$(CXX) -MM -MT $^ $(CXXFLAGS) > ./.depend
 
 clean:
 	$(RM) *.o 
+
+include .depend
