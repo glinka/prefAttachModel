@@ -24,8 +24,11 @@ class prefAttachModel {
     double genURN();
     void initGraph();
     void initGraph(int **newA);
-    graphData step(bool saveFlag);
+    void init_complete_graph();
+    graphData *step(bool saveFlag);
     int consistencyCheck();
+    double simplified_edge_density();
+    double compute_selfloop_density();
     void save_degrees(const std::vector< std::vector<int> > &degs, std::ofstream &fileHandle);
     void saveData(graphData *data, int nData, std::ofstream &fileHandle);
     void saveData(std::vector<std::vector<double> > &data, std::ofstream &fileHandle);
@@ -33,8 +36,8 @@ class prefAttachModel {
       void saveData(std::vector< T > &data, std::ofstream &fileHandle);
     void save_coeffs(const std::vector< std::vector< double > > &data, std::ofstream &fileHandle);
  public:
-    void run(long int nSteps, int dataInterval);
-    std::ofstream &createFile(const std::string base, const std::string dir, std::vector<double> &addtnlData, std::vector<std::string> &addtnlDataLabels);
+    void run(long int nSteps, long int dataInterval, std::string init_type);
+    std::ofstream* createFile(const std::string base, const std::string dir, std::vector<double> &addtnlData, std::vector<std::string> &addtnlDataLabels);
     prefAttachModel(int n, int m, double kappa);
     ~prefAttachModel() {
 	for(int i = 0; i < n; i++) {
