@@ -123,24 +123,44 @@ must recalc graph properties as in previous initGraph(), otherwise segfault
 
 void prefAttachModel::initGraph(int **newA) {
     int i, j;
-    double max = 0, min = 100;
+    double max = -1e10, min = 1e10;
     int temp_m = 0;
     for(i = 0; i < n; i++) {
 	degs[i] = 0;
 	for(j = 0; j < n; j++) {
 	    A[i][j] = newA[i][j];
 	    degs[i] += A[i][j];
+	}
+	temp_m += degs[i];
+    }
+    temp_m /= 2;
+    int init_diff = m - temp_m;
+    double deg_diff = 1.0*m/temp_m;
+    temp_m = 0;
+    int nzeros = 0;
+    for(i = 0; i < n; i++) {
+	degs[i] = 0;
+	for(j = 0; j < n; j++) {
+	  A[i][j] = (int) (deg_diff*A[i][j] + 0.5);
+	    degs[i] += A[i][j];
+
+	    // get some additional info
+	    if(A[i][j] == 0) {
+	      nzeros++;
+	    }
 	    if(A[i][j] > max) {
 		max = A[i][j];
 	    }
 	    if(A[i][j] < min) {
 		min = A[i][j];
 	    }
+	    // end non-useful info
+
 	}
 	temp_m += degs[i];
     }
     temp_m /= 2;
-    cout << max << "," << min << "," << m-temp_m << "\n";
+    cout << max << "," << min << "," << m-temp_m << "," << init_diff << "," << nzeros << "," << deg_diff << "\n";
     m = temp_m;
 }
 

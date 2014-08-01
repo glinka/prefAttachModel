@@ -1,6 +1,10 @@
 #include <iostream>
 #include <stdlib.h>
 #include <cstring>
+#include <sstream>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "pamCPI.h"
 
 using namespace std;
@@ -18,12 +22,38 @@ long int parse_longint(const char* number) {
   return 0;
 }
 
+string itos(const int i) {
+  stringstream ss("");
+  ss << i;
+  return ss.str();
+}
+
+string create_dir(string dir_base) {
+  stringstream ss;
+  int folder_counter = 0;
+  string dir;
+    bool isdir = true;
+    struct stat stat_dir;
+    do {
+      ss.str("");
+      ss << dir_base << folder_counter << "/";
+      folder_counter++;
+      dir = ss.str();
+      int check = stat(dir.c_str(), &stat_dir);
+      if(check == -1) {
+	mkdir(dir.c_str(), 0700);
+	isdir = false;
+      }
+    } while (isdir);
+    return dir;
+}
+
 int main(int argc, char *argv[]) {
   int n = 100;
   int m = 10000;
   double kappa = 0.5;
   long int nSteps = 10000000;
-  long int dataInterval = 1000;
+  long int savetofile_interval = 1000;
   int i;
   bool project = false;
   //CPI vars
@@ -31,6 +61,7 @@ int main(int argc, char *argv[]) {
   int collectInterval = 1000;
   int offManifoldWait = 5000;
   int nMicroSteps = 20000;
+  int nruns = 1;
   string init_type = "complete";
   //parse command line args, could be moved to separate fn?
   for(i = 1; i < argc; i++) {
@@ -43,7 +74,7 @@ int main(int argc, char *argv[]) {
 	cout << "\tm : " << m << "\n";
 	cout << "\tkappa: " << kappa << "\n";
 	cout << "\tsteps: " << nSteps << "\n";
-	cout << "\tcollection_interval: " << dataInterval << "\n";
+	cout << "\tcollection_interval: " << savetofile_interval << "\n";
 	cout << "\nUse -variable_name to change values on the command line, e.g. \n./prefAttachModel -n 500 -m 250000 \nfor a 500 vertex, 250000 edge run with default kappa, steps and collection interval" << endl << endl;
 	return 0;
       }
@@ -57,10 +88,10 @@ int main(int argc, char *argv[]) {
 	kappa = atof(currentArg);
       }
       else if(currentLabel == "-s" || currentLabel == "-nSteps" || currentLabel == "-steps") {
-	nSteps = (long int) (atof(currentArg) + 0.5);// parse_longint(currentArg);
+	nSteps = (long int) (atof(currentArg) + 0.5); // parse_longint(currentArg);
       }
-      else if(currentLabel == "-di" || currentLabel == "-dataInterval" || currentLabel == "-ci" || currentLabel == "-collection_interval") {
-	dataInterval = (long int) (atof(currentArg) + 0.5);// parse_longint(currentArg);
+      else if(currentLabel == "-save_interval" || currentLabel == "-savetofile_interval" || currentLabel == "-si") {
+	savetofile_interval = (long int) (atof(currentArg) + 0.5); // parse_longint(currentArg);
       }
       else if(currentLabel == "-project") {
 	project = true;
@@ -85,15 +116,24 @@ int main(int argc, char *argv[]) {
 	init_type.assign(currentArg);
 	cout << "initial graph is type: " << init_type << endl;
       }
+      else if(currentLabel == "-nruns") {
+	nruns = atoi(currentArg);
+      }
     }
   }
   if(project) {
-       pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps);
-       model.runCPI(nSteps);
+    pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps, savetofile_interval);
+    string dir = create_dir("./cpi_data");
+    cout << "--> saving files into " << dir << endl;
+    for(i = 0; i < nruns; i++) {
+      model.runCPI(nSteps, init_type, dir, itos(i));
+    }
   }
   else {
-     prefAttachModel model(n, m, kappa);
-     model.run(nSteps, dataInterval, init_type);
+    prefAttachModel model(n, m, kappa);
+    for(i = 0; i < nruns; i++) {
+      model.run(nSteps, savetofile_interval, init_type);
+    }
   }
   return 0;
 }

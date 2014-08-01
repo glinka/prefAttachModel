@@ -1,6 +1,6 @@
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
+// #include <sys/types.h>
+// #include <sys/stat.h>
+// #include <unistd.h>
 #include <sstream>
 #include <algorithm>
 #include <cmath>
@@ -12,11 +12,20 @@
 
 using namespace std;
 
-pamCPI::pamCPI(const int n, const int m, const double kappa, const int projStep, const int collectInterval, const int offManifoldWait, const int nMicroSteps) : prefAttachModel(n, m, kappa), projStep(projStep), collectInterval(collectInterval), offManifoldWait(offManifoldWait), nMicroSteps(nMicroSteps) {
+pamCPI::pamCPI(const int n, const int m, const double kappa, const int projStep, const int collectInterval, const int offManifoldWait, const int nMicroSteps, const int save_interval) : prefAttachModel(n, m, kappa), projStep(projStep), collectInterval(collectInterval), offManifoldWait(offManifoldWait), nMicroSteps(nMicroSteps), save_interval(save_interval) {
 };
 
-void pamCPI::runCPI(const int nSteps) {
+void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, const string run_id) {
+  if(init_type == "erdos") {
     initGraph();
+  }
+  else if(init_type == "complete") {
+    init_complete_graph();
+  }
+  // initGraph() is default
+  else {
+    initGraph();
+  }
     //set up save file and write header
     vector<double> forFile;
     forFile.push_back(projStep);
@@ -29,32 +38,31 @@ void pamCPI::runCPI(const int nSteps) {
     forFileStrs.push_back("nms");
     forFileStrs.push_back("collection_interval");
     //open all the files
-    stringstream ss;
-    int folder_counter = 0;
-    string dir_base = "./csv_data";
-    string dir;
-    bool isdir = true;
-    struct stat stat_dir;
-    do {
-      ss.str("");
-      ss << dir_base << folder_counter << "/";
-      folder_counter++;
-      dir = ss.str();
-      int check = stat(dir.c_str(), &stat_dir);
-      if(check == -1) {
-	mkdir(dir.c_str(), 0700);
-	isdir = false;
-      }
-    } while (isdir);
-    ofstream* paDataCPI = createFile("paDataCPI", dir, forFile, forFileStrs);
-    ofstream* projData = createFile("projData", dir, forFile, forFileStrs);
-    ofstream* eigVectData = createFile("eigVectData", dir, forFile, forFileStrs);
-    ofstream* deg_data = createFile("deg_data", dir, forFile, forFileStrs);
-    ofstream* time_data = createFile("time_data", dir , forFile, forFileStrs);
-    cout << "-->saving files into " << dir << endl;
+    // stringstream ss;
+    // int folder_counter = 0;
+    // string dir_base = "./csv_data";
+    // string dir;
+    // bool isdir = true;
+    // struct stat stat_dir;
+    // do {
+    //   ss.str("");
+    //   ss << dir_base << folder_counter << "/";
+    //   folder_counter++;
+    //   dir = ss.str();
+    //   int check = stat(dir.c_str(), &stat_dir);
+    //   if(check == -1) {
+    // 	mkdir(dir.c_str(), 0700);
+    // 	isdir = false;
+    //   }
+    // } while (isdir);
+    ofstream* paDataCPI = createFile("paDataCPI" + run_id, dir, forFile, forFileStrs);
+    ofstream* projData = createFile("projData" + run_id, dir, forFile, forFileStrs);
+    ofstream* eigVectData = createFile("eigVectData" + run_id, dir, forFile, forFileStrs);
+    ofstream* eigval_data = createFile("eigval_data" + run_id, dir, forFile, forFileStrs);
+    ofstream* deg_data = createFile("deg_data" + run_id, dir, forFile, forFileStrs);
+    ofstream* time_data = createFile("time_data" + run_id, dir , forFile, forFileStrs);
     //after waiting for the system to reach the slow manifold, collect data every collectInterval number of steps
     int totalSteps = 0;
-    int saveDataInterval = 1000;
     while(totalSteps < nSteps) {
 	int microStep;
 	vector<graphData> toPlot;
@@ -68,9 +76,10 @@ void pamCPI::runCPI(const int nSteps) {
 	toPlot.push_back(*d);
 	degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
 	times_to_save.push_back(totalSteps);
+	totalSteps++;
 	for(microStep = 1; microStep < nMicroSteps; microStep++) {
 	    if(microStep < offManifoldWait) {
-		if((microStep+1)%saveDataInterval == 0) {
+		if((microStep+1)%save_interval == 0) {
 		  graphData* d = step(true);
 		  toPlot.push_back(*d);
 		  degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
@@ -82,9 +91,9 @@ void pamCPI::runCPI(const int nSteps) {
 	    }
 	    else {
 	      int nOnManifoldSteps = microStep - offManifoldWait;
-	      if((nOnManifoldSteps)%collectInterval == 0) {
+	      if((nOnManifoldSteps)%collectInterval == 0 || nOnManifoldSteps == nMicroSteps - offManifoldWait - 1) {
 		time.push_back(totalSteps);
-		if((microStep+1)%saveDataInterval == 0) {
+		if((microStep+1)%save_interval == 0) {
 		  graphData* d = step(true);
 		  toPlot.push_back(*d);
 		  degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
@@ -96,7 +105,7 @@ void pamCPI::runCPI(const int nSteps) {
 		}
 	      }
 	      else {
-		if((microStep+1)%saveDataInterval == 0) {
+		if((microStep+1)%save_interval == 0) {
 		  graphData* d = step(true);
 		  toPlot.push_back(*d);
 		  degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
@@ -123,7 +132,7 @@ void pamCPI::runCPI(const int nSteps) {
 		}
 	    }
 	}
-	project(data, time, projData, eigVectData);
+	project(data, time, projData, eigVectData, eigval_data);
 	int nPlotPts = toPlot.size();
 	//hooray for vlas
 	graphData toPlotAry[nPlotPts];
@@ -141,12 +150,15 @@ void pamCPI::runCPI(const int nSteps) {
 	totalSteps += projStep;
     }
     *eigVectData << endl;
+    *eigval_data << endl;
     paDataCPI->close();
     projData->close();
     eigVectData->close();
+    eigval_data->close();
     delete paDataCPI;
     delete projData;
     delete eigVectData;
+    delete eigval_data;
 }
 /**
 ******************** TODO ********************
@@ -157,7 +169,7 @@ typedef vector<vector<double>> graph;
 and pass all calcGraphProps fns a 'graph'
 **********************************************
 **/
-void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &time, ofstream* projData, ofstream* eigVectData) {
+void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &time, ofstream* projData, ofstream* eigVectData, ofstream* eigval_data) {
   //save data. this can be deleted after the damn thing runs properly
     //assert data.size() == time.size()
     int nPts = time.size();
@@ -180,9 +192,10 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
     toFitCoeffs.push_back(constOffset);
     toFitCoeffs.push_back([] (double x) { return x;});
     for(i = 0; i < n; i++) {
-	line.push_back(i);
+      line.push_back(50.0*i/n);
     }
     vector< vector< double > > coeffs_to_save;
+    vector< vector< double > > eigval_tosave;
     for(i = 0; i < nPts; i++) {
 	vector<vector<double> > currentAdjMat = data[i];
 	//want last column, corresponds to eigenvector with largest eigenvalue
@@ -200,11 +213,29 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
 	for(j = 0; j < n; j++) {
 	    leadingEigVect.push_back(eigVects[j][n-1]);
 	}
+	eigval_tosave.push_back(leadingEigVect);
 	for(j = 0; j < n; j++) {
 	  delete[] eigVects[j];
 	}
 	delete[] eigVects;
 	delete[] eigVals;
+
+
+	// TESTING
+	double recon_err = 0;
+	double max_recon_err = 0;
+	for(j = 0; j < n; j++) {
+	  for(k = 0; k < n; k++) {
+	    double err = abs(maxEigVal*leadingEigVect[j]*leadingEigVect[k] - currentAdjMat[j][k]);
+	    recon_err += err;
+	    if(err > max_recon_err) {
+	      max_recon_err = err;
+	    }
+	  }
+	}
+	// cout << recon_err << " , " << max_recon_err << endl;
+
+
 	sort(leadingEigVect.begin(), leadingEigVect.end());
 	eigVectFittedCoeffs.push_back(fitCurves::fitFx(line, leadingEigVect, toFitEigVects));
 	eigVectFittedCoeffs.back().push_back(maxEigVal);
@@ -251,7 +282,11 @@ decrease time vector to be the same during each projection, else values will bec
       }
       newCoeffs[i] = utils::average(to_average);
     }
+    // not pretty, but needed to make every time mod 100
+    coeffs_to_save.back().back() = coeffs_to_save.back().back() + 1;
 
+    coeffs_to_save.push_back(newCoeffs);
+    coeffs_to_save.back().push_back(time.back() + 1 + projStep);
     double newEigVal = newCoeffs.back();
     newCoeffs.pop_back();
     nCoeffs = newCoeffs.size();
@@ -263,11 +298,10 @@ decrease time vector to be the same during each projection, else values will bec
 	}
 	newEigVect.push_back(eval);
     }
+    eigval_tosave.push_back(newEigVect);
     int **newA = new int*[n];
-    vector<vector<double> > toSaveRecon;
     for(i = 0; i < n; i++) {
 	newA[i] = new int[n];
-	toSaveRecon.push_back(v);
 	for(j = 0; j < n; j++) {
 	    //need to round to nearest even on diag
 	    if(i == j) {
@@ -278,10 +312,18 @@ decrease time vector to be the same during each projection, else values will bec
 	    else {
 		newA[i][j] = (int) (newEigVal*newEigVect[i]*newEigVect[j] + 0.5);
 	    }
-	    toSaveRecon[i].push_back(newA[i][j]);
 	}
     }
+
     initGraph(newA);
+
+    vector<vector<double> > toSaveRecon;
+    for(i = 0; i < n; i++) {
+      toSaveRecon.push_back(vector<double>(n));
+      for(j = 0; j < n; j++) {
+	toSaveRecon[i][j] = A[i][j];
+      }
+    }
     for(i = 0; i < n; i++) {
 	delete[] newA[i];
     }
@@ -293,4 +335,5 @@ decrease time vector to be the same during each projection, else values will bec
     //save new eigvect
     sort(newEigVect.begin(), newEigVect.end());
     save_coeffs(coeffs_to_save, *eigVectData);
+    save_coeffs(eigval_tosave, *eigval_data);
 }

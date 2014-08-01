@@ -275,7 +275,10 @@ def compare_recon(data_list, params):
         postRecon = postRecon / float(ndata)
         pre_recon_degs = np.sum(preRecon, 0)
         post_recon_degs = np.sum(postRecon, 0)
-        ax.scatter(range(n), pre_recon_degs - post_recon_degs, lw=0, c=colormap.to_rgba(float(i)), alpha=0.3)
+        if i == 0 or i == npts-1:
+            ax.plot(range(n), np.sort(pre_recon_degs) -  np.sort(post_recon_degs), c=colormap.to_rgba(float(i)), lw=5)
+        else:
+            ax.plot(range(n),  np.sort(pre_recon_degs) -  np.sort(post_recon_degs), c=colormap.to_rgba(float(i)))
         pre_sort = np.argsort(pre_recon_degs)
         post_sort = np.argsort(post_recon_degs)
         preRecon = preRecon[pre_sort, :]
@@ -372,6 +375,57 @@ def animateVector(data, params, fn, fps=10, bitrate=14400, containerType='.mkv')
         ax.set_ylim((yMin, yMax))
         ax.plot(np.linspace(1,n,n), fn(data[(i)*n:(i+1)*n,:n]), marker='o', c=[1,0.5,0.5])
         fileName = genFileName('eigVals', params, str(i))
+        plt.savefig(newFolder + fileName + '.png')
+    makeAnimation(fileName, newFolder)
+
+def comp_eigvect_recon(coeffs, params, plot_name=""):
+    n = params['n']
+    proj_step = params['proj_step']
+    wait = params['off_manifold_wait']
+    nmicrosteps = params['nms']
+    collect_interval = params['collection_interval']
+    nsaves_per_proj = (nmicrosteps - wait)/collect_interval + 2
+    nprojs = (data.shape[0] - 1)/nsaves_per_proj
+    print nprojs, nsaves_per_proj
+    nvects = data.shape[1]
+    nyvects = nvects - 1
+    if plot_name is not "":
+        plot_name = plot_name + "_"
+    line = np.arange(n)
+    for i in range(nprojs):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        for j in range(nsaves_per_proj):
+            recon = np.zeros(n)
+            for k in range(nyvects-1, -1, -1):
+                recon = recon*line + coeffs[i*nsaves_per_proj + j][k]
+            if j == nsaves_per_proj-1:
+                ax.plot(range(n), recon, c='r')
+            else:
+                ax.plot(range(n), recon, c='b')
+        ax.set_title('reconstructions over time')
+        plt.savefig("eigvect_recon/" + plot_name + "eigvect_recon" + str(i) + ".png")
+
+def animate_eigvals(eigvals, params, fps=10, bitrate=14400, containerType='.mkv'):
+    n = params['n']
+    nvects = eigvals.shape[0]
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_xlabel('Index')
+    ax.set_ylabel('Eigenvalue')
+    newFolder = makeFolder('eigenvalues')
+    print 'saved in', newFolder
+    fileName = ""
+    #find y upper and lower limits
+    yMin = np.min(eigvals)
+    yMax = np.max(eigvals)
+    for i in range(nvects):    
+        ax.cla()
+        ax.set_xlabel('Index')
+        ax.set_ylabel('Eigenvalue')
+        ax.set_ylim((yMin, yMax))
+        ax.plot(np.arange(n), data[i, :], marker='o', c=[1,0.5,0.5])
+        fileName = genFileName('eigvals', params, str(i))
         plt.savefig(newFolder + fileName + '.png')
     makeAnimation(fileName, newFolder)
 
@@ -496,7 +550,7 @@ def makeDegSurface(data, params, fn):
     fig.savefig(newFolder + 'degreeSurfacen3.png')
     fig2.savefig(newFolder + 'degreeSurfacen2.png')
 
-def plot_vectors_tc(data, params):
+def plot_vectors_tc(data, params, plot_name=""):
     """ Assumes data is arranged as:
 
     vector1   vector2   vector3 ... vectorN     times
@@ -504,17 +558,29 @@ def plot_vectors_tc(data, params):
 
     and plots vectors against times
     """
+    proj_step = params['proj_step']
+    wait = params['off_manifold_wait']
+    nmicrosteps = params['nms']
+    collect_interval = params['collection_interval']
+    nsaves_per_proj = (nmicrosteps - wait)/collect_interval + 2
+    nprojs = (data.shape[0] - 1)/nsaves_per_proj
+    print nprojs, nsaves_per_proj
     nvects = data.shape[1]
     nyvects = nvects - 1
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.hold(False)
+    if plot_name is not "":
+        plot_name = plot_name + "_"
     for i in range(nyvects):
-        ax.scatter(data[:,nyvects], data[:,i], color=(np.sin(i/nyvects), np.cos(1-i/nyvects), 1-i/nyvects), label="coeff: " + str(i+1), lw=0)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        for j in range(nprojs):
+            ax.scatter(data[j*nsaves_per_proj:(j+1)*nsaves_per_proj,nyvects], data[j*nsaves_per_proj:(j+1)*nsaves_per_proj,i], c=(np.sin(float(i)/nyvects), np.cos(float(1-i)/nyvects), 1-float(i)/nyvects), label="coeff: " + str(i+1), lw=0)
+        ax.scatter(np.arange(1, nprojs+1)*(nmicrosteps + proj_step), data[np.arange(nprojs)*nsaves_per_proj + nsaves_per_proj - 1, i], lw=0, s=30, c='r')
         ax.set_xlabel('simulation step')
         ax.set_ylabel('coefficient value')
         ax.set_xlim(left=0)
-        plt.savefig("coeffs/coeff" + str(i) + ".png")
+        plt.savefig("coeffs/" + plot_name + "coeff" + str(i) + ".png")
     #ax.legend(loc=6)
 
 def plot_degree_surface(degs, times):
@@ -1420,7 +1486,8 @@ if __name__=="__main__":
     parser.add_argument('-ppr', '--parallel-plot-reconstruction', action='store_true', default=False)
     parser.add_argument('-pd', '--plot-degrees', action='store_true', default=False)
     parser.add_argument('-cp', '--compare-projection', '--comp-proj', action='store_true', default=False)
-    parser.add_argument('-coeffs', '--plot-coeffs', action='store_true', default=False)
+    parser.add_argument('--plot-coeffs', '-coeffs', action='store_true', default=False)
+    parser.add_argument('--plot-name', type=str, default="")
     parser.add_argument('-ds', '--plot-degree-surface', action='store_true', default=False)
     parser.add_argument('-dst', '--ds-time-proj', action='store_true', default=False)
     parser.add_argument('-dsv', '--ds-vertex-proj', action='store_true', default=False)
@@ -1430,6 +1497,8 @@ if __name__=="__main__":
     parser.add_argument('--plot-simple-densities', '--plot-sd', action='store_true', default=False)
     parser.add_argument('--plot-selfloop-densities', '--plot-sld', action='store_true', default=False)
     parser.add_argument('--plot-degrees-analytic', '-pda', action='store_true', default=False)
+    parser.add_argument('--animate-eigvals', action='store_true', default=False)
+    parser.add_argument('--comp-eigvect-recon', action='store_true', default=False)
     args = parser.parse_args()
     # this whole file is a huge piece of
     # the atrocities below won't be noticed
@@ -1511,7 +1580,7 @@ if __name__=="__main__":
             if args.plot_degrees:
                 makeDegSurface(data, params, gGP.getDegrees)
             if args.plot_coeffs:
-                plot_vectors_tc(data, params)
+                plot_vectors_tc(data, params, args.plot_name)
             if args.fit:
                 epsilon = 0.1
                 fns = []
@@ -1520,6 +1589,10 @@ if __name__=="__main__":
             if 'projData' in fileName:
                 data_list.append(data)
                 comp = True
+            if args.animate_eigvals:
+                animate_eigvals(data, params)
+            if args.comp_eigvect_recon:
+                comp_eigvect_recon(data, params, args.plot_name)
             # if 'eigVectData' in fileName:
                 # plotEigVectRecon(data, params)
     if comp:
