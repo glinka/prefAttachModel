@@ -126,11 +126,11 @@ int main(int argc, char *argv[]) {
     }
   }
   if(project) {
-    pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps, savetofile_interval);
     string dir = create_dir("./cpi_data");
     cout << "--> saving files into " << dir << endl;
-#pragma omp parallel for num_threads(nthreads) private(model) schedule(dynamic)
+#pragma omp parallel for num_threads(nthreads) schedule(dynamic)
     for(i = 0; i < nruns; i++) {
+      pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps, savetofile_interval);
       model.runCPI(nSteps, init_type, dir, itos(i));
     }
   }

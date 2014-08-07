@@ -1,5 +1,6 @@
 #ifndef PREFATTACH_H
 #define PREFATTACH_H
+#include <chrono>
 #include <random>
 #include <fstream>
 #include <string>
@@ -52,6 +53,44 @@ class prefAttachModel {
 	delete[] degs;
 	delete mt;
     };
+
+    // rule of three you dumbass
+ prefAttachModel(const prefAttachModel& tocopy): m(tocopy.m), kappa(tocopy.kappa), n(tocopy.n) {
+      A = new int*[n];
+      degs = new int[n];
+      for(int i = 0; i < n; i++) {
+	degs[i] = tocopy.degs[i];
+	A[i] = new int[n];
+	for(int j = 0; j < n; j++) {
+	  A[i][j] = tocopy.A[i][j];
+	}
+      }
+      unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+      mt = new std::mt19937(seed);
+      rnNormalization = (double) (mt->max()+1);
+    }
+
+    prefAttachModel& operator=(const prefAttachModel& rhs) {
+      if(this == &rhs) {
+	return *this;
+      }
+      // a wiser man would properly define some swap routine
+      // or remove the 'const'-ness of the members altogether
+      // to solve this problem of const-reassignment, but
+      // I shall take the easier path and simply assume that
+      // all such values are the same for both lhs and rhs
+      else {
+	for(int i = 0; i < n; i++) {
+	  degs[i] = rhs.degs[i];
+	  for(int j = 0; j < n; j++) {
+	    A[i][j] = rhs.A[i][j];
+	  }
+	}
+	m = rhs.m;
+	return *this;
+      }
+    }
+
 };
 
 #endif

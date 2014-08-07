@@ -3,7 +3,7 @@ OBJECTS=$(SRCS:.cc=.o)
 
 CXX = icpc 
 
-CXXFLAGS = -debug full -std=c++0x -O3 -mkl -openmp -gxx-name=/home/oakridge/holiday/build/bin/g++
+CXXFLAGS = -debug full -std=c++0x -O3 -mkl -openmp -gxx-name=/usr/bin/g++ #/home/oakridge/holiday/build/bin/g++
 # CXX = g++
 
 # CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x #-O3
