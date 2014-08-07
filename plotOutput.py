@@ -553,6 +553,18 @@ def makeDegSurface(data, params, fn):
     fig.savefig(newFolder + 'degreeSurfacen3.png')
     fig2.savefig(newFolder + 'degreeSurfacen2.png')
 
+def plot_coeffs(times, coeffs_list, plot_name=""):
+    coeffs = np.average(np.array(coeffs_list), 0)
+    n = coeffs.shape[0]
+    ncoeffs = coeffs.shape[1]
+    if plot_name is not "":
+        plot_name = plot_name + "_"
+    for i in range(ncoeffs):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.plot(times, coeffs[:,i])
+        plt.savefig("coeffs/" + plot_name + "coeff" + str(i) + ".png")
+
 def plot_vectors_tc(data, params, plot_name=""):
     """ Assumes data is arranged as:
 
@@ -1468,6 +1480,24 @@ def plot_degrees(degs, ax=None):
     ax.set_ylim((0, np.max(degs[degs != np.max(degs)])/float(n)))
     plt.show()
 
+def compare_deg_recon(pre_recon, post_recon, poly_coeffs):
+    n = pre_recon.shape[1]
+    nrecons = pre_recon.shape[0]
+    ncoeffs = poly_coeffs.shape[1]
+    indices = np.arange(n)
+    for i in range(nrecons):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.scatter(indices, np.sort(pre_recon[i,:]), lw=0, c='b')
+        ax.scatter(indices, post_recon[i,:], lw=0, c='r')
+        recon = np.zeros(n)
+        for j in range(ncoeffs):
+            recon = indices*recon + np.ones(n)*poly_coeffs[i,ncoeffs-j-1]
+        ax.plot(indices, recon, c='g')
+        plt.savefig('./deg_cpi_data/comparison' + str(i+1) + '.png')
+# 59.112032033903844, 2.5954064014015832, -0.12128778079321469, 0.0032341112645995402, -3.8690293051141307e-05, 1.6932667805213894e-07
+
+
 if __name__=="__main__":
     import argparse
     parser = argparse.ArgumentParser()
@@ -1490,6 +1520,7 @@ if __name__=="__main__":
     parser.add_argument('-pd', '--plot-degrees', action='store_true', default=False)
     parser.add_argument('-cp', '--compare-projection', '--comp-proj', action='store_true', default=False)
     parser.add_argument('--plot-coeffs', '-coeffs', action='store_true', default=False)
+    parser.add_argument('--plot-new-coeffs', action='store_true', default=False)
     parser.add_argument('--plot-name', type=str, default="")
     parser.add_argument('-ds', '--plot-degree-surface', action='store_true', default=False)
     parser.add_argument('-dst', '--ds-time-proj', action='store_true', default=False)
@@ -1502,6 +1533,7 @@ if __name__=="__main__":
     parser.add_argument('--plot-degrees-analytic', '-pda', action='store_true', default=False)
     parser.add_argument('--animate-eigvals', action='store_true', default=False)
     parser.add_argument('--comp-eigvect-recon', action='store_true', default=False)
+    parser.add_argument('--comp-deg-recon', action='store_true', default=False)
     args = parser.parse_args()
     # this whole file is a huge piece of
     # the atrocities below won't be noticed
@@ -1550,6 +1582,28 @@ if __name__=="__main__":
             elif 'time' in fileName:
                 time_data, params = get_data(fileName)
         plot_densities(density_data, time_data, params)
+    elif args.comp_deg_recon:
+        pre = None
+        post = None
+        coeffs = None
+        for fileName in args.inputFiles:
+            if 'pre' in fileName:
+                pre, params = get_data(fileName, header_rows=0)
+            elif 'post' in fileName:
+                post, params = get_data(fileName, header_rows=0)
+            elif 'coeffs' in fileName:
+                coeffs, params = get_data(fileName, header_rows=0)
+        compare_deg_recon(pre, post, coeffs)
+    elif args.plot_new_coeffs:
+        times = None
+        coeffs_list = []
+        for fileName in args.inputFiles:
+            if 'times' in fileName:
+                times, params = get_data(fileName, header_rows=1)
+            elif 'coeffs' in fileName:
+                coeffs, params = get_data(fileName, header_rows=1)
+                coeffs_list.append(coeffs)
+        plot_coeffs(times, coeffs_list, args.plot_name)
     else:
         for fileName in args.inputFiles:
             params, data = genData(fileName)

@@ -16,6 +16,21 @@ pamCPI::pamCPI(const int n, const int m, const double kappa, const int projStep,
 };
 
 void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, const string run_id) {
+  // TESTING
+  // open files once to clear them, afterwards data will be appended
+  ofstream times_out("./deg_cpi_data/times" + run_id + ".csv");
+  ofstream pre_proj_degs_out("./deg_cpi_data/pre_proj_degs" + run_id + ".csv");
+  ofstream post_proj_degs_out("./deg_cpi_data/post_proj_degs" + run_id + ".csv");
+  ofstream fitted_coeffs_out("./deg_cpi_data/fitted_coeffs" + run_id + ".csv");
+  times_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  pre_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  post_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  fitted_coeffs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  pre_proj_degs_out.close();
+  post_proj_degs_out.close();
+  fitted_coeffs_out.close();
+
+  
   if(init_type == "erdos") {
     initGraph();
   }
@@ -67,6 +82,7 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
 	int microStep;
 	vector<graphData> toPlot;
 	vector<graphData> toProject;
+	vector< vector<int> > degs_to_project;
 	vector<double> time;
 	vector< vector<int> > degs_to_save;
 	vector< int > times_to_save;
@@ -92,16 +108,19 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
 	    else {
 	      int nOnManifoldSteps = microStep - offManifoldWait;
 	      if((nOnManifoldSteps)%collectInterval == 0 || nOnManifoldSteps == nMicroSteps - offManifoldWait - 1) {
-		time.push_back(totalSteps);
 		if((microStep+1)%save_interval == 0) {
 		  graphData* d = step(true);
 		  toPlot.push_back(*d);
 		  degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
 		  times_to_save.push_back(totalSteps);
 		  toProject.push_back(*d);
+		  time.push_back(totalSteps);
+		  degs_to_project.push_back(calcGraphProps::get_degrees(A, n));
 		}
 		else {
 		  toProject.push_back(*step(true));
+		  time.push_back(totalSteps);
+		  degs_to_project.push_back(calcGraphProps::get_degrees(A, n));
 		}
 	      }
 	      else {
@@ -118,36 +137,39 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
 	    }
 	    totalSteps++;
 	}
-	//project collected data forward, save toPlot data, clear all vectors, update totalSteps
-	vector<vector<vector<double> > > data;
-	vector<vector<double> > mat;
-	vector<double> v;
-	for(vector<graphData>::iterator d = toProject.begin(); d != toProject.end(); d++) {
-	    data.push_back(mat);
-	    int i, j;
-	    for(i = 0; i < n; i++) {
-		data.back().push_back(v);
-		for(j = 0; j < n; j++) {
-		    (data.back()[i]).push_back((*d).A[i][j]);
-		}
-	    }
-	}
-	project(data, time, projData, eigVectData, eigval_data);
-	int nPlotPts = toPlot.size();
-	//hooray for vlas
-	graphData toPlotAry[nPlotPts];
-	int i;
-	for(i = 0; i < nPlotPts; i++) {
-	    toPlotAry[i] = toPlot[i];
-	}
-	saveData(toPlotAry, nPlotPts, *paDataCPI);
-	save_degrees(degs_to_save, *deg_data);
-	saveData<int>(times_to_save, *time_data);
-	degs_to_save.clear();
-	times_to_save.clear();
-	toPlot.clear();
-	toProject.clear();
+	vector<int> new_degs = project_degs(degs_to_project, time, projStep, run_id);
+	init_graph_loosehh(new_degs);
 	totalSteps += projStep;
+
+	// old projection method
+	// //project collected data forward, save toPlot data, clear all vectors, update totalSteps
+	// vector<vector<vector<double> > > data;
+	// vector<vector<double> > mat;
+	// vector<double> v;
+	// for(vector<graphData>::iterator d = toProject.begin(); d != toProject.end(); d++) {
+	//     data.push_back(mat);
+	//     int i, j;
+	//     for(i = 0; i < n; i++) {
+	// 	data.back().push_back(v);
+	// 	for(j = 0; j < n; j++) {
+	// 	    (data.back()[i]).push_back((*d).A[i][j]);
+	// 	}
+	//     }
+	// }
+	// // project(data, time, projData, eigVectData, eigval_data);
+	// int nPlotPts = toPlot.size();
+	// //hooray for vlas
+	// graphData toPlotAry[nPlotPts];
+	// int i;
+	// for(i = 0; i < nPlotPts; i++) {
+	//     toPlotAry[i] = toPlot[i];
+	// }
+	// saveData(toPlotAry, nPlotPts, *paDataCPI);
+	// save_degrees(degs_to_save, *deg_data);
+	// saveData<int>(times_to_save, *time_data);
+	// degs_to_save.clear();
+	// times_to_save.clear();
+	// toPlot.clear();
     }
     *eigVectData << endl;
     *eigval_data << endl;
@@ -336,4 +358,126 @@ decrease time vector to be the same during each projection, else values will bec
     sort(newEigVect.begin(), newEigVect.end());
     save_coeffs(coeffs_to_save, *eigVectData);
     save_coeffs(eigval_tosave, *eigval_data);
+}
+
+vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data, const std::vector<double>& times, const int proj_step, const string run_id) {
+  // if proj_step is too small due negative degree restarts, simply return the current degree distribution
+  // the choice of cutoff is arbitrary
+  // if(proj_step < m*m/2) {
+  //   return deg_data.back();
+  // }
+
+  const int n = deg_data[0].size();
+  const int npts = deg_data.size();
+
+  // add desired functions to fit to deg vs. index data
+  fxs deg_fit_fns;
+  fx const_offset = [] (double x) -> double { 
+	return 1;
+    };
+    deg_fit_fns.push_back(const_offset);
+    deg_fit_fns.push_back([] (double x) { return x;});
+    deg_fit_fns.push_back([] (double x) { return x*x;});
+    deg_fit_fns.push_back([] (double x) { return x*x*x;});
+    deg_fit_fns.push_back([] (double x) { return x*x*x*x;});
+    deg_fit_fns.push_back([] (double x) { return x*x*x*x*x;});
+    
+    vector<double> indices(n);
+    for(int i = 0; i < n; i++) {
+      indices[i] = i;
+    }
+    
+  vector< vector<double> > deg_fitted_coeffs(npts, vector<double>());
+    for(int i = 0; i < npts; i++) {
+      vector<double> degrees(deg_data[i].begin(), deg_data[i].end());
+      sort(degrees.begin(), degrees.end());
+      deg_fitted_coeffs[i] = fitCurves::fitFx(indices, degrees, deg_fit_fns);
+    }
+    
+    // fit each coefficient's evolution with a line
+    const int ncoeffs = deg_fit_fns.size();
+    fxs coeff_fit_fns;
+    coeff_fit_fns.push_back(const_offset);
+    coeff_fit_fns.push_back([] (double x) { return x;});
+    vector< vector<double> > coeff_fitted_coeffs(ncoeffs);
+    for(int i = 0; i < ncoeffs; i++) {
+      vector<double> coeff_timecourse(npts);
+      for(int j = 0; j < npts; j++) {
+	coeff_timecourse[j] = deg_fitted_coeffs[j][i];
+      }
+      coeff_fitted_coeffs[i] = fitCurves::fitFx(times, coeff_timecourse, coeff_fit_fns);
+    }
+      
+    // project data
+    vector<double> new_coeffs(ncoeffs);
+    double proj_time = times.back() + proj_step;
+    for(int i = 0; i < ncoeffs; i++) {
+      // evaluate each coefficient at the new time
+      double eval = 0;
+      for(int j = 0; j < coeff_fit_fns.size(); j++) {
+	eval += (*coeff_fit_fns[j])(proj_time)*coeff_fitted_coeffs[i][j];
+      }
+      new_coeffs[i] = eval;
+    }
+
+    // reconstruct degree distribution
+    vector<int> projected_degs(n);
+    for(int i = 0; i < n; i++) {
+      double eval = 0;
+      for(int j = 0; j < ncoeffs; j++) {
+	eval += (*deg_fit_fns[j])(indices[i])*new_coeffs[j];
+      }
+      projected_degs[i] = eval;
+    }
+    
+    // rescale to approach approximately 'm' edges
+    // allow maximum 0.1% disparity
+
+    int degcount = 0;
+    for(int i = 0; i < n; i++) {
+      degcount += projected_degs[i];
+    }
+    double deg_scaling = 2.0*m/degcount;
+    // while(std::abs(1 - deg_scaling) > 0.001) {
+    for(int i = 0; i < n; i++) {
+      projected_degs[i] = deg_scaling*projected_degs[i];
+    }
+    //   degcount = 0;
+    //   for(int i = 0; i < n; i++) {
+    // 	degcount += projected_degs[i];
+    //   }
+    //   deg_scaling = 2.0*m/degcount;
+    // }
+
+    // ensure all degrees are non-negative
+    // if a negative value is found, re-try with half the projection step
+    for(int i = 0; i < n; i++) {
+      if(projected_degs[i] < 0) {
+
+	// TESTING
+	projected_degs[i] = 0;
+
+	// return project_degs(deg_data, time, proj_step/2);
+      }
+    }
+
+   // TESTING
+    degcount = 0;
+    for(int i = 0; i < n; i++) {
+      degcount += projected_degs[i];
+    }
+
+    cout << "degree difference: " << degcount - 2*m << endl;
+
+    ofstream times_out("./deg_cpi_data/times" + run_id + ".csv");
+    ofstream pre_proj_degs_out("./deg_cpi_data/pre_proj_degs" + run_id + ".csv");
+    ofstream post_proj_degs_out("./deg_cpi_data/post_proj_degs" + run_id + ".csv");
+    ofstream fitted_coeffs_out("./deg_cpi_data/fitted_coeffs" + run_id + ".csv");
+    // truly abhorrent initialization
+    saveData(times, times_out);
+    save_coeffs(vector< vector<double> >(1, std::vector<double>(deg_data.back().begin(), deg_data.back().end())), pre_proj_degs_out);
+    save_coeffs(vector< vector<double> >(1, std::vector<double>(projected_degs.begin(), projected_degs.end())), post_proj_degs_out);
+    // save_coeffs(vector< vector<double> >(1, deg_fitted_coeffs.back()), fitted_coeffs_out);
+    save_coeffs(deg_fitted_coeffs, fitted_coeffs_out);
+    return projected_degs;
 }

@@ -4,6 +4,7 @@
 #include <chrono>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 #include "prefAttachModel.h"
 
 using namespace std;
@@ -315,15 +316,8 @@ void prefAttachModel::run(long int nSteps, long int dataInterval, string init_ty
   //take out the garbage
 }
 
-template<typename T>
-void prefAttachModel::saveData(vector < T > &data, ofstream &fileHandle) {
-  int nData = data.size();
-  for(int i = 0; i < nData; i++) {
-    fileHandle << data[i] << endl;
-  }
-}
-template void prefAttachModel::saveData<int>(vector < int > &data, ofstream &fileHandle);
-template void prefAttachModel::saveData<double>(vector < double > &data, ofstream &fileHandle);
+// template void prefAttachModel::saveData<int>(vector < int > &data, ofstream &fileHandle);
+// template void prefAttachModel::saveData<double>(vector < double > &data, ofstream &fileHandle);
 
 void prefAttachModel::save_degrees(const vector< vector<int> > &degs, ofstream &fileHandle) {
   vector<int>::const_iterator val;
@@ -522,4 +516,68 @@ double prefAttachModel::compute_selfloop_density() {
     }
   }
   return ((double) selfloop_count)/n;
+}
+
+bool reverse_comp(const double i, const double j) {
+  return (i > j);
+}
+
+void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
+  // sort in increasing order
+  sort(new_degs.begin(), new_degs.end(), reverse_comp);
+  
+  // check if the sum is even, if not, add one to largest degree
+  int degcount = 0;
+  for(int i = 0; i < n; i++) {
+    degs[i] = new_degs[i];
+    degcount += new_degs[i];
+  }
+  if(degcount % 2 != 0) {
+    new_degs.front()++;
+    degs[0]++;
+    degcount++;
+  }
+  
+  // zero everything
+  for(int i = 0; i < n; i++) {
+    for(int j = 0; j < n; j++) {
+      A[i][j] = 0;
+    }
+  }
+
+  // try to havel-hakimi the sequence
+  // recall that the result is a multigraph
+  for(int i = 0; i < n; i++) {
+    int j = 0;
+    bool deg_decrease = false;
+    while(new_degs[i] > 0) {
+      if(new_degs[(i+j+1) % n] > 0) {
+	if((((i+j+1) % n) != i) || (new_degs[(i+j+1) % n] > 1)) {
+	  A[i][(i+j+1) % n]++;
+	  A[(i+j+1) % n][i]++;
+	  new_degs[i]--;
+	  new_degs[(i+j+1) % n]--;
+	  deg_decrease = true;
+	}
+      }
+      // instead of using '(i+j+1) % n', which ends in overflow
+      // reduce j as necessary
+      if(j == n-1) {
+	j = 0;
+	deg_decrease = false;
+      }
+      else {
+	j++;
+      }
+    }
+  }
+  
+  // TESTING
+  for(int i = 0; i < n; i++) {
+    if(new_degs[i] != 0) {
+      cout << "hh was unsuccessful with deg " << new_degs[i] << " at " << i << endl;
+    }
+  }
+  cout << "deg disparity: " << degcount - 2*m << endl;
+  m = degcount/2;
 }

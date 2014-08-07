@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
   int nMicroSteps = 20000;
   int nruns = 1;
   string init_type = "complete";
+  int nthreads = 2;
   //parse command line args, could be moved to separate fn?
   for(i = 1; i < argc; i++) {
     if(argv[i][0] == '-') {
@@ -119,12 +120,16 @@ int main(int argc, char *argv[]) {
       else if(currentLabel == "-nruns") {
 	nruns = atoi(currentArg);
       }
+      else if(currentLabel == "-nthreads") {
+	nruns = atoi(currentArg);
+      }
     }
   }
   if(project) {
     pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps, savetofile_interval);
     string dir = create_dir("./cpi_data");
     cout << "--> saving files into " << dir << endl;
+#pragma omp parallel for num_threads(nthreads) private(model) schedule(dynamic)
     for(i = 0; i < nruns; i++) {
       model.runCPI(nSteps, init_type, dir, itos(i));
     }

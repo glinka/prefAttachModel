@@ -11,6 +11,7 @@ class pamCPI : public prefAttachModel {
  private:
     const int projStep, collectInterval, offManifoldWait, nMicroSteps, save_interval;
     void project(std::vector<std::vector<std::vector<double> > > &data, std::vector<double> &time, std::ofstream* projData, std::ofstream* eigVectData, std::ofstream* eigval_data);
+    std::vector<int> project_degs(const std::vector< std::vector<int> >& data, const std::vector<double>& times, const int proj_step, const std::string run_id);
 };
 
 #endif

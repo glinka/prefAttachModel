@@ -1,9 +1,12 @@
 SRCS=main.cc prefAttachModel.cc pamCPI.cc calcGraphProps.cc fitCurves.cc util_fns.cc
 OBJECTS=$(SRCS:.cc=.o)
 
-CXX = g++
+CXX = icpc 
 
-CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x -O3
+CXXFLAGS = -debug full -std=c++0x -O3 -mkl -openmp -gxx-name=/home/oakridge/holiday/build/bin/g++
+# CXX = g++
+
+# CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x #-O3
 
 all: pref_attach
 

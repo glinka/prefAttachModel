@@ -12,10 +12,9 @@ struct graphData {
 
 class prefAttachModel {
     //clean up what's protected, what's private
- private:
+ protected:
     int m;
     const double kappa;
- protected:
     const int n;
     double rnNormalization;
     int **A;
@@ -25,6 +24,7 @@ class prefAttachModel {
     void initGraph();
     void initGraph(int **newA);
     void init_complete_graph();
+    void init_graph_loosehh(std::vector<int> degs);
     graphData *step(bool saveFlag);
     int consistencyCheck();
     double simplified_edge_density();
@@ -33,7 +33,12 @@ class prefAttachModel {
     void saveData(graphData *data, int nData, std::ofstream &fileHandle);
     void saveData(std::vector<std::vector<double> > &data, std::ofstream &fileHandle);
     template <typename T>
-      void saveData(std::vector< T > &data, std::ofstream &fileHandle);
+      void saveData(const std::vector < T > &data, std::ofstream &fileHandle) {
+      int nData = data.size();
+      for(int i = 0; i < nData; i++) {
+	fileHandle << data[i] << std::endl;
+      }
+    }
     void save_coeffs(const std::vector< std::vector< double > > &data, std::ofstream &fileHandle);
  public:
     void run(long int nSteps, long int dataInterval, std::string init_type);
