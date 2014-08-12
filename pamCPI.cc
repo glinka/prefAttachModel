@@ -81,24 +81,26 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
     while(totalSteps < nSteps) {
 	int microStep;
 	vector<graphData> toPlot;
-	vector<graphData> toProject;
+	// vector<graphData> toProject;
 	vector< vector<int> > degs_to_project;
 	vector<double> time;
 	vector< vector<int> > degs_to_save;
 	vector< int > times_to_save;
 
 	// take one step and save this data, start microStep at 1
-	graphData* d = step(true);
-	toPlot.push_back(*d);
-	degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
+	// graphData* d = 
+	step(true);
+	// toPlot.push_back(*d);
+	// degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
 	times_to_save.push_back(totalSteps);
 	totalSteps++;
 	for(microStep = 1; microStep < nMicroSteps; microStep++) {
 	    if(microStep < offManifoldWait) {
 		if((microStep+1)%save_interval == 0) {
-		  graphData* d = step(true);
-		  toPlot.push_back(*d);
-		  degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
+		  // graphData* d = 
+		  step(true);
+		  // toPlot.push_back(*d);
+		  // degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
 		  times_to_save.push_back(totalSteps);
 		}
 		else {
@@ -109,25 +111,27 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
 	      int nOnManifoldSteps = microStep - offManifoldWait;
 	      if((nOnManifoldSteps)%collectInterval == 0 || nOnManifoldSteps == nMicroSteps - offManifoldWait - 1) {
 		if((microStep+1)%save_interval == 0) {
-		  graphData* d = step(true);
-		  toPlot.push_back(*d);
-		  degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
+		  // graphData* d = 
+		  step(true);
+		  // toPlot.push_back(*d);
+		  // degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
 		  times_to_save.push_back(totalSteps);
-		  toProject.push_back(*d);
+		  // toProject.push_back(*d);
 		  time.push_back(totalSteps);
 		  degs_to_project.push_back(calcGraphProps::get_degrees(A, n));
 		}
 		else {
-		  toProject.push_back(*step(true));
+		  // toProject.push_back(*step(true));
 		  time.push_back(totalSteps);
 		  degs_to_project.push_back(calcGraphProps::get_degrees(A, n));
 		}
 	      }
 	      else {
 		if((microStep+1)%save_interval == 0) {
-		  graphData* d = step(true);
-		  toPlot.push_back(*d);
-		  degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
+		  // graphData* d =
+		  step(true);
+		  // toPlot.push_back(*d);
+		  // degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
 		  times_to_save.push_back(totalSteps);
 		}
 		else {
