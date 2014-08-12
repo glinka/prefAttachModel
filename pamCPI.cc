@@ -182,8 +182,8 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
 	    }
 	  }
 	  new_degs = project_degs(degs_to_project, time, projStep, run_id);
-	  MPI_Bcast(&new_degs.front(), n, MPI_INT, root, MPI_COMM_WORLD);
 	}
+	MPI_Bcast(&new_degs.front(), n, MPI_INT, root, MPI_COMM_WORLD);
 	// end MPI
 	  
 	// vector<int> new_degs = project_degs(degs_to_project, time, projStep, run_id);
