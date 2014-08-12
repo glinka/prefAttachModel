@@ -161,7 +161,7 @@ void prefAttachModel::initGraph(int **newA) {
 	temp_m += degs[i];
     }
     temp_m /= 2;
-    cout << max << "," << min << "," << m-temp_m << "," << init_diff << "," << nzeros << "," << deg_diff << "\n";
+    // cout << max << "," << min << "," << m-temp_m << "," << init_diff << "," << nzeros << "," << deg_diff << "\n";
     m = temp_m;
 }
 
@@ -205,19 +205,19 @@ graphData *prefAttachModel::step(bool saveFlag) {
       cout << "step error" << endl;
   }
   **/
-  if(saveFlag) {
-      graphData *data = new graphData;
-      data->degSeq = new int[n];
-      data->A = new int*[n];
-      for(i = 0; i < n; i++) {
-	  data->A[i] = new int[n];
-	  data->degSeq[i] = degs[i];
-	  for(j = 0; j < n; j++) {
-	      data->A[i][j] = A[i][j];
-	  }
-      }
-      return data;
-  }
+  // if(saveFlag) {
+  //     graphData *data = new graphData;
+  //     data->degSeq = new int[n];
+  //     data->A = new int*[n];
+  //     for(i = 0; i < n; i++) {
+  // 	  data->A[i] = new int[n];
+  // 	  data->degSeq[i] = degs[i];
+  // 	  for(j = 0; j < n; j++) {
+  // 	      data->A[i][j] = A[i][j];
+  // 	  }
+  //     }
+  //     return data;
+  // }
 }
 
 ofstream* prefAttachModel::createFile(const string base, const string dir, vector<double> &addtnlData, vector<string> &addtnlDataLabels) {
@@ -255,7 +255,7 @@ void prefAttachModel::run(long int nSteps, long int dataInterval, string init_ty
     initGraph();
   }
   vector<double> forFile;
-  vector< vector<int> > degs_to_save(SAVE_INTERVAL);
+  // vector< vector<int> > degs_to_save(SAVE_INTERVAL);
   vector< long int > times_to_save(SAVE_INTERVAL);
   vector< double > densities_to_save(SAVE_INTERVAL);
   vector< double > selfloop_densities_to_save(SAVE_INTERVAL);
@@ -271,15 +271,16 @@ void prefAttachModel::run(long int nSteps, long int dataInterval, string init_ty
   int current_index = 0;
   for(long int i = 0; i < nSteps; i++) {
     if(i % dataInterval == 0) {
-      graphData *d = step(true);
-      degs_to_save[current_index] = vector<int>(d->degSeq, d->degSeq+n);
+      // graphData *d = 
+      step(true);
+      // degs_to_save[current_index] = vector<int>(d->degSeq, d->degSeq+n);
       // delete returned data
-      for(int j = 0; j < n; j++) {
-	delete[] d->A[j];
-      }
-      delete[] d->A;
-      delete[] d->degSeq;
-      delete d;
+      // for(int j = 0; j < n; j++) {
+      // 	delete[] d->A[j];
+      // }
+      // delete[] d->A;
+      // delete[] d->degSeq;
+      // delete d;
       times_to_save[current_index] = i;
       densities_to_save[current_index] = simplified_edge_density();
       selfloop_densities_to_save[current_index] = compute_selfloop_density();
@@ -287,7 +288,7 @@ void prefAttachModel::run(long int nSteps, long int dataInterval, string init_ty
       current_index++;
       if(current_index % SAVE_INTERVAL == 0) {
 	// saveData(data, SAVE_INTERVAL, paData);
-	  save_degrees(degs_to_save, *deg_data);
+	  // save_degrees(degs_to_save, *deg_data);
 	  saveData<long int>(times_to_save, *time_data);
 	  saveData< double >(densities_to_save, *density_data);
 	  saveData< double >(selfloop_densities_to_save, *selfloop_density_data);
@@ -299,7 +300,7 @@ void prefAttachModel::run(long int nSteps, long int dataInterval, string init_ty
     }
   }
 
-  save_degrees(degs_to_save, *deg_data);
+  // save_degrees(degs_to_save, *deg_data);
   saveData<long int>(times_to_save, *time_data);
   saveData<double>(densities_to_save, *density_data);
   saveData<double>(selfloop_densities_to_save, *selfloop_density_data);
@@ -575,9 +576,9 @@ void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
   // TESTING
   for(int i = 0; i < n; i++) {
     if(new_degs[i] != 0) {
-      cout << "hh was unsuccessful with deg " << new_degs[i] << " at " << i << endl;
+      // cout << "hh was unsuccessful with deg " << new_degs[i] << " at " << i << endl;
     }
   }
-  cout << "deg disparity: " << degcount - 2*m << endl;
+  // cout << "deg disparity: " << degcount - 2*m << endl;
   m = degcount/2;
 }

@@ -70,12 +70,12 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
     // 	isdir = false;
     //   }
     // } while (isdir);
-    ofstream* paDataCPI = createFile("paDataCPI" + run_id, dir, forFile, forFileStrs);
-    ofstream* projData = createFile("projData" + run_id, dir, forFile, forFileStrs);
-    ofstream* eigVectData = createFile("eigVectData" + run_id, dir, forFile, forFileStrs);
-    ofstream* eigval_data = createFile("eigval_data" + run_id, dir, forFile, forFileStrs);
-    ofstream* deg_data = createFile("deg_data" + run_id, dir, forFile, forFileStrs);
-    ofstream* time_data = createFile("time_data" + run_id, dir , forFile, forFileStrs);
+    // ofstream* paDataCPI = createFile("paDataCPI" + run_id, dir, forFile, forFileStrs);
+    // ofstream* projData = createFile("projData" + run_id, dir, forFile, forFileStrs);
+    // ofstream* eigVectData = createFile("eigVectData" + run_id, dir, forFile, forFileStrs);
+    // ofstream* eigval_data = createFile("eigval_data" + run_id, dir, forFile, forFileStrs);
+    // ofstream* deg_data = createFile("deg_data" + run_id, dir, forFile, forFileStrs);
+    // ofstream* time_data = createFile("time_data" + run_id, dir , forFile, forFileStrs);
     //after waiting for the system to reach the slow manifold, collect data every collectInterval number of steps
     int totalSteps = 0;
     while(totalSteps < nSteps) {
@@ -171,16 +171,16 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
 	// times_to_save.clear();
 	// toPlot.clear();
     }
-    *eigVectData << endl;
-    *eigval_data << endl;
-    paDataCPI->close();
-    projData->close();
-    eigVectData->close();
-    eigval_data->close();
-    delete paDataCPI;
-    delete projData;
-    delete eigVectData;
-    delete eigval_data;
+    // *eigVectData << endl;
+    // *eigval_data << endl;
+    // paDataCPI->close();
+    // projData->close();
+    // eigVectData->close();
+    // eigval_data->close();
+    // delete paDataCPI;
+    // delete projData;
+    // delete eigVectData;
+    // delete eigval_data;
 }
 /**
 ******************** TODO ********************
@@ -467,12 +467,12 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
       degcount += projected_degs[i];
     }
 
-    cout << "degree difference: " << degcount - 2*m << endl;
+    // cout << "degree difference: " << degcount - 2*m << endl;
 
-    ofstream times_out("./deg_cpi_data/times" + run_id + ".csv");
-    ofstream pre_proj_degs_out("./deg_cpi_data/pre_proj_degs" + run_id + ".csv");
-    ofstream post_proj_degs_out("./deg_cpi_data/post_proj_degs" + run_id + ".csv");
-    ofstream fitted_coeffs_out("./deg_cpi_data/fitted_coeffs" + run_id + ".csv");
+    ofstream times_out("/tigress/holiday/data/prefAttachModel/deg_cpi_data/times" + run_id + ".csv");
+    ofstream pre_proj_degs_out("/tigress/holiday/data/prefAttachModel/deg_cpi_data/pre_proj_degs" + run_id + ".csv");
+    ofstream post_proj_degs_out("/tigress/holiday/data/prefAttachModel/deg_cpi_data/post_proj_degs" + run_id + ".csv");
+    ofstream fitted_coeffs_out("/tigress/holiday/data/prefAttachModel/deg_cpi_data/fitted_coeffs" + run_id + ".csv");
     // truly abhorrent initialization
     saveData(times, times_out);
     save_coeffs(vector< vector<double> >(1, std::vector<double>(deg_data.back().begin(), deg_data.back().end())), pre_proj_degs_out);
