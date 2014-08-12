@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <mpi.h>
 #include "pamCPI.h"
 #include "calcGraphProps.h"
 #include "fitCurves.h"
@@ -141,7 +142,51 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
 	    }
 	    totalSteps++;
 	}
-	vector<int> new_degs = project_degs(degs_to_project, time, projStep, run_id);
+
+	// start MPI
+	int size, rank;
+	const int root = 0;
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	vector<int> new_degs(n);
+	if(rank != root) {
+	  int tag = 0;
+	  for(vector< vector<int> >::iterator v = degs_to_project.begin(); v != degs_to_project.end(); v++) {
+	    MPI_Send(&v->front(), n, MPI_INT, root, tag, MPI_COMM_WORLD);
+	    tag++;
+	  }
+	}
+	/* 
+	   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	       probablty should use MPI_Gather
+	   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	*/
+	// gather all (use MPI_Gather()?) degs_to_project to
+	// root process and average, then send out again to project with
+	else {
+	  for(int i = 0; i < degs_to_project.size(); i++) {
+	    vector< vector<int> > other_degs(size-1, vector<int>(n));
+	    int source = 1;
+	    for(vector< vector<int> >::iterator v = other_degs.begin(); v != other_degs.end(); v++) {
+	      MPI_Recv(&v->front(), n, MPI_INT, source, i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	      source++;
+	    }
+	    // average across all processes
+	    for(int j = 0; j < other_degs.size(); j++) {
+	      for(int k = 0; k < n; k++) {
+		degs_to_project[i][k] += other_degs[j][k];
+	      }
+	    }
+	    for(int j = 0; j < n; j++) {
+	      degs_to_project[i][j] /= size;
+	    }
+	  }
+	  new_degs = project_degs(degs_to_project, time, projStep, run_id);
+	  MPI_Bcast(&new_degs.front(), n, MPI_INT, root, MPI_COMM_WORLD);
+	}
+	// end MPI
+	  
+	// vector<int> new_degs = project_degs(degs_to_project, time, projStep, run_id);
 	init_graph_loosehh(new_degs);
 	totalSteps += projStep;
 
@@ -473,10 +518,10 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
 
     // cout << "degree difference: " << degcount - 2*m << endl;
 
-    ofstream times_out("/tigress/holiday/data/prefAttachModel/deg_cpi_data/times" + run_id + ".csv");
-    ofstream pre_proj_degs_out("/tigress/holiday/data/prefAttachModel/deg_cpi_data/pre_proj_degs" + run_id + ".csv");
-    ofstream post_proj_degs_out("/tigress/holiday/data/prefAttachModel/deg_cpi_data/post_proj_degs" + run_id + ".csv");
-    ofstream fitted_coeffs_out("/tigress/holiday/data/prefAttachModel/deg_cpi_data/fitted_coeffs" + run_id + ".csv");
+    ofstream times_out("./deg_cpi_data/times" + run_id + ".csv");
+    ofstream pre_proj_degs_out("./deg_cpi_data/pre_proj_degs" + run_id + ".csv");
+    ofstream post_proj_degs_out("./deg_cpi_data/post_proj_degs" + run_id + ".csv");
+    ofstream fitted_coeffs_out("./deg_cpi_data/fitted_coeffs" + run_id + ".csv");
     // truly abhorrent initialization
     saveData(times, times_out);
     save_coeffs(vector< vector<double> >(1, std::vector<double>(deg_data.back().begin(), deg_data.back().end())), pre_proj_degs_out);

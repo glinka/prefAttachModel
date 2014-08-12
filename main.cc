@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <mpi.h>
 #include "pamCPI.h"
 
 using namespace std;
@@ -128,11 +129,25 @@ int main(int argc, char *argv[]) {
   if(project) {
     string dir = create_dir("./cpi_data");
     cout << "--> saving files into " << dir << endl;
-#pragma omp parallel for num_threads(nthreads) schedule(dynamic)
-    for(i = 0; i < nruns; i++) {
-      pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps, savetofile_interval);
-      model.runCPI(nSteps, init_type, dir, itos(i));
+    // #pragma omp parallel for num_threads(nthreads) schedule(dynamic)
+    //     for(i = 0; i < nruns; i++) {
+    // }
+
+    // start MPI
+    int mpierr = MPI_Init(NULL, NULL);
+    if(mpierr != MPI_SUCCESS) {
+      cout << "Error initializing MPI, terminating" << endl;
+      MPI_Abort(MPI_COMM_WORLD, mpierr);
     }
+    // end MPI
+
+    pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps, savetofile_interval);
+    model.runCPI(nSteps, init_type, dir, itos(i));
+
+    // start MPI
+    MPI_Finalize();
+    // end MPI
+
   }
   else {
     prefAttachModel model(n, m, kappa);

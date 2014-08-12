@@ -1,7 +1,7 @@
 SRCS=main.cc prefAttachModel.cc pamCPI.cc calcGraphProps.cc fitCurves.cc util_fns.cc
 OBJECTS=$(SRCS:.cc=.o)
 
-CXX = icpc 
+CXX = mpic++
 
 CXXFLAGS = -I/home/holiday/build/Eigen -debug full -std=c++0x -O3 -mkl -gxx-name=/usr/bin/g++ #-openmp # #/home/oakridge/holiday/build/bin/g++
 # CXX = g++
