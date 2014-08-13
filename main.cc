@@ -118,12 +118,12 @@ int main(int argc, char *argv[]) {
 	init_type.assign(currentArg);
 	cout << "initial graph is type: " << init_type << endl;
       }
-      else if(currentLabel == "-nruns") {
-	nruns = atoi(currentArg);
-      }
-      else if(currentLabel == "-nthreads") {
-	nruns = atoi(currentArg);
-      }
+      // else if(currentLabel == "-nruns") {
+      // 	nruns = atoi(currentArg);
+      // }
+      // else if(currentLabel == "-nthreads") {
+      // 	nruns = atoi(currentArg);
+      // }
     }
   }
   if(project) {
@@ -139,6 +139,7 @@ int main(int argc, char *argv[]) {
       cout << "Error initializing MPI, terminating" << endl;
       MPI_Abort(MPI_COMM_WORLD, mpierr);
     }
+    MPI_Comm_rank(MPI_COMM_WORLD, &i);
     // end MPI
 
     pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps, savetofile_interval);

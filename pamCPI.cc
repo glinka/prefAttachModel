@@ -79,12 +79,15 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
     // ofstream* time_data = createFile("time_data" + run_id, dir , forFile, forFileStrs);
     //after waiting for the system to reach the slow manifold, collect data every collectInterval number of steps
     int totalSteps = 0;
+    ofstream selfloops_out("./deg_cpi_data/selfloop_densities" + run_id + ".csv");
+    selfloops_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
     while(totalSteps < nSteps) {
 	int microStep;
 	vector<graphData> toPlot;
 	// vector<graphData> toProject;
 	vector< vector<int> > degs_to_project;
 	vector<double> time;
+	vector<double> selfloop_densities;
 	vector< vector<int> > degs_to_save;
 	vector< int > times_to_save;
 
@@ -119,11 +122,13 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
 		  times_to_save.push_back(totalSteps);
 		  // toProject.push_back(*d);
 		  time.push_back(totalSteps);
+		  selfloop_densities.push_back(compute_selfloop_density());
 		  degs_to_project.push_back(calcGraphProps::get_degrees(A, n));
 		}
 		else {
 		  // toProject.push_back(*step(true));
 		  time.push_back(totalSteps);
+		  selfloop_densities.push_back(compute_selfloop_density());
 		  degs_to_project.push_back(calcGraphProps::get_degrees(A, n));
 		}
 	      }
@@ -190,6 +195,13 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
 	init_graph_loosehh(new_degs);
 	totalSteps += projStep;
 
+
+	// save selfloop data
+	for(int i = 0; i < selfloop_densities.size(); i++) {
+	  selfloops_out << selfloop_densities[i] << endl;
+	}
+
+
 	// old projection method
 	// //project collected data forward, save toPlot data, clear all vectors, update totalSteps
 	// vector<vector<vector<double> > > data;
@@ -219,6 +231,7 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
 	// degs_to_save.clear();
 	// times_to_save.clear();
 	// toPlot.clear();
+
     }
     // *eigVectData << endl;
     // *eigval_data << endl;
@@ -518,10 +531,10 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
 
     // cout << "degree difference: " << degcount - 2*m << endl;
 
-    ofstream times_out("./deg_cpi_data/times" + run_id + ".csv");
-    ofstream pre_proj_degs_out("./deg_cpi_data/pre_proj_degs" + run_id + ".csv");
-    ofstream post_proj_degs_out("./deg_cpi_data/post_proj_degs" + run_id + ".csv");
-    ofstream fitted_coeffs_out("./deg_cpi_data/fitted_coeffs" + run_id + ".csv");
+    ofstream times_out("./deg_cpi_data/times" + run_id + ".csv", ios_base::app);
+    ofstream pre_proj_degs_out("./deg_cpi_data/pre_proj_degs" + run_id + ".csv", ios_base::app);
+    ofstream post_proj_degs_out("./deg_cpi_data/post_proj_degs" + run_id + ".csv", ios_base::app);
+    ofstream fitted_coeffs_out("./deg_cpi_data/fitted_coeffs" + run_id + ".csv", ios_base::app);
     // truly abhorrent initialization
     saveData(times, times_out);
     save_coeffs(vector< vector<double> >(1, std::vector<double>(deg_data.back().begin(), deg_data.back().end())), pre_proj_degs_out);

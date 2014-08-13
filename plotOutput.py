@@ -1480,6 +1480,27 @@ def plot_degrees(degs, ax=None):
     ax.set_ylim((0, np.max(degs[degs != np.max(degs)])/float(n)))
     plt.show()
 
+def comp_selfloops(selfloops, times, params):
+    nms = params['nms']
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    colors = ['b', 'r', 'g', 'k', 'c']
+    nruns = len(selfloops)
+    for i in range(nruns):
+        ax.scatter(times[i], selfloops[i], c=colors[i])
+    ntimes = times[0].shape[0]
+    time = times[0]
+    j = 1
+    for i in range(ntimes-1):
+        if time[i] < j*nms and time[i+1] > j*nms:
+            ax.axvline(x=(time[i] + time[i+1])/2.0, c='k')
+            j = j + 1
+    ax.set_xlim((0, np.max(time)))
+    ax.set_xlabel('step', fontsize=24)
+    ax.set_ylabel('selfloop density', fontsize=24)
+    ax.tick_params(axis='both', which='both', labelsize=24)
+    plt.show()
+
 def compare_deg_recon(pre_recon, post_recon, poly_coeffs):
     n = pre_recon.shape[1]
     nrecons = pre_recon.shape[0]
@@ -1534,6 +1555,7 @@ if __name__=="__main__":
     parser.add_argument('--animate-eigvals', action='store_true', default=False)
     parser.add_argument('--comp-eigvect-recon', action='store_true', default=False)
     parser.add_argument('--comp-deg-recon', action='store_true', default=False)
+    parser.add_argument('--comp-selfloops', action='store_true', default=False)
     args = parser.parse_args()
     # this whole file is a huge piece of
     # the atrocities below won't be noticed
@@ -1604,6 +1626,18 @@ if __name__=="__main__":
                 coeffs, params = get_data(fileName, header_rows=1)
                 coeffs_list.append(coeffs)
         plot_coeffs(times, coeffs_list, args.plot_name)
+    elif args.comp_selfloops:
+        times = []
+        selfloops = []
+        params = None
+        for fileName in args.inputFiles:
+            if 'selfloop_densities' in fileName:
+                sl, params = get_data(fileName, header_rows=1)
+                selfloops.append(sl)
+            elif 'times' in fileName:
+                t, params = get_data(fileName, header_rows=1)
+                times.append(t)
+        comp_selfloops(selfloops, times, params)
     else:
         for fileName in args.inputFiles:
             params, data = genData(fileName)
