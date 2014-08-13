@@ -16,13 +16,20 @@ using namespace std;
 pamCPI::pamCPI(const int n, const int m, const double kappa, const int projStep, const int collectInterval, const int offManifoldWait, const int nMicroSteps, const int save_interval) : prefAttachModel(n, m, kappa), projStep(projStep), collectInterval(collectInterval), offManifoldWait(offManifoldWait), nMicroSteps(nMicroSteps), save_interval(save_interval) {
 };
 
-void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, const string run_id) {
+void pamCPI::runCPI(const int nSteps, const string init_type, const string dir_base, const string run_id, const bool new_init) {
   // TESTING
   // open files once to clear them, afterwards data will be appended
-  ofstream times_out("./deg_cpi_data/times" + run_id + ".csv");
-  ofstream pre_proj_degs_out("./deg_cpi_data/pre_proj_degs" + run_id + ".csv");
-  ofstream post_proj_degs_out("./deg_cpi_data/post_proj_degs" + run_id + ".csv");
-  ofstream fitted_coeffs_out("./deg_cpi_data/fitted_coeffs" + run_id + ".csv");
+  string dir;
+  if(new_init) {
+    dir = "withinit";
+  }
+  else {
+    dir = "noinit";
+  }
+  ofstream times_out("./" + dir + "_cpi_data/times" + run_id + ".csv");
+  ofstream pre_proj_degs_out("./" + dir + "_cpi_data/pre_proj_degs" + run_id + ".csv");
+  ofstream post_proj_degs_out("./" + dir + "_cpi_data/post_proj_degs" + run_id + ".csv");
+  ofstream fitted_coeffs_out("./" + dir + "_cpi_data/fitted_coeffs" + run_id + ".csv");
   times_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
   pre_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
   post_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
@@ -79,7 +86,7 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
     // ofstream* time_data = createFile("time_data" + run_id, dir , forFile, forFileStrs);
     //after waiting for the system to reach the slow manifold, collect data every collectInterval number of steps
     int totalSteps = 0;
-    ofstream selfloops_out("./deg_cpi_data/selfloop_densities" + run_id + ".csv");
+    ofstream selfloops_out("./" + dir + "_cpi_data/selfloop_densities" + run_id + ".csv");
     selfloops_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
     while(totalSteps < nSteps) {
 	int microStep;
@@ -186,13 +193,16 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir, 
 	      degs_to_project[i][j] /= size;
 	    }
 	  }
-	  new_degs = project_degs(degs_to_project, time, projStep, run_id);
+	  new_degs = project_degs(degs_to_project, time, projStep, run_id, dir);
 	}
 	MPI_Bcast(&new_degs.front(), n, MPI_INT, root, MPI_COMM_WORLD);
 	// end MPI
 	  
 	// vector<int> new_degs = project_degs(degs_to_project, time, projStep, run_id);
-	init_graph_loosehh(new_degs);
+	// TESTING
+	if(new_init) {
+	  init_graph_loosehh(new_degs);
+	}
 	totalSteps += projStep;
 
 
@@ -422,7 +432,7 @@ decrease time vector to be the same during each projection, else values will bec
     save_coeffs(eigval_tosave, *eigval_data);
 }
 
-vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data, const std::vector<double>& times, const int proj_step, const string run_id) {
+vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data, const std::vector<double>& times, const int proj_step, const string run_id, const string dir) {
   // if proj_step is too small due negative degree restarts, simply return the current degree distribution
   // the choice of cutoff is arbitrary
   // if(proj_step < m*m/2) {
@@ -531,10 +541,10 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
 
     // cout << "degree difference: " << degcount - 2*m << endl;
 
-    ofstream times_out("./deg_cpi_data/times" + run_id + ".csv", ios_base::app);
-    ofstream pre_proj_degs_out("./deg_cpi_data/pre_proj_degs" + run_id + ".csv", ios_base::app);
-    ofstream post_proj_degs_out("./deg_cpi_data/post_proj_degs" + run_id + ".csv", ios_base::app);
-    ofstream fitted_coeffs_out("./deg_cpi_data/fitted_coeffs" + run_id + ".csv", ios_base::app);
+    ofstream times_out("./" + dir + "_cpi_data/times" + run_id + ".csv", ios_base::app);
+    ofstream pre_proj_degs_out("./" + dir + "_cpi_data/pre_proj_degs" + run_id + ".csv", ios_base::app);
+    ofstream post_proj_degs_out("./" + dir + "_cpi_data/post_proj_degs" + run_id + ".csv", ios_base::app);
+    ofstream fitted_coeffs_out("./" + dir + "_cpi_data/fitted_coeffs" + run_id + ".csv", ios_base::app);
     // truly abhorrent initialization
     saveData(times, times_out);
     save_coeffs(vector< vector<double> >(1, std::vector<double>(deg_data.back().begin(), deg_data.back().end())), pre_proj_degs_out);

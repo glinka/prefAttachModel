@@ -1480,26 +1480,31 @@ def plot_degrees(degs, ax=None):
     ax.set_ylim((0, np.max(degs[degs != np.max(degs)])/float(n)))
     plt.show()
 
-def comp_selfloops(selfloops, times, params):
-    nms = params['nms']
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    colors = ['b', 'r', 'g', 'k', 'c']
+def comp_selfloops(selfloops, times, params, ax, **kwargs):
+    # nms = params['nms']
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # colors = ['b', 'r', 'g', 'k', 'c']
     nruns = len(selfloops)
-    for i in range(nruns):
-        ax.scatter(times[i], selfloops[i], c=colors[i])
-    ntimes = times[0].shape[0]
-    time = times[0]
-    j = 1
-    for i in range(ntimes-1):
-        if time[i] < j*nms and time[i+1] > j*nms:
-            ax.axvline(x=(time[i] + time[i+1])/2.0, c='k')
-            j = j + 1
-    ax.set_xlim((0, np.max(time)))
-    ax.set_xlabel('step', fontsize=24)
-    ax.set_ylabel('selfloop density', fontsize=24)
-    ax.tick_params(axis='both', which='both', labelsize=24)
-    plt.show()
+    n = selfloops[0].shape[0]
+    avg_selfloops = np.zeros(n)
+    for sl in selfloops:
+        avg_selfloops = avg_selfloops + sl
+    avg_selfloops = avg_selfloops/nruns
+    ax.scatter(times, avg_selfloops, **kwargs)
+    #     ax.scatter(times[i], selfloops[i], c=colors[i])
+    # ntimes = times[0].shape[0]
+    # time = times[0]
+    # j = 1
+    # for i in range(ntimes-1):
+    #     if time[i] < j*nms and time[i+1] > j*nms:
+    #         ax.axvline(x=(time[i] + time[i+1])/2.0, c='k')
+    #         j = j + 1
+    # ax.set_xlim((0, np.max(time)))
+    # ax.set_xlabel('step', fontsize=24)
+    # ax.set_ylabel('selfloop density', fontsize=24)
+    # ax.tick_params(axis='both', which='both', labelsize=24)
+    # plt.show()
 
 def compare_deg_recon(pre_recon, post_recon, poly_coeffs):
     n = pre_recon.shape[1]
@@ -1627,17 +1632,36 @@ if __name__=="__main__":
                 coeffs_list.append(coeffs)
         plot_coeffs(times, coeffs_list, args.plot_name)
     elif args.comp_selfloops:
-        times = []
-        selfloops = []
-        params = None
+        selfloops_nocpi = []
+        times_nocpi = None
+        params_nocpi = None
+        selfloops_cpi = []
+        times_cpi = None
+        params_cpi = None
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         for fileName in args.inputFiles:
-            if 'selfloop_densities' in fileName:
-                sl, params = get_data(fileName, header_rows=1)
-                selfloops.append(sl)
-            elif 'times' in fileName:
-                t, params = get_data(fileName, header_rows=1)
-                times.append(t)
-        comp_selfloops(selfloops, times, params)
+            if 'noinit' in fileName:
+                if 'selfloop_densities' in fileName:
+                    sl, params = get_data(fileName, header_rows=1)
+                    selfloops_nocpi.append(sl)
+                elif 'times' in fileName:
+                    times_nocpi, params = get_data(fileName, header_rows=1)
+            elif 'withinit' in fileName:
+                if 'selfloop_densities' in fileName:
+                    sl, params = get_data(fileName, header_rows=1)
+                    selfloops_cpi.append(sl)
+                elif 'times' in fileName:
+                    times_cpi, params = get_data(fileName, header_rows=1)
+        comp_selfloops(selfloops_cpi, times_cpi, params_cpi, ax, c='c', label='cpi', lw=0)
+        comp_selfloops(selfloops_nocpi, times_nocpi, params_nocpi, ax, c='b', label='no cpi', lw=0)
+        ax.legend()
+        ax.set_xlim((0, np.max(times_cpi)))
+        ax.set_xlabel('step', fontsize=24)
+        ax.set_ylabel('selfloop density', fontsize=24)
+        ax.tick_params(axis='both', which='both', labelsize=24)
+        plt.show()
+            
     else:
         for fileName in args.inputFiles:
             params, data = genData(fileName)

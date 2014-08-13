@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
   long int savetofile_interval = 1000;
   int i;
   bool project = false;
+  bool new_init = true;
   //CPI vars
   int projStep = 1000;
   int collectInterval = 1000;
@@ -118,6 +119,9 @@ int main(int argc, char *argv[]) {
 	init_type.assign(currentArg);
 	cout << "initial graph is type: " << init_type << endl;
       }
+      else if(currentLabel == "-withoutinit" || currentLabel == "-noinit") {
+	new_init = false;
+      }
       // else if(currentLabel == "-nruns") {
       // 	nruns = atoi(currentArg);
       // }
@@ -143,7 +147,7 @@ int main(int argc, char *argv[]) {
     // end MPI
 
     pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps, savetofile_interval);
-    model.runCPI(nSteps, init_type, dir, itos(i));
+    model.runCPI(nSteps, init_type, dir, itos(i), new_init);
 
     // start MPI
     MPI_Finalize();
