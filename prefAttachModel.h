@@ -41,6 +41,7 @@ class prefAttachModel {
       }
     }
     void save_coeffs(const std::vector< std::vector< double > > &data, std::ofstream &fileHandle);
+    void save_coeffs(const std::vector< std::vector<int> > &data, std::ofstream &fileHandle);
  public:
     void run(long int nSteps, long int dataInterval, std::string init_type);
     std::ofstream* createFile(const std::string base, const std::string dir, std::vector<double> &addtnlData, std::vector<std::string> &addtnlDataLabels);

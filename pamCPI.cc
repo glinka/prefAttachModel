@@ -547,7 +547,8 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     ofstream fitted_coeffs_out("./" + dir + "_cpi_data/fitted_coeffs" + run_id + ".csv", ios_base::app);
     // truly abhorrent initialization
     saveData(times, times_out);
-    save_coeffs(vector< vector<double> >(1, std::vector<double>(deg_data.back().begin(), deg_data.back().end())), pre_proj_degs_out);
+    // save_coeffs(vector< vector<double> >(1, std::vector<double>(deg_data.back().begin(), deg_data.back().end())), pre_proj_degs_out);
+    save_coeffs(deg_data, pre_proj_degs_out);
     save_coeffs(vector< vector<double> >(1, std::vector<double>(projected_degs.begin(), projected_degs.end())), post_proj_degs_out);
     // save_coeffs(vector< vector<double> >(1, deg_fitted_coeffs.back()), fitted_coeffs_out);
     save_coeffs(deg_fitted_coeffs, fitted_coeffs_out);

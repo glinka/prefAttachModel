@@ -1195,9 +1195,28 @@ def plot_degree_projection(degs, times):
     
 
 
-    
+def plot_vertex_projection(degs, times):
+    import matplotlib.cm as cm
+    import matplotlib.colors as colors
+    import matplotlib.colorbar as colorbar
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    n = degs.shape[1]
+    degs = np.sort(degs, 1)
+    degs = np.average(degs, 2)
+    colornorm = colors.Normalize(vmin=0, vmax=n-1)
+    colorbarnorm = colors.Normalize(vmin=0, vmax=100)
+    colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
 
-def plot_vertex_projection(degs, times, n3=True):
+    for i in range(n):
+        ax.scatter(times, degs[:, i], c=colormap.to_rgba(1.0*i), lw=0, alpha=0.8)
+    ax.set_xlim((0, np.max(times)))
+    ax.set_xlabel('step', fontsize=25)
+    ax.set_ylabel('vertex degree', fontsize=25)
+    ax.tick_params(axis='both', which='both', labelsize=24)
+    plt.show()
+
+def plot_vertex_projection_old(degs, times, n3=True):
     import matplotlib.cm as cm
     import matplotlib.colors as colors
     import matplotlib.colorbar as colorbar
@@ -1205,7 +1224,7 @@ def plot_vertex_projection(degs, times, n3=True):
     gspec = gs.GridSpec(6,6)
     deg_diff = []
     n = params['n']
-    ci = params['dataInterval']
+    ci = params['collection_interval']
     indices = np.linspace(1, n, n)
     colornorm = colors.Normalize(vmin=0, vmax=n-1)
     colorbarnorm = colors.Normalize(vmin=0, vmax=100)
@@ -1372,7 +1391,7 @@ def plot_vertex_projection_analytical(degs, times):
     gspec = gs.GridSpec(6,6)
     deg_diff = []
     n = params['n']
-    ci = params['dataInterval']
+    ci = params['collection_interval']
     indices = np.linspace(1, n, n)
     FONTSIZE = 48
     LABELSIZE = 36
@@ -1583,8 +1602,10 @@ if __name__=="__main__":
         time_data = []
         deg_data = []
         for fileName in args.inputFiles:
+            deg_data = []
             if 'deg' in fileName:
-                deg_data, params = get_data(fileName)
+                degs, params = get_data(fileName)
+                deg_data.append(degs)
             elif 'time' in fileName:
                 time_data, params = get_data(fileName)
         if args.plot_degree_surface:
@@ -1596,7 +1617,7 @@ if __name__=="__main__":
         if args.ds_vertex_proj_analytical:
             plot_vertex_projection_analytical(deg_data, time_data)
         if  args.ds_vertex_proj:
-            plot_vertex_projection(deg_data, time_data)
+            plot_vertex_projection(np.array(deg_data), time_data)
         if args.ds_degree_proj:
             plot_degree_projection(deg_data, time_data)
     elif args.plot_simple_densities or args.plot_selfloop_densities:
