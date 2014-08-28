@@ -1106,18 +1106,18 @@ def plot_degree_projection(degs, times):
 
     n = params['n']
     npts = times.shape[0]
-    npts_kept = int(0.01*npts)
+    npts_kept = int(0.02*npts)
     sorted_degs = np.sort(degs)
     maxdeg = np.amax(degs)
+    mindeg = np.min(degs)
     next_max = np.amax(sorted_degs[:,:-1])
     log_next_max = np.log(next_max)
 
     # n3
     times.shape = (npts, 1)
     thinned_sorted_degs = thin_array(sorted_degs, new_npts=npts_kept)
-    # why are there degrees of -1 !?
-    # add two to allow log-taking
-    thinned_sorted_log_degs = np.log(thinned_sorted_degs + 2)
+    # add one to allow log-taking
+    thinned_sorted_log_degs = np.log(thinned_sorted_degs + 1)
     thinned_times = thin_array(times, new_npts=npts_kept)
     nthinnedtimes = thinned_times.shape[0]
     ones_vect = np.ones(nthinnedtimes)
@@ -1125,11 +1125,11 @@ def plot_degree_projection(degs, times):
     fig1 = plt.figure()
     gspec = gs.GridSpec(6,6)
     ax = fig1.add_subplot(gspec[:,:5], axisbg='white')
-    colornorm = colors.Normalize(vmin=0, vmax=log_next_max)
+    colornorm = colors.Normalize(vmin=mindeg, vmax=maxdeg)
     colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
     # stop before last vertex, which is an outlier
     for v in range(n-1):
-        ax.scatter(thinned_times, v*ones_vect, color=colormap.to_rgba(thinned_sorted_log_degs[:, v]), lw=0, alpha=ALPHA)
+        ax.scatter(thinned_times, v*ones_vect, color=colormap.to_rgba(thinned_sorted_degs[:, v]), lw=0, alpha=ALPHA)
 
     ax.set_xlabel('step', fontsize=FONTSIZE)
     ax.set_ylabel('vertex', fontsize=FONTSIZE)
@@ -1141,25 +1141,22 @@ def plot_degree_projection(degs, times):
     ax.xaxis.get_children()[1].set_size(LABELSIZE)
 
     ax_cb = fig1.add_subplot(gspec[:, 5])
-    colorbarnorm = colors.Normalize(vmin=0, vmax=log_next_max)
-    cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colorbarnorm, orientation='vertical')
+    # colorbarnorm = colors.Normalize(vmin=0, vmax=log_next_max)
+    cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colornorm, orientation='vertical')
     ax_cb.tick_params(axis='both', which='major', labelsize=LABELSIZE)
     ax_cb.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
 
     txtcolor = ax.get_ymajorticklabels()[0].get_color()
-    fig1.text(0.78, 0.93, 'ln(degree)', fontsize=FONTSIZE-4, color=txtcolor)
+    fig1.text(0.78, 0.93, 'degree', fontsize=FONTSIZE-4, color=txtcolor)
     ax.set_title(r'$n^3$', fontsize=FONTSIZE, color=txtcolor)
     
     # n2
-    time_limit = 20*np.power(n, 2)
+    time_limit = 2*np.power(n, 3)
     i = 0
     while times[i] <= time_limit:
         i = i + 1
     max_deg = np.amax(degs[:i,:])
-    log_max_deg = np.log(max_deg)
     min_deg = np.amin(degs[:i,:])
-    log_min_deg = np.log(min_deg)
-    sorted_log_degs = np.log(sorted_degs + 2)
 
     fig2 = plt.figure()
     gspec = gs.GridSpec(6,6)
@@ -1542,7 +1539,37 @@ def compare_deg_recon(pre_recon, post_recon, poly_coeffs):
         plt.savefig('./deg_cpi_data/comparison' + str(i+1) + '.png')
 # 59.112032033903844, 2.5954064014015832, -0.12128778079321469, 0.0032341112645995402, -3.8690293051141307e-05, 1.6932667805213894e-07
 
+def deg_recon_discrepancy(times, degs, params):
+    n = params['n']
+    m = n*n/2
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    print degs.shape
+    ax.plot(times, np.sum(degs, 1)/2 - m)
+    ax.set_xlabel('step')
+    ax.set_ylabel('edge discrepancy')
+    plt.show()
 
+def compare_deg_cpi(cpi_degs, cpi_times, nocpi_degs, nocpi_times):
+    if cpi_degs.shape[0] > nocpi_degs.shape[0]:
+        l = cpi_degs
+        s = nocpi_degs
+    else:
+        l = nocpi_degs
+        s = cpi_degs
+    l_indices = [0]
+    s_indices = []
+    mutual_times = []
+    s_count = 0
+    for t in s:
+        if t in l[l_indices[-1]:]:
+            l_indices.append(np.where(l == t)[0][0])
+            s_indices.append(s_count)
+            mutual_times.append(t)
+        s_count = s_count + 1
+    l_indices.pop(0)
+    plot_degree_projection(np.abs(l[l_indices, :] - s[s_indices, :]), np.array(mutual_times))
+            
 if __name__=="__main__":
     import argparse
     parser = argparse.ArgumentParser()
@@ -1580,6 +1607,8 @@ if __name__=="__main__":
     parser.add_argument('--comp-eigvect-recon', action='store_true', default=False)
     parser.add_argument('--comp-deg-recon', action='store_true', default=False)
     parser.add_argument('--comp-selfloops', action='store_true', default=False)
+    parser.add_argument('--deg-recon-discrepancy', action='store_true', default=False)
+    parser.add_argument('--comp-deg-cpi', action='store_true', default=False)
     args = parser.parse_args()
     # this whole file is a huge piece of
     # the atrocities below won't be noticed
@@ -1602,7 +1631,6 @@ if __name__=="__main__":
         time_data = []
         deg_data = []
         for fileName in args.inputFiles:
-            deg_data = []
             if 'deg' in fileName:
                 degs, params = get_data(fileName)
                 deg_data.append(degs)
@@ -1619,7 +1647,7 @@ if __name__=="__main__":
         if  args.ds_vertex_proj:
             plot_vertex_projection(np.array(deg_data), time_data)
         if args.ds_degree_proj:
-            plot_degree_projection(deg_data, time_data)
+            plot_degree_projection(deg_data[0], time_data)
     elif args.plot_simple_densities or args.plot_selfloop_densities:
         density_data = None
         time_data = None
@@ -1642,6 +1670,17 @@ if __name__=="__main__":
             elif 'coeffs' in fileName:
                 coeffs, params = get_data(fileName, header_rows=0)
         compare_deg_recon(pre, post, coeffs)
+    elif args.deg_recon_discrepancy:
+        times = None
+        degs = None
+        params = None
+        for fileName in args.inputFiles:
+            if 'times' in fileName:
+                times, params = get_data(fileName, header_rows=1)
+            elif 'degs' in fileName:
+                degs, params = get_data(fileName, header_rows=1)
+        deg_recon_discrepancy(times, degs, params)
+        
     elif args.plot_new_coeffs:
         times = None
         coeffs_list = []
@@ -1652,6 +1691,24 @@ if __name__=="__main__":
                 coeffs, params = get_data(fileName, header_rows=1)
                 coeffs_list.append(coeffs)
         plot_coeffs(times, coeffs_list, args.plot_name)
+    elif args.comp_deg_cpi:
+        times_cpi = None
+        times_nocpi = None
+        degs_cpi = None
+        degs_nocpi = None
+        params = None
+        for fileName in args.inputFiles:
+            if 'withinit' in fileName:
+                if 'times' in fileName:
+                    times_cpi, params = get_data(fileName, header_rows=1)
+                elif 'degs' in fileName:
+                    degs_cpi, params = get_data(fileName, header_rows=1)
+            elif 'noinit' in fileName:
+                if 'times' in fileName:
+                    times_nocpi, params = get_data(fileName, header_rows=1)
+                elif 'degs' in fileName:
+                    degs_nocpi, params = get_data(fileName, header_rows=1)
+        compare_deg_cpi(degs_cpi, times_cpi, degs_nocpi, times_nocpi)
     elif args.comp_selfloops:
         selfloops_nocpi = []
         times_nocpi = None

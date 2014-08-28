@@ -55,7 +55,6 @@ int main(int argc, char *argv[]) {
   double kappa = 0.5;
   long int nSteps = 10000000;
   long int savetofile_interval = 1000;
-  int i;
   bool project = false;
   bool new_init = true;
   //CPI vars
@@ -67,7 +66,7 @@ int main(int argc, char *argv[]) {
   string init_type = "complete";
   int nthreads = 2;
   //parse command line args, could be moved to separate fn?
-  for(i = 1; i < argc; i++) {
+  for(int i = 1; i < argc; i++) {
     if(argv[i][0] == '-') {
       string currentLabel = argv[i];
       char *currentArg = argv[i+1];
@@ -132,7 +131,7 @@ int main(int argc, char *argv[]) {
   }
   if(project) {
     string dir = create_dir("./cpi_data");
-    cout << "--> saving files into " << dir << endl;
+    // cout << "--> saving files into " << dir << endl;
     // #pragma omp parallel for num_threads(nthreads) schedule(dynamic)
     //     for(i = 0; i < nruns; i++) {
     // }
@@ -143,6 +142,7 @@ int main(int argc, char *argv[]) {
       cout << "Error initializing MPI, terminating" << endl;
       MPI_Abort(MPI_COMM_WORLD, mpierr);
     }
+    int i;
     MPI_Comm_rank(MPI_COMM_WORLD, &i);
     // end MPI
 
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
   }
   else {
     prefAttachModel model(n, m, kappa);
-    for(i = 0; i < nruns; i++) {
+    for(int i = 0; i < nruns; i++) {
       model.run(nSteps, savetofile_interval, init_type);
     }
   }

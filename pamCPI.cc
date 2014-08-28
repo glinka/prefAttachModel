@@ -26,18 +26,26 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir_b
   else {
     dir = "noinit";
   }
-  ofstream times_out("./" + dir + "_cpi_data/times" + run_id + ".csv");
-  ofstream pre_proj_degs_out("./" + dir + "_cpi_data/pre_proj_degs" + run_id + ".csv");
-  ofstream post_proj_degs_out("./" + dir + "_cpi_data/post_proj_degs" + run_id + ".csv");
-  ofstream fitted_coeffs_out("./" + dir + "_cpi_data/fitted_coeffs" + run_id + ".csv");
-  times_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
-  pre_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
-  post_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
-  fitted_coeffs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
-  pre_proj_degs_out.close();
-  post_proj_degs_out.close();
-  fitted_coeffs_out.close();
 
+  // MPI Start
+  // only root process needs these files
+  const int root = 0;
+  int size, rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(rank == root) {
+    ofstream times_out("./" + dir + "_cpi_data/times" + run_id + ".csv");
+    ofstream pre_proj_degs_out("./" + dir + "_cpi_data/pre_proj_degs" + run_id + ".csv");
+    ofstream post_proj_degs_out("./" + dir + "_cpi_data/post_proj_degs" + run_id + ".csv");
+    ofstream fitted_coeffs_out("./" + dir + "_cpi_data/fitted_coeffs" + run_id + ".csv");
+    times_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+    pre_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+    post_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+    fitted_coeffs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+    pre_proj_degs_out.close();
+    post_proj_degs_out.close();
+    fitted_coeffs_out.close();
+  }
   
   if(init_type == "erdos") {
     initGraph();
@@ -120,7 +128,7 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir_b
 	    }
 	    else {
 	      int nOnManifoldSteps = microStep - offManifoldWait;
-	      if((nOnManifoldSteps)%collectInterval == 0 || nOnManifoldSteps == nMicroSteps - offManifoldWait - 1) {
+	      if((nOnManifoldSteps)%collectInterval == 0 || nOnManifoldSteps == nMicroSteps - offManifoldWait) {
 		if((microStep+1)%save_interval == 0) {
 		  // graphData* d = 
 		  step(true);
@@ -155,11 +163,16 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir_b
 	    totalSteps++;
 	}
 
+	/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	run the risk of duplicating the last elements, but
+	even if this happens, it should have a negligible effect
+	on the projection
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   */
+	time.push_back(totalSteps);
+	selfloop_densities.push_back(compute_selfloop_density());
+	degs_to_project.push_back(calcGraphProps::get_degrees(A, n));
+
 	// start MPI
-	int size, rank;
-	const int root = 0;
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	vector<int> new_degs(n);
 	if(rank != root) {
 	  int tag = 0;
@@ -202,8 +215,8 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string dir_b
 	// TESTING
 	if(new_init) {
 	  init_graph_loosehh(new_degs);
+	  totalSteps += projStep;
 	}
-	totalSteps += projStep;
 
 
 	// save selfloop data
@@ -435,9 +448,9 @@ decrease time vector to be the same during each projection, else values will bec
 vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data, const std::vector<double>& times, const int proj_step, const string run_id, const string dir) {
   // if proj_step is too small due negative degree restarts, simply return the current degree distribution
   // the choice of cutoff is arbitrary
-  // if(proj_step < m*m/2) {
-  //   return deg_data.back();
-  // }
+  if(proj_step < m) {
+    return deg_data.back();
+  }
 
   const int n = deg_data[0].size();
   const int npts = deg_data.size();
@@ -510,16 +523,32 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
       degcount += projected_degs[i];
     }
     double deg_scaling = 2.0*m/degcount;
-    // while(std::abs(1 - deg_scaling) > 0.001) {
-    for(int i = 0; i < n; i++) {
-      projected_degs[i] = deg_scaling*projected_degs[i];
+    int iters = 0, maxiters = 50;
+    while(std::abs(1 - deg_scaling) > 0.001 && iters < maxiters) {
+      for(int i = 0; i < n; i++) {
+	projected_degs[i] = deg_scaling*projected_degs[i];
+      }
+      degcount = 0;
+      for(int i = 0; i < n; i++) {
+    	degcount += projected_degs[i];
+      }
+      deg_scaling = 2.0*m/degcount;
+      iters++;
     }
-    //   degcount = 0;
-    //   for(int i = 0; i < n; i++) {
-    // 	degcount += projected_degs[i];
-    //   }
-    //   deg_scaling = 2.0*m/degcount;
-    // }
+
+    // TESTING
+    if(iters == maxiters) {
+      cout << "failed to rescale within tolerance" << endl;
+    }
+    // TESTING
+
+    // arbitrary method of preventing a steady decrease
+    // in the number of edges in the system
+    int degree_discrepancy = std::abs(degcount - 2*m);
+    int adjustment = (int) (std::copysign(1, 2*m - degcount) + std::copysign(0.5, 2*m - degcount));
+    for(int i = 0; i < degree_discrepancy; i++) {
+      projected_degs[n - i%n -1] += adjustment;
+    }
 
     // ensure all degrees are non-negative
     // if a negative value is found, re-try with half the projection step
@@ -527,25 +556,27 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
       if(projected_degs[i] < 0) {
 
 	// TESTING
-	projected_degs[i] = 0;
+	// projected_degs[i] = 0;
+	// TESTING
 
-	// return project_degs(deg_data, time, proj_step/2);
+	return project_degs(deg_data, times, proj_step/2, run_id, dir);
       }
     }
 
-   // TESTING
+    // TESTING
     degcount = 0;
     for(int i = 0; i < n; i++) {
       degcount += projected_degs[i];
     }
 
-    // cout << "degree difference: " << degcount - 2*m << endl;
+    cout << "degree difference: " << degcount - 2*m << endl;
+    // TESTING
 
     ofstream times_out("./" + dir + "_cpi_data/times" + run_id + ".csv", ios_base::app);
     ofstream pre_proj_degs_out("./" + dir + "_cpi_data/pre_proj_degs" + run_id + ".csv", ios_base::app);
     ofstream post_proj_degs_out("./" + dir + "_cpi_data/post_proj_degs" + run_id + ".csv", ios_base::app);
     ofstream fitted_coeffs_out("./" + dir + "_cpi_data/fitted_coeffs" + run_id + ".csv", ios_base::app);
-    // truly abhorrent initialization
+    // truly abhorrent constructors
     saveData(times, times_out);
     // save_coeffs(vector< vector<double> >(1, std::vector<double>(deg_data.back().begin(), deg_data.back().end())), pre_proj_degs_out);
     save_coeffs(deg_data, pre_proj_degs_out);
