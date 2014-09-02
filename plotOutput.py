@@ -42,9 +42,8 @@ def thin_array(array, frac_to_keep=0.5, new_npts=None):
             spacing = npts/new_npts
             ncols = array.shape[1]
             thinned_array = np.zeros((new_npts, ncols))
-    for j in range(ncols):
-        for i in range(new_npts):
-            thinned_array[i,j] = array[spacing*i, j]
+    for i in range(new_npts):
+        thinned_array[i,:] = array[spacing*i, :]
     return thinned_array
 
 def get_data(filename, header_rows=1, **kwargs):
@@ -562,7 +561,7 @@ def plot_coeffs(times, coeffs_list, plot_name=""):
     for i in range(ncoeffs):
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.plot(times, coeffs[:,i])
+        ax.scatter(times, coeffs[:,i], lw=0)
         plt.savefig("coeffs/" + plot_name + "coeff" + str(i) + ".png")
 
 def plot_vectors_tc(data, params, plot_name=""):
@@ -991,113 +990,67 @@ def plot_time_projection_diff(degs, times):
     # ax.set_ylim((-2100, 1000))
     plt.show()
 
-def plot_time_projection(degs, times):
+def plot_time_projection(degs, times, params, fig_title="", cmap='autumn_r', ax_fig=None, ax_cb=None):
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.cm as cm
     import matplotlib.colors as colors
     import matplotlib.colorbar as colorbar
     import matplotlib.gridspec as gs
+
+    fig = plt.figure()
     gspec = gs.GridSpec(6,6)
-    deg_diff = []
+    show = False
+    if ax_fig is None or ax_cb is None:
+        ax_fig = fig.add_subplot(gspec[:6,:5])
+        ax_cb = fig.add_subplot(gspec[:,5])
+        show = True
+    sorted_degs = np.sort(degs)
     n = params['n']
-    ci = params['dataInterval']
     indices = np.linspace(1, n, n)
-    NPLOTTED_PTS = 60
-    data_count = 0
-    ntimes = times.shape[0]
-    max_degs = [np.max(degs[i,:]) for i in range(ntimes)]
-    FONTSIZE = 48
-    LABELSIZE = 36
-    SCALESIZE = 24
-    colorbarnorm = colors.Normalize(vmin=0, vmax=times[-1])
-    colornorm = colors.Normalize(vmin=0, vmax=NPLOTTED_PTS-1)
-    colormap = cm.ScalarMappable(norm=colornorm, cmap='autumn_r')
+    nplotted_pts = 60
+    sorted_degs = thin_array(sorted_degs, new_npts=nplotted_pts)
+    times.shape = (times.shape[0], 1)
+    times = thin_array(times, new_npts=nplotted_pts)
+    times.shape = (times.shape[0],)
+ 
+    colornorm = colors.Normalize(vmin=0, vmax=nplotted_pts-1)
+    colormap = cm.ScalarMappable(norm=colornorm, cmap=cmap)
+
+    for i in range(nplotted_pts):
+        ax_fig.plot(indices, sorted_degs[i,:], lw=2, c=colormap.to_rgba(1.0*i), alpha=0.6)
+        # ax_fig.plot(indices , sorted_degs[i*PLOT_INTERVAL,:], linewidths=0, c=colormap.to_rgba(1.0*i), alpha=0.3)
+
     formatter = ticker.ScalarFormatter()
     formatter.set_scientific(True)
     formatter.set_powerlimits((-2, 2))
-    fig7 = plt.figure()
-    ax6_ = fig7.add_subplot(gspec[:6,:5])
-    ax62_ = fig7.add_subplot(gspec[:,5])
-    # n3
-    PLOT_INTERVAL = int(ntimes/NPLOTTED_PTS)
-    sorted_degs = np.sort(degs)
-    for time in range(NPLOTTED_PTS):
-        ax6_.plot(sorted_degs[time*PLOT_INTERVAL,:], indices, lw=2, c=colormap.to_rgba(1.0*time), alpha=0.6)
-        # ax6_.plot(indices , sorted_degs[time*PLOT_INTERVAL,:], linewidths=0, c=colormap.to_rgba(1.0*time), alpha=0.3)
-    cb = colorbar.ColorbarBase(ax62_, cmap='autumn_r', norm=colorbarnorm, orientation='vertical', format=formatter)
-    ax62_.yaxis.get_children()[1].set_size(SCALESIZE)
-    ax6_.set_ylabel('probability', fontsize=FONTSIZE)
-    ax6_.set_xlabel('degree', fontsize=FONTSIZE)
-    ax6_.set_ylim((0, n))
-    ax6_.set_xlim(left=0, right=2100)
-    ax6_.set_yticks([i for i in np.linspace(0, n, 11)])
-    ax6_.set_yticklabels([str(i) for i in np.linspace(0, 100, 11)/100.0])
-    textcolor = ax6_.get_ymajorticklabels()[0].get_color()
-    ax6_.set_title(r'$n^3$', fontsize=FONTSIZE, color=textcolor)
-    fig7.text(0.8, 0.94, 'time', fontsize=FONTSIZE-4, color=textcolor)
-    ax62_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
-    ax62_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
-    ax62_.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
-    ax6_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
-    ax6_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
-    # # ax6_.set_xlim((0, .68*n))
-    # # ax6_.set_ylim((0, 1400))
-    # ax6_.set_xlim((.68*n, n))
-    # ax6_.set_ylim((1000, 10000))
-    # ax6_.set_xlim((0.57*n, n))
-    # # ax6_.set_ylim((0, 2100))
-    # ax6_.set_ylim((1000, 21000))
-    # n2
-    interval_times = []
-    trimmed_degs = []
-    i = 0
-    time_limit = 20*np.power(n, 2)
-    while times[i] <= time_limit:
-        interval_times.append(times[i])
-        trimmed_degs.append(sorted_degs[i])
-        i = i + 1
-    interval_times = np.array(interval_times)
-    trimmed_degs = np.array(trimmed_degs)
-    npoints = trimmed_degs.shape[0]
-    fig6 = plt.figure()
-    ax6_ = fig6.add_subplot(gspec[:6,:5])
-    ax62_ = fig6.add_subplot(gspec[:,5])
-    PLOT_INTERVAL = int(npoints/NPLOTTED_PTS)
-    for time in range(NPLOTTED_PTS):
-        ax6_.plot(trimmed_degs[time*PLOT_INTERVAL,:], indices, lw=2, c=colormap.to_rgba(1.0*time), alpha=0.6)
-        # ax6_.plot(indices , trimmed_degs[time*PLOT_INTERVAL,:], linewidths=0, c=colormap.to_rgba(1.0*time), alpha=0.3)
-    colorbarnorm = colors.Normalize(vmin=0, vmax=interval_times[-1])
-    cb = colorbar.ColorbarBase(ax62_, cmap='autumn_r', norm=colorbarnorm, orientation='vertical', format=formatter)
-    ax62_.yaxis.get_children()[1].set_size(SCALESIZE)
-    ax6_.set_ylabel('probability', fontsize=FONTSIZE)
-    ax6_.set_xlabel('degree', fontsize=FONTSIZE)
-    ax6_.set_ylim((0, n))
-    ax6_.set_xlim(left=0, right=2100)
-    ax6_.set_yticks([i for i in np.linspace(0, n, 11)])
-    ax6_.set_yticklabels([str(i) for i in np.linspace(0, 100, 11)/100.0])
-    textcolor = ax6_.get_ymajorticklabels()[0].get_color()
-    ax6_.set_title(r'$n^2$', fontsize=FONTSIZE, color=textcolor)
-    fig6.text(0.8, 0.94, 'time', fontsize=FONTSIZE-4, color=textcolor)
-    ax62_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
-    ax62_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
-    ax62_.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
-    ax6_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
-    ax6_.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
-    # # ax6_.set_xlim((0, 0.62*n))
-    # # ax6_.set_ylim((0, 1200))
-    # ax6_.set_xlim((.62*n, n))
-    # ax6_.set_ylim((1000, 5500))
-    # ax6_.set_xlim((0.54*n, n))
-    # # ax6_.set_ylim((0, 2000))
-    # ax6_.set_ylim((1500, 12500))
-    # plt.show()
-    plt.show()
+    colorbarnorm = colors.Normalize(vmin=0, vmax=times[-1])
+    cb = colorbar.ColorbarBase(ax_cb, cmap=cmap, norm=colorbarnorm, orientation='vertical', format=formatter)
 
-def plot_degree_projection(degs, times):
+    SCALESIZE = 24
+    ax_cb.yaxis.get_children()[1].set_size(SCALESIZE)
+    FONTSIZE = 48
+    ax_fig.set_xlabel('vertex', fontsize=FONTSIZE)
+    ax_fig.set_ylabel('degree', fontsize=FONTSIZE)
+    ax_fig.set_xlim((0, n))
+    # ax_fig.set_xlim(left=)
+    # ax_fig.set_yticks([i for i in np.linspace(0, n, 11)])
+    # ax_fig.set_yticklabels([str(i) for i in np.linspace(0, 100, 11)/100.0])
+    textcolor = ax_fig.get_ymajorticklabels()[0].get_color()
+    ax_fig.set_title(fig_title, fontsize=FONTSIZE, color=textcolor)
+    ax_cb.text(0.25, 1.04, 'time', fontsize=FONTSIZE-4, color=textcolor)
+    LABELSIZE = 36
+    ax_fig.tick_params(axis='both', which='both', labelsize=LABELSIZE)
+    ax_cb.tick_params(axis='both', which='both', labelsize=LABELSIZE)
+    ax_cb.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
+    if show:
+        plt.show(fig)
+
+def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degree'):
     import matplotlib.cm as cm
     import matplotlib.colors as colors
     import matplotlib.colorbar as colorbar
     import matplotlib.gridspec as gs
+    import matplotlib.ticker as ticker
 
     FONTSIZE = 48
     LABELSIZE = 36
@@ -1106,30 +1059,32 @@ def plot_degree_projection(degs, times):
 
     n = params['n']
     npts = times.shape[0]
-    npts_kept = int(0.02*npts)
-    sorted_degs = np.sort(degs)
-    maxdeg = np.amax(degs)
-    mindeg = np.min(degs)
-    next_max = np.amax(sorted_degs[:,:-1])
-    log_next_max = np.log(next_max)
-
-    # n3
+    npts_kept = int(0.2*npts)
+    if sort:
+        sorted_degs = np.sort(degs)
+    else:
+        sorted_degs = degs
     times.shape = (npts, 1)
-    thinned_sorted_degs = thin_array(sorted_degs, new_npts=npts_kept)
-    # add one to allow log-taking
-    thinned_sorted_log_degs = np.log(thinned_sorted_degs + 1)
-    thinned_times = thin_array(times, new_npts=npts_kept)
-    nthinnedtimes = thinned_times.shape[0]
-    ones_vect = np.ones(nthinnedtimes)
+    thinned_sorted_degs = thin_array(sorted_degs, new_npts=100)
+    thinned_times = thin_array(times, new_npts=100)
+    ones_vect = np.ones(thinned_times.shape[0])
 
-    fig1 = plt.figure()
+    # next_max = np.amax(sorted_degs[:,:-1])
+    # log_next_max = np.log(next_max)
+    # add one to allow log-taking
+    # thinned_sorted_log_degs = np.log(thinned_sorted_degs + 1)
+
+    fig = plt.figure()
     gspec = gs.GridSpec(6,6)
-    ax = fig1.add_subplot(gspec[:,:5], axisbg='white')
+    ax = fig.add_subplot(gspec[:,:5], axisbg='white')
+
+    maxdeg = np.amax(thinned_sorted_degs)
+    mindeg = np.min(thinned_sorted_degs)
     colornorm = colors.Normalize(vmin=mindeg, vmax=maxdeg)
     colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
-    # stop before last vertex, which is an outlier
-    for v in range(n-1):
-        ax.scatter(thinned_times, v*ones_vect, color=colormap.to_rgba(thinned_sorted_degs[:, v]), lw=0, alpha=ALPHA)
+
+    for v in range(n):
+        ax.scatter(thinned_times, v*ones_vect, color=colormap.to_rgba(thinned_sorted_degs[:, v]), s=30, lw=0, alpha=ALPHA)
 
     ax.set_xlabel('step', fontsize=FONTSIZE)
     ax.set_ylabel('vertex', fontsize=FONTSIZE)
@@ -1140,57 +1095,19 @@ def plot_degree_projection(degs, times):
     ax.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
     ax.xaxis.get_children()[1].set_size(LABELSIZE)
 
-    ax_cb = fig1.add_subplot(gspec[:, 5])
+    ax_cb = fig.add_subplot(gspec[:, 5])
     # colorbarnorm = colors.Normalize(vmin=0, vmax=log_next_max)
-    cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colornorm, orientation='vertical')
-    ax_cb.tick_params(axis='both', which='major', labelsize=LABELSIZE)
-    ax_cb.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
+    # formatting function to prevent long decimal labels
+    format_fn = lambda val, pos: "%.2f" % val
+    cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colornorm, orientation='vertical', format=ticker.FuncFormatter(format_fn))
+    cb.set_ticks(np.linspace(mindeg, maxdeg, 5))
+    ax_cb.tick_params(axis='both', which='both', labelsize=LABELSIZE)
 
-    txtcolor = ax.get_ymajorticklabels()[0].get_color()
-    fig1.text(0.78, 0.93, 'degree', fontsize=FONTSIZE-4, color=txtcolor)
-    ax.set_title(r'$n^3$', fontsize=FONTSIZE, color=txtcolor)
+    textcolor = ax.get_ymajorticklabels()[0].get_color()
+    ax_cb.text(0.0, 1.04, cb_label, fontsize=FONTSIZE-4, color=textcolor)
+    ax.set_title(fig_title, fontsize=FONTSIZE, color=textcolor)
     
-    # n2
-    time_limit = 2*np.power(n, 3)
-    i = 0
-    while times[i] <= time_limit:
-        i = i + 1
-    max_deg = np.amax(degs[:i,:])
-    min_deg = np.amin(degs[:i,:])
-
-    fig2 = plt.figure()
-    gspec = gs.GridSpec(6,6)
-    ax = fig2.add_subplot(gspec[:,:5], axisbg='white')
-    colornorm = colors.Normalize(vmin=min_deg, vmax=max_deg)
-    colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
-
-    ones_vect = np.ones(i)
-    for v in range(n):
-        ax.scatter(times[:i], v*ones_vect, color=colormap.to_rgba(sorted_degs[:i, v]), lw=0, alpha=ALPHA, s=25)
-
-    ax.set_xlabel('step', fontsize=FONTSIZE)
-    ax.set_ylabel('vertex', fontsize=FONTSIZE)
-    ax.set_xlim((0, times[i]))
-    ax.set_ylim((0, n))
-    ax.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
-    ax.tick_params(axis='both', which='major', labelsize=LABELSIZE)
-    ax.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
-    ax.xaxis.get_children()[1].set_size(LABELSIZE)
-
-    ax_cb = fig2.add_subplot(gspec[:, 5])
-    colorbarnorm = colors.Normalize(vmin=min_deg, vmax=max_deg)
-    cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colorbarnorm, orientation='vertical')
-    ax_cb.tick_params(axis='both', which='major', labelsize=LABELSIZE)
-    ax_cb.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
-
-    txtcolor = ax.get_ymajorticklabels()[0].get_color()
-    fig2.text(0.795, 0.93, 'degree', fontsize=FONTSIZE-4, color=txtcolor)
-    ax.set_title(r'$n^2$', fontsize=FONTSIZE, color=txtcolor)
-
     plt.show()
-    
-    
-
 
 def plot_vertex_projection(degs, times):
     import matplotlib.cm as cm
@@ -1465,7 +1382,7 @@ def plot_densities(densities, times, params):
     # n2
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    time_limit = 10*np.power(n, 2)
+    time_limit = 5*(params['proj_step'] + params['nms'])
     times_short = np.array(filter(lambda t: t <= time_limit, times))
     nshorttimes = times_short.shape[0]
     ax.scatter(times_short, densities[:nshorttimes], lw=0, alpha=0.7, label='simulation')
@@ -1550,25 +1467,110 @@ def deg_recon_discrepancy(times, degs, params):
     ax.set_ylabel('edge discrepancy')
     plt.show()
 
-def compare_deg_cpi(cpi_degs, cpi_times, nocpi_degs, nocpi_times):
-    if cpi_degs.shape[0] > nocpi_degs.shape[0]:
-        l = cpi_degs
-        s = nocpi_degs
-    else:
-        l = nocpi_degs
-        s = cpi_degs
-    l_indices = [0]
-    s_indices = []
+def align_degs(cpi_times, cpi_degs, nocpi_times, nocpi_degs, nocpi_ci):
     mutual_times = []
-    s_count = 0
-    for t in s:
-        if t in l[l_indices[-1]:]:
-            l_indices.append(np.where(l == t)[0][0])
-            s_indices.append(s_count)
-            mutual_times.append(t)
-        s_count = s_count + 1
-    l_indices.pop(0)
-    plot_degree_projection(np.abs(l[l_indices, :] - s[s_indices, :]), np.array(mutual_times))
+    cpi_indices = []
+    nocpi_indices = []
+    cpi_index = 0
+    for t in cpi_times:
+        if t % nocpi_ci == 0:
+            if t <= nocpi_times[-1]:
+                cpi_indices.append(cpi_index)
+                nocpi_indices.append(t/nocpi_ci - 1)
+                mutual_times.append(t)
+        cpi_index = cpi_index + 1
+    return [np.array(mutual_times), cpi_degs[cpi_indices, :], nocpi_degs[nocpi_indices, :]]
+
+
+def compare_deg_cpi_timeproj(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_times, nocpi_params):
+    import matplotlib.gridspec as gs
+
+    nocpi_ci = nocpi_params['collection_interval']
+    mutual_times, cpi_degs, nocpi_degs = align_degs(cpi_times, cpi_degs, nocpi_times, nocpi_degs, nocpi_ci)
+    cpi_degs = np.sort(cpi_degs)
+    nocpi_degs = np.sort(nocpi_degs)
+
+    # n3
+
+    # uncomment if you want to plot more than one piece of data on the same
+    # figure, but this makes things nearly impossible to interpret
+    # gspec = gs.GridSpec(6,6)
+    # fig = plt.figure()
+    # ax_fig = fig.add_subplot(gspec[:6,:5])
+    # ax_cb = fig.add_subplot(gspec[:,5])
+    # plot_time_projection(np.abs(cpi_degs - nocpi_degs)/nocpi_degs, mutual_times, cpi_params, fig_title=r'$n^3$', cmap='jet', ax_fig=ax_fig, ax_cb=ax_cb)
+
+    plot_time_projection(cpi_degs, mutual_times, cpi_params, fig_title=r'$n^3$', cmap='jet') #, ax_cb=ax_cb, ax_fig=ax_fig)
+    plot_time_projection(nocpi_degs, mutual_times, cpi_params, fig_title=r'$n^3$', cmap='jet') #, ax_cb=ax_cb, ax_fig=ax_fig)
+    # plt.show(fig)
+
+    # n2
+
+    n = cpi_params['n']
+    time_limit = 5*(cpi_params['proj_step'] + cpi_params['nms'])
+    i = 0
+    while mutual_times[i] < time_limit:
+        i = i + 1
+
+    # fig = plt.figure()
+    # ax_fig = fig.add_subplot(gspec[:6,:5])
+    # ax_cb = fig.add_subplot(gspec[:,5])
+    # plot_time_projection(np.abs(cpi_degs[:i, :] - nocpi_degs[:i, :])/nocpi_degs[:i, :], mutual_times[:i], cpi_params, fig_title=r'$n^2$', cmap='jet', ax_fig=ax_fig, ax_cb=ax_cb)
+
+    plot_time_projection(cpi_degs[:i, :], mutual_times[:i], cpi_params, fig_title=r'$n^2$', cmap='jet') #, ax_cb=ax_cb, ax_fig=ax_fig)
+    plot_time_projection(nocpi_degs[:i, :], mutual_times[:i], cpi_params, fig_title=r'$n^2$', cmap='jet') #, ax_cb=ax_cb, ax_fig=ax_fig)
+    # plt.show(fig)
+
+def compare_deg_cpi(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_times, nocpi_params):
+    nocpi_ci = nocpi_params['collection_interval']
+    mutual_times, cpi_degs, nocpi_degs = align_degs(cpi_times, cpi_degs, nocpi_times, nocpi_degs, nocpi_ci)
+    cpi_degs = np.sort(cpi_degs)
+    nocpi_degs = np.sort(nocpi_degs)
+    # n3
+    plot_degree_projection((cpi_degs - nocpi_degs)/nocpi_degs, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error')
+    # n2
+    n = cpi_params['n']
+    time_limit = 5*(cpi_params['proj_step']+cpi_params['nms'])
+    i = 0
+    while mutual_times[i] < time_limit:
+        i = i + 1
+    plot_degree_projection((cpi_degs[:i,:] - nocpi_degs[:i,:])/nocpi_degs[:i,:], mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='relative error')
+
+def compare_deg_cpi_3d(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_times, nocpi_params):
+    from mpl_toolkits.mplot3d import Axes3D
+
+    nocpi_ci = nocpi_params['collection_interval']
+    mutual_times, cpi_degs, nocpi_degs = align_degs(cpi_times, cpi_degs, nocpi_times, nocpi_degs, nocpi_ci)
+
+    # thin arrays, 3D plotting tis expensive
+    mutual_times.shape = (mutual_times.shape[0], 1)
+    new_npts=100
+    cpi_degs = thin_array(cpi_degs, new_npts=new_npts)
+    nocpi_degs = thin_array(nocpi_degs, new_npts=new_npts)
+    mutual_times = thin_array(mutual_times, new_npts=new_npts)
+    mutual_times.shape = (mutual_times.shape[0],)
+
+    n = params['n']
+    i = 0
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    for t in mutual_times:
+        ax.plot(np.linspace(1,n,n), np.ones(n)*t, np.sort(cpi_degs[i,:]), c='r')
+        i = i + 1
+    ax.plot(np.linspace(1,n,n), np.ones(n)*mutual_times[-1], np.sort(cpi_degs[-1,:]), c='r', label='cpi')
+    i = 0
+    for t in mutual_times:
+        ax.plot(np.linspace(1,n,n), np.ones(n)*t, np.sort(nocpi_degs[i,:]), c='b')
+        i = i + 1
+    ax.plot(np.linspace(1,n,n), np.ones(n)*mutual_times[-1], np.sort(nocpi_degs[-1,:]), c='b', label='plain')
+    fs = 42
+    ax.set_xlabel('vertex', fontsize=fs)
+    ax.set_ylabel('time', fontsize=fs)
+    ax.set_zlabel('degree', fontsize=fs)
+    ax.legend(fontsize=fs)
+    ax.tick_params(axis='both', which='both', labelsize=fs)
+    plt.show()
+
             
 if __name__=="__main__":
     import argparse
@@ -1609,6 +1611,8 @@ if __name__=="__main__":
     parser.add_argument('--comp-selfloops', action='store_true', default=False)
     parser.add_argument('--deg-recon-discrepancy', action='store_true', default=False)
     parser.add_argument('--comp-deg-cpi', action='store_true', default=False)
+    parser.add_argument('--comp-deg-cpi-3d', action='store_true', default=False)
+    parser.add_argument('--comp-deg-cpi-timeproj', action='store_true', default=False)
     args = parser.parse_args()
     # this whole file is a huge piece of
     # the atrocities below won't be noticed
@@ -1630,6 +1634,7 @@ if __name__=="__main__":
     elif args.plot_degree_surface or args.ds_time_proj_diff or args.ds_time_proj or args.ds_vertex_proj_analytical or args.ds_vertex_proj or args.ds_degree_proj:
         time_data = []
         deg_data = []
+        params = None
         for fileName in args.inputFiles:
             if 'deg' in fileName:
                 degs, params = get_data(fileName)
@@ -1641,13 +1646,30 @@ if __name__=="__main__":
         if  args.ds_time_proj_diff:
             plot_time_projection_diff(deg_data, time_data)
         if args.ds_time_proj:
-            plot_time_projection(deg_data, time_data)
+            # n3
+            plot_time_projection(deg_data, time_data, params, r'$n^3$')
+            # n2
+            n = params['n']
+            time_limit = 5*(params['proj_step'] + params['nms'])
+            i = 0
+            while time_data[i] <= time_limit:
+                i = i + 1
+            plot_time_projection(deg_data[:i, :], time_data[:i], params, r'$n^2$')
         if args.ds_vertex_proj_analytical:
             plot_vertex_projection_analytical(deg_data, time_data)
         if  args.ds_vertex_proj:
             plot_vertex_projection(np.array(deg_data), time_data)
         if args.ds_degree_proj:
-            plot_degree_projection(deg_data[0], time_data)
+            # n3
+            plot_degree_projection(deg_data[0], time_data, fig_title=r'$n^3$')
+            # n2
+            n = params['n']
+            time_limit = 5*(params['proj_step'] + params['nms'])
+            i = 0
+            while time_data[i] <= time_limit:
+                i = i + 1
+            plot_degree_projection(deg_data[0][:i,:], time_data[:i], fig_title=r'$n^2$')
+                
     elif args.plot_simple_densities or args.plot_selfloop_densities:
         density_data = None
         time_data = None
@@ -1680,7 +1702,6 @@ if __name__=="__main__":
             elif 'degs' in fileName:
                 degs, params = get_data(fileName, header_rows=1)
         deg_recon_discrepancy(times, degs, params)
-        
     elif args.plot_new_coeffs:
         times = None
         coeffs_list = []
@@ -1691,24 +1712,30 @@ if __name__=="__main__":
                 coeffs, params = get_data(fileName, header_rows=1)
                 coeffs_list.append(coeffs)
         plot_coeffs(times, coeffs_list, args.plot_name)
-    elif args.comp_deg_cpi:
+    elif args.comp_deg_cpi or args.comp_deg_cpi_3d or args.comp_deg_cpi_timeproj:
         times_cpi = None
         times_nocpi = None
         degs_cpi = None
         degs_nocpi = None
-        params = None
+        cpi_params = None
+        nocpi_params = None
         for fileName in args.inputFiles:
-            if 'withinit' in fileName:
+            if 'withinit' in fileName or '08' in fileName:
                 if 'times' in fileName:
-                    times_cpi, params = get_data(fileName, header_rows=1)
+                    times_cpi, cpi_params = get_data(fileName, header_rows=1)
                 elif 'degs' in fileName:
                     degs_cpi, params = get_data(fileName, header_rows=1)
             elif 'noinit' in fileName:
                 if 'times' in fileName:
-                    times_nocpi, params = get_data(fileName, header_rows=1)
+                    times_nocpi, nocpi_params = get_data(fileName, header_rows=1)
                 elif 'degs' in fileName:
                     degs_nocpi, params = get_data(fileName, header_rows=1)
-        compare_deg_cpi(degs_cpi, times_cpi, degs_nocpi, times_nocpi)
+        if args.comp_deg_cpi:
+            compare_deg_cpi(degs_cpi, times_cpi, cpi_params, degs_nocpi, times_nocpi, nocpi_params)
+        elif args.comp_deg_cpi_3d:
+            compare_deg_cpi_3d(degs_cpi, times_cpi, cpi_params, degs_nocpi, times_nocpi, nocpi_params)
+        elif args.comp_deg_cpi_timeproj:
+            compare_deg_cpi_timeproj(degs_cpi, times_cpi, cpi_params, degs_nocpi, times_nocpi, nocpi_params)
     elif args.comp_selfloops:
         selfloops_nocpi = []
         times_nocpi = None

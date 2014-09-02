@@ -1,3 +1,4 @@
+#include <ctime>
 #include <iostream>
 #include <stdlib.h>
 #include <cstring>
@@ -130,7 +131,15 @@ int main(int argc, char *argv[]) {
     }
   }
   if(project) {
-    string dir = create_dir("./cpi_data");
+    if(!new_init) {
+      // projStep should be zero, as no
+      // projection is taking place, but
+      // if "projStep < m" project_degrees()
+      // will not run, and thus no data will be saved
+      projStep = 2*m;
+      offManifoldWait = 0;
+    }
+    // string dir = create_dir("./cpi_data");
     // cout << "--> saving files into " << dir << endl;
     // #pragma omp parallel for num_threads(nthreads) schedule(dynamic)
     //     for(i = 0; i < nruns; i++) {
@@ -144,12 +153,21 @@ int main(int argc, char *argv[]) {
     }
     int i;
     MPI_Comm_rank(MPI_COMM_WORLD, &i);
-    // end MPI
+    double start_time;
+    if(i == 0) {
+      // time from root process
+      start_time = time(NULL);
+    }
 
     pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps, savetofile_interval);
-    model.runCPI(nSteps, init_type, dir, itos(i), new_init);
+    model.runCPI(nSteps, init_type, itos(i), new_init);
 
-    // start MPI
+    if(i == 0) {
+      double end_time = time(NULL);
+      double elapsed_time = difftime(end_time, start_time);
+      cout << "Wall time: " << elapsed_time << " s" << endl;
+    }
+
     MPI_Finalize();
     // end MPI
 
