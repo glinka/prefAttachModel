@@ -13,12 +13,7 @@
 
 using namespace std;
 
-pamCPI::pamCPI(const int n, const int m, const double kappa, const int projStep, const int collectInterval, const int offManifoldWait, const int nMicroSteps, const int save_interval) : prefAttachModel(n, m, kappa), projStep(projStep), collectInterval(collectInterval), offManifoldWait(offManifoldWait), nMicroSteps(nMicroSteps), save_interval(save_interval) {
-};
-
-void pamCPI::runCPI(const int nSteps, const string init_type, const string run_id, const bool new_init) {
-  // TESTING
-  // open files once to clear them, afterwards data will be appended
+string pamCPI::create_files(const string init_type, const bool new_init, const string run_id) {
   string dir;
   if(new_init) {
     dir = "withinit";
@@ -26,28 +21,40 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
   else {
     dir = "noinit";
   }
-
   dir = "./" + dir + "_" + init_type + "_cpi_data/";
+
+  ofstream times_out(dir + "times" + run_id + ".csv");
+  ofstream pre_proj_degs_out(dir + "pre_proj_degs" + run_id + ".csv");
+  ofstream post_proj_degs_out(dir + "post_proj_degs" + run_id + ".csv");
+  ofstream fitted_coeffs_out(dir + "fitted_coeffs" + run_id + ".csv");
+  times_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  pre_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  post_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  fitted_coeffs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  pre_proj_degs_out.close();
+  post_proj_degs_out.close();
+  fitted_coeffs_out.close();
+  
+  return dir;
+}
+
+pamCPI::pamCPI(const int n, const int m, const double kappa, const int projStep, const int collectInterval, const int offManifoldWait, const int nMicroSteps, const int save_interval) : prefAttachModel(n, m, kappa), projStep(projStep), collectInterval(collectInterval), offManifoldWait(offManifoldWait), nMicroSteps(nMicroSteps), save_interval(save_interval) {
+};
+
+void pamCPI::runCPI(const int nSteps, const string init_type, const string run_id, const bool new_init) {
+  // open files once to clear them, afterwards data will be appended
+
   // MPI Start
   // only root process needs these files
   const int root = 0;
   int size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  string dir;
   if(rank == root) {
-    ofstream times_out(dir + "times" + run_id + ".csv");
-    ofstream pre_proj_degs_out(dir + "pre_proj_degs" + run_id + ".csv");
-    ofstream post_proj_degs_out(dir + "post_proj_degs" + run_id + ".csv");
-    ofstream fitted_coeffs_out(dir + "fitted_coeffs" + run_id + ".csv");
-    times_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
-    pre_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
-    post_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
-    fitted_coeffs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
-    pre_proj_degs_out.close();
-    post_proj_degs_out.close();
-    fitted_coeffs_out.close();
+    dir = create_files(init_type, new_init);  
   }
-  
+
   if(init_type == "erdos") {
     initGraph();
   }
@@ -273,7 +280,7 @@ vector<int> pamCPI::run_single_step(const vector<int>& degree_seq) {
   // based on the provided degree sequence, runs one full projective step
   // starting with the inialization of a full system up to and including
   // the new, projected degree sequence
-
+  
   init_graph_loosehh(degree_seq);
   // std::cout << "here RSS1" << std::endl;
   vector< vector<int> > degs_to_project;
@@ -312,6 +319,10 @@ vector<int> pamCPI::run_single_step(const vector<int>& degree_seq) {
   int size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  string dir;
+  if(rank == root) {
+    dir = create_files("loosehh");
+  }
   vector<int> new_degs(n);
   if(rank != root) {
     int tag = 0;
@@ -346,11 +357,11 @@ vector<int> pamCPI::run_single_step(const vector<int>& degree_seq) {
 	degs_to_project[i][j] /= size;
       }
     }
-    new_degs = project_degs(degs_to_project, time, actual_proj_step, "", "./junk");
+    new_degs = project_degs(degs_to_project, time, actual_proj_step, "", dir);
     // std::cout << "here RSS5-1" << std::endl;
   }
   // std::cout << "here RSS6-1" << std::endl;
-  MPI_Bcast(&new_degs.front(), n, MPI_INT, root, MPI_COMM_WORLD);
+  // MPI_Bcast(&new_degs.front(), n, MPI_INT, root, MPI_COMM_WORLD);
   // end MPI
 	  
   return new_degs;
@@ -535,10 +546,21 @@ decrease time vector to be the same during each projection, else values will bec
 }
 
 vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data, const std::vector<double>& times, int& proj_step, const string run_id, const string dir) {
-  // if proj_step is too small due negative degree restarts, simply return the current degree distribution
+  // if proj_step is too small due to negative degree restarts, simply return the current degree distribution
   // the choice of cutoff is arbitrary
   if(proj_step < m) {
-    return deg_data.back();
+    // as these are average degree sequences, need to ensure total degree count is conserved
+    vector<int> projected_degs = deg_data.back();
+    int degcount = 0;
+    for(int i = 0; i < n; i++) {
+      degcount += projected_degs[i];
+    }
+    int degree_discrepancy = std::abs(degcount - 2*m);
+    int adjustment = (int) (std::copysign(1, 2*m - degcount) + std::copysign(0.5, 2*m - degcount));
+    for(int i = 0; i < degree_discrepancy; i++) {
+      projected_degs[n - 1 - i%n] += adjustment;
+    }
+    return projected_degs;
   }
 
   const int n = deg_data[0].size();
@@ -642,7 +664,7 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     int degree_discrepancy = std::abs(degcount - 2*m);
     int adjustment = (int) (std::copysign(1, 2*m - degcount) + std::copysign(0.5, 2*m - degcount));
     for(int i = 0; i < degree_discrepancy; i++) {
-      projected_degs[n - i%n -1] += adjustment;
+      projected_degs[n - 1 - i%n] += adjustment;
     }
 
     // ensure all degrees are non-negative
@@ -659,10 +681,10 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     }
 
     // TESTING
-    degcount = 0;
-    for(int i = 0; i < n; i++) {
-      degcount += projected_degs[i];
-    }
+    // degcount = 0;
+    // for(int i = 0; i < n; i++) {
+    //   degcount += projected_degs[i];
+    // }
 
     // cout << "degree difference: " << degcount - 2*m << endl;
     // TESTING

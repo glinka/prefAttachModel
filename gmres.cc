@@ -223,7 +223,6 @@ Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::Vec
 namespace la {
 
   Eigen::VectorXd v_next(const Eigen::VectorXd& x, const Eigen::VectorXd& w, const double h, Eigen::VectorXd (*F)(const Eigen::VectorXd&, pamCPI), pamCPI model) {
-    std::cout << "vnext1" << std::endl;
     return w.norm()*(F(x + h*x.norm()*w/(w.norm()), model) - F(x, model))/(h*x.norm());
   }
 
@@ -236,14 +235,12 @@ namespace la {
   // "init" because often we will be solving DF(x) dx = F(x) where
   // the initial guess for dx is 0
   Eigen::VectorXd v_next_init(const Eigen::VectorXd& x, const Eigen::VectorXd& w, const double h, Eigen::VectorXd (*F)(const Eigen::VectorXd&, pamCPI), pamCPI model) {
-    std::cout << "vnext2" << std::endl;
     return Eigen::VectorXd::Zero(x.size());
   }
 }
 
 Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::VectorXd&, pamCPI), const Eigen::VectorXd& x, const Eigen::VectorXd& x0, const double dx, pamCPI model) const {
   Eigen::VectorXd b = F(x, model);
-  std::cout << "gmres1" << std::endl;
   const int n = b.size();
   /*
     V will store the basis vectors for
@@ -271,7 +268,6 @@ Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::Vec
   else {
     r = b - v_next(x, x0, dx, F, model);
   }    
-  std::cout << "gmres2" << std::endl;
   V.col(0) = r/r.norm();
   std::cout << "V_0 sum: " << V.col(0).sum() << std::endl;
   double rho = r.norm();
@@ -288,7 +284,6 @@ Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::Vec
     k++;
     V.col(k+1) = v_next(x, V.col(k), dx, F, model);
     std::cout << "V_" << k+2 << " 1-norm: " << V.col(k+1).sum() << std::endl;
-    std::cout << "gmres3" << std::endl;
     for(int j = 0; j < k+1; j++) {
       h(j) = V.col(k+1).dot(V.col(j));
       V.col(k+1) -= h(j)*V.col(j);
@@ -323,7 +318,6 @@ Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::Vec
       H(i, k) = h(i);
     }
     rho = abs(g(k+1));
-    std::cout << "gmres4" << std::endl;
   }
   Eigen::VectorXd y(k+2);
   y(k+1) = 1;

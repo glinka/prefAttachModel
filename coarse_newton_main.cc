@@ -17,14 +17,12 @@ int main(int argc, char** argv) {
   int n = 100;
   int m = 10000;
   double kappa = 1.0;
-  long int nsteps = 10000000;
   long int savetofile_interval = 1000;
   bool new_init = true;
   int proj_step = 50000;
   int collect_interval = 5000;
   int off_manifold_wait = 20000;
   int nmicrosteps = 100000;
-  int nruns = 1;
   double h = 0.1;
   std::string init_type = "erdos";
   //parse command line args, could be moved to separate fn?
@@ -40,9 +38,6 @@ int main(int argc, char** argv) {
       }
       else if(current_label == "-k" || current_label == "-kappa") {
 	kappa = std::atof(current_arg);
-      }
-      else if(current_label == "-s" || current_label == "-nsteps" || current_label == "-steps") {
-	nsteps = (long int) (std::atof(current_arg) + 0.5); // parse_longint(current_arg);
       }
       else if(current_label == "-save_interval" || current_label == "-savetofile_interval" || current_label == "-si") {
 	savetofile_interval = (long int) (std::atof(current_arg) + 0.5); // parse_longint(current_arg);
@@ -85,7 +80,6 @@ int main(int argc, char** argv) {
   int i;
   MPI_Comm_rank(MPI_COMM_WORLD, &i);
   double start_time;
-  // std::cout << "here(-1)" << std::endl;
   pamCPI model(n, m, kappa, proj_step, collect_interval, off_manifold_wait, nmicrosteps, savetofile_interval);
   if(init_type == "erdos") {
     model.initGraph();
@@ -97,9 +91,8 @@ int main(int argc, char** argv) {
     // time from root process
     start_time = time(NULL);
     // root process is responsible for running newton-gmres
-    Newton newton(1e-6, 1e-6, 100);
-    // std::cout << "here1" << std::endl;
-    Eigen::VectorXd x = newton.find_zero(newton_wrapper::F, n*Eigen::VectorXd::Ones(n), 0.1, GMRES(1e-6, 75), model);
+    Newton newton(1e-2, 10, 100);
+    Eigen::VectorXd x = newton.find_zero(newton_wrapper::F, n*Eigen::VectorXd::Ones(n), h, GMRES(1e-3, 75), model);
     std::cout << "HERRRRRRRRRRRRR" << std::endl;
     // stop other processes from receiving input
     bool receive_data = false;
@@ -115,21 +108,15 @@ int main(int argc, char** argv) {
     int deg_seq[n];
 
     bool receive_data;
-    // std::cout << "here3" << std::endl;
     MPI_Bcast(&receive_data, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    // std::cout << "here4 " << n << std::endl;
     while(receive_data) {
-      // std::cout << "here4.1" << std::endl;
 
       // MPI_Bcast(&deg_seq.front(), n, MPI_INT, 0, MPI_COMM_WORLD);
       MPI_Bcast(deg_seq, n, MPI_INT, 0, MPI_COMM_WORLD);
 
-      // std::cout << "here5" << std::endl;
-
       // std::vector<int> new_deq_seq = model.run_single_step(deg_seq);
       std::vector<int> new_deq_seq = model.run_single_step(std::vector<int>(deg_seq, deg_seq + n));
    
-      // std::cout << "here6" << std::endl;
       MPI_Bcast(&receive_data, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }
   }

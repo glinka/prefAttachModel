@@ -16,29 +16,26 @@ namespace newton_wrapper {
     // returns x - \Phi(x) where 'x' is a degree sequence
     // and \Phi(x) is a single coarse step, taken with run_single_step()
     
-    // std::cout << "here F1" << std::endl;
     const int n = deg_seq.size();
     std::vector<int> deg_seq_copy(deg_seq.data(), deg_seq.data() + n);
     bool receive_data = true;
     MPI_Bcast(&receive_data, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    std::cout << "Degs span in: " << deg_seq_copy.front() << " " << deg_seq_copy.back() << std::endl;
     MPI_Bcast(&deg_seq_copy.front(), n, MPI_INT, 0, MPI_COMM_WORLD);
-    // std::cout << "here F3" << std::endl;
     std::vector<int> projected_deg_seq_copy = model.run_single_step(deg_seq_copy);
-    std::cout << "Degs span out: " << projected_deg_seq_copy.front() << " " << projected_deg_seq_copy.back() << std::endl;    // std::cout << "here F4" << std::endl;
 
     // sort both, and return difference of sorted sequences
     std::sort(deg_seq_copy.begin(), deg_seq_copy.end());
     std::sort(projected_deg_seq_copy.begin(), projected_deg_seq_copy.end());
+    std::cout << "Degs span in: " << deg_seq_copy.front() << " " << deg_seq_copy.back() << std::endl;
+    std::cout << "Degs span out: " << projected_deg_seq_copy.front() << " " << projected_deg_seq_copy.back() << std::endl;
     Eigen::VectorXd projected_deg_seq(n);
     Eigen::VectorXd sorted_deg_seq(n);
     for(int i = 0; i < n; i++) {
       projected_deg_seq(i) = projected_deg_seq_copy[i];
       sorted_deg_seq(i) = deg_seq_copy[i];
     }
-
-    std::cout << "1-norm of F(x): " << deg_seq.sum() - projected_deg_seq.sum() << std::endl;
-
+    // std::cout << "1-norm of F(x): " << sorted_deg_seq.sum() - projected_deg_seq.sum() << std::endl;
+    std::cout << "m: " << sorted_deg_seq.sum()/2 << std::endl;
     return sorted_deg_seq - projected_deg_seq;
   }
 }

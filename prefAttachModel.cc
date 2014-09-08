@@ -555,7 +555,6 @@ void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
   // recall that the result is a multigraph
   for(int i = 0; i < n; i++) {
     int j = 0;
-    bool deg_decrease = false;
     while(new_degs[i] > 0) {
       if(new_degs[(i+j+1) % n] > 0) {
 	if((((i+j+1) % n) != i) || (new_degs[(i+j+1) % n] > 1)) {
@@ -563,14 +562,12 @@ void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
 	  A[(i+j+1) % n][i]++;
 	  new_degs[i]--;
 	  new_degs[(i+j+1) % n]--;
-	  deg_decrease = true;
 	}
       }
       // instead of using '(i+j+1) % n', which ends in overflow
       // reduce j as necessary
       if(j == n-1) {
 	j = 0;
-	deg_decrease = false;
       }
       else {
 	j++;

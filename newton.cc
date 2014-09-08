@@ -48,7 +48,6 @@ Eigen::VectorXd Newton::find_zero(Eigen::VectorXd (*F)(const Eigen::VectorXd&), 
 
 Eigen::VectorXd Newton::find_zero(Eigen::VectorXd (*F)(const Eigen::VectorXd&, pamCPI), const Eigen::VectorXd& x0, const double dx, const GMRES& ls, pamCPI model) const {
   const int n = x0.size();
-  std::cout << "here newton1" << std::endl;
   double r0 = F(x0, model).norm();
   double r = r0;
   Eigen::VectorXd zeros = Eigen::VectorXd::Zero(n);
@@ -56,9 +55,8 @@ Eigen::VectorXd Newton::find_zero(Eigen::VectorXd (*F)(const Eigen::VectorXd&, p
   int iters = 0;
   while(r > r0*tol_rel_ + tol_abs_ && iters < itermax_) {
     // default to initial x = {0, 0, ..., 0}
-    std::cout << "here newton2" << std::endl;
+    std::cout << "newton residual: " << r << std::endl;
     x += ls.solve_linear_system(F, x, zeros, dx, model);
-    std::cout << "here newton3" << std::endl;
     r = F(x, model).norm();
     iters++;
   }
