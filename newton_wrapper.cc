@@ -26,8 +26,8 @@ namespace newton_wrapper {
     // sort both, and return difference of sorted sequences
     std::sort(deg_seq_copy.begin(), deg_seq_copy.end());
     std::sort(projected_deg_seq_copy.begin(), projected_deg_seq_copy.end());
-    std::cout << "Degs span in: " << deg_seq_copy.front() << " " << deg_seq_copy.back() << std::endl;
-    std::cout << "Degs span out: " << projected_deg_seq_copy.front() << " " << projected_deg_seq_copy.back() << std::endl;
+    // std::cout << "Degs span in: " << deg_seq_copy.front() << " " << deg_seq_copy.back() << std::endl;
+    // std::cout << "Degs span out: " << projected_deg_seq_copy.front() << " " << projected_deg_seq_copy.back() << std::endl;
     Eigen::VectorXd projected_deg_seq(n);
     Eigen::VectorXd sorted_deg_seq(n);
     for(int i = 0; i < n; i++) {

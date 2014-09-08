@@ -269,9 +269,10 @@ Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::Vec
     r = b - v_next(x, x0, dx, F, model);
   }    
   V.col(0) = r/r.norm();
-  std::cout << "V_0 sum: " << V.col(0).sum() << std::endl;
   double rho = r.norm();
   const double b_norm = b.norm();
+  std::cout << "bnorm: " << b_norm << std::endl;
+  std::cout << "V_0 sum: " << V.col(0).sum() << std::endl;
   int k = -1;
   Eigen::VectorXd g(kmax_ + 1);
   Eigen::VectorXd h(kmax_ + 1);
@@ -318,6 +319,7 @@ Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::Vec
       H(i, k) = h(i);
     }
     rho = abs(g(k+1));
+    std::cout << "gmres residual: " << rho << std::endl;
   }
   Eigen::VectorXd y(k+2);
   y(k+1) = 1;
