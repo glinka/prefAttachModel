@@ -1,3 +1,17 @@
+/*
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Errors:
+1.) abs() should be std::abs(), otherwise it will always return an integer
+2.) V(k+1) should be normalized by h(k+1), not h(k)
+3.) v_next is chosen incorrectly, and a separate check is needed to ascertain whether or not x0 == 0
+4.) The initial residual when using F() to evaluate DF dx should be "-F(x)" not "F(x)", unless you're subtracting the result from the current x value in newton, which you're not
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+*/
+
 // #include "la_ops.h"
 #include <Eigen/Dense>
 #include "gmres.h"
@@ -117,7 +131,7 @@ namespace la {
 
 
 Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::VectorXd&), const Eigen::VectorXd& x, const Eigen::VectorXd& x0, const double dx) const {
-  Eigen::VectorXd b = F(x);
+  Eigen::VectorXd b = -F(x);
   const int n = b.size();
   /*
     V will store the basis vectors for
@@ -239,7 +253,7 @@ namespace la {
 }
 
 Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::VectorXd&, pamCPI), const Eigen::VectorXd& x, const Eigen::VectorXd& x0, const double dx, pamCPI model) const {
-  Eigen::VectorXd b = F(x, model);
+  Eigen::VectorXd b = -F(x, model);
   const int n = b.size();
   /*
     V will store the basis vectors for
