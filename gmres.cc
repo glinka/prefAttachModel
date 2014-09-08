@@ -1,4 +1,3 @@
-#include <cmath>
 // #include "la_ops.h"
 #include <Eigen/Dense>
 #include "gmres.h"
@@ -66,7 +65,7 @@ Eigen::VectorXd GMRES::solve_linear_system(const Eigen::MatrixXd& A, const Eigen
     for(int i = 0; i < k+1; i++) {
       H(i, k) = h(i);
     }
-    rho = abs(g(k+1));
+    rho = std::abs(g(k+1));
   }
 
   Iters_Exception::test_iters(k, kmax_ - 1);
@@ -184,7 +183,7 @@ Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::Vec
     for(int i = 0; i < k+1; i++) {
       H(i, k) = h(i);
     }
-    rho = abs(g(k+1));
+    rho = std::abs(g(k+1));
   }
   Eigen::VectorXd y(k+2);
   y(k+1) = 1;
@@ -318,7 +317,7 @@ Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::Vec
     for(int i = 0; i < k+1; i++) {
       H(i, k) = h(i);
     }
-    rho = abs(g(k+1));
+    rho = std::abs(g(k+1));
     std::cout << "gmres residual: " << rho << std::endl;
   }
   Eigen::VectorXd y(k+2);
