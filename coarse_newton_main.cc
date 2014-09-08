@@ -91,8 +91,8 @@ int main(int argc, char** argv) {
     // time from root process
     start_time = time(NULL);
     // root process is responsible for running newton-gmres
-    Newton newton(1e-2, 10, 100);
-    Eigen::VectorXd x = newton.find_zero(newton_wrapper::F, n*Eigen::VectorXd::Ones(n), h, GMRES(1e-3, 75), model);
+    Newton newton(10, 1e-2, 100);
+    Eigen::VectorXd x = newton.find_zero(newton_wrapper::F, n*Eigen::VectorXd::Ones(n), h, GMRES(1e-4, 75), model);
     std::cout << "HERRRRRRRRRRRRR" << std::endl;
     // stop other processes from receiving input
     bool receive_data = false;
