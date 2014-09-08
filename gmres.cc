@@ -156,7 +156,7 @@ Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::Vec
     }
     h(k+1) = V.col(k+1).norm();
     // test for orthogonality
-    V.col(k+1) = V.col(k+1)/h(k);
+    V.col(k+1) = V.col(k+1)/h(k+1);
     // perform first loop separately to avoid if?
     // will not execute during first loop, as desired
     for(int i = 0; i < k; i++) {
@@ -290,7 +290,7 @@ Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::Vec
     }
     h(k+1) = V.col(k+1).norm();
     // test for orthogonality
-    V.col(k+1) = V.col(k+1)/h(k);
+    V.col(k+1) = V.col(k+1)/h(k+1);
     // perform first loop separately to avoid if?
     // will not execute during first loop, as desired
     for(int i = 0; i < k; i++) {
