@@ -13,7 +13,7 @@ class calcGraphProps {
   static double **getAdjEigVects(int **A, const int n);
   static double *getLaplEigVals(int **A, const int n);
   static double **getLaplEigVects(int **A, const int n);
-  static std::vector<int> get_degrees(int **A, const int n);
+  static std::vector<int> get_sorted_degrees(int **A, const int n);
 };
 
 #endif

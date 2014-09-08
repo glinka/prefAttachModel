@@ -1,7 +1,8 @@
+#include <algorithm>
 #include <iostream>
-#include "calcGraphProps.h"
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
+#include "calcGraphProps.h"
 
 using namespace std;
 using namespace Eigen;
@@ -145,12 +146,14 @@ double **calcGraphProps::getLaplEigVects(int **A, const int n) {
   return eigVectOut;
 }
 
-vector<int> calcGraphProps::get_degrees(int **A, const int n) {
+// returns sorted degrees
+vector<int> calcGraphProps::get_sorted_degrees(int **A, const int n) {
   vector<int> degs(n, 0);
   for(int i = 0; i < n; i++) {
     for(int j = 0; j < n; j++) {
       degs[i] += A[i][j];
     }
   }
+  std::sort(degs.begin(), degs.end());
   return degs;
 }

@@ -58,8 +58,8 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
   else {
     initGraph();
   }
-    //set up save file and write header
-    vector<double> forFile;
+  //set up save file and write header
+  vector<double> forFile;
     forFile.push_back(projStep);
     forFile.push_back(offManifoldWait);
     forFile.push_back(nMicroSteps);
@@ -139,13 +139,13 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 		  // toProject.push_back(*d);
 		  time.push_back(totalSteps);
 		  selfloop_densities.push_back(compute_selfloop_density());
-		  degs_to_project.push_back(calcGraphProps::get_degrees(A, n));
+		  degs_to_project.push_back(calcGraphProps::get_sorted_degrees(A, n));
 		}
 		else {
 		  // toProject.push_back(*step(true));
 		  time.push_back(totalSteps);
 		  selfloop_densities.push_back(compute_selfloop_density());
-		  degs_to_project.push_back(calcGraphProps::get_degrees(A, n));
+		  degs_to_project.push_back(calcGraphProps::get_sorted_degrees(A, n));
 		}
 	      }
 	      else {
@@ -171,8 +171,8 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   */
 	time.push_back(totalSteps);
 	selfloop_densities.push_back(compute_selfloop_density());
-	degs_to_project.push_back(calcGraphProps::get_degrees(A, n));
-
+	degs_to_project.push_back(calcGraphProps::get_sorted_degrees(A, n));
+	int actual_proj_step = projStep;
 	// start MPI
 	vector<int> new_degs(n);
 	if(rank != root) {
@@ -207,7 +207,7 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 	      degs_to_project[i][j] /= size;
 	    }
 	  }
-	  new_degs = project_degs(degs_to_project, time, projStep, run_id, dir);
+	  new_degs = project_degs(degs_to_project, time, actual_proj_step, run_id, dir);
 	}
 	MPI_Bcast(&new_degs.front(), n, MPI_INT, root, MPI_COMM_WORLD);
 	// end MPI
@@ -216,7 +216,7 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 	// TESTING
 	if(new_init) {
 	  init_graph_loosehh(new_degs);
-	  totalSteps += projStep;
+	  totalSteps += actual_proj_step;
 	}
 
 
@@ -268,6 +268,94 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
     // delete eigVectData;
     // delete eigval_data;
 }
+
+vector<int> pamCPI::run_single_step(const vector<int>& degree_seq) {
+  // based on the provided degree sequence, runs one full projective step
+  // starting with the inialization of a full system up to and including
+  // the new, projected degree sequence
+
+  init_graph_loosehh(degree_seq);
+  // std::cout << "here RSS1" << std::endl;
+  vector< vector<int> > degs_to_project;
+  vector<double> time;
+  int totalSteps = 0;
+  for(int microStep = 0; microStep < nMicroSteps; microStep++) {
+    if(microStep < offManifoldWait) {
+      step(false);
+    }
+    else {
+      int nOnManifoldSteps = microStep - offManifoldWait;
+      if((nOnManifoldSteps)%collectInterval == 0) {
+	time.push_back(totalSteps);
+	degs_to_project.push_back(calcGraphProps::get_sorted_degrees(A, n));
+      }
+      else {
+	step(false);
+      }
+    }
+    totalSteps++;
+  }
+
+  // std::cout << "here RSS2" << std::endl;
+  /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     run the risk of duplicating the last elements, but
+     even if this happens, it should have a negligible effect
+     on the projection
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   */
+  time.push_back(totalSteps);
+  degs_to_project.push_back(calcGraphProps::get_sorted_degrees(A, n));
+  int actual_proj_step = projStep;
+  // std::cout << "here RSS3" << std::endl;
+
+  // MPI Start
+  const int root = 0;
+  int size, rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  vector<int> new_degs(n);
+  if(rank != root) {
+    int tag = 0;
+    for(vector< vector<int> >::iterator v = degs_to_project.begin(); v != degs_to_project.end(); v++) {
+      MPI_Send(&v->front(), n, MPI_INT, root, tag, MPI_COMM_WORLD);
+      tag++;
+    }
+  }
+  /* 
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     probablty should use MPI_Gather
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  */
+  // gather all degs_to_project to
+  // root process and average, then send out again to project with
+  else {
+    // std::cout << "here RSS4-1" << std::endl;
+    for(int i = 0; i < degs_to_project.size(); i++) {
+      vector< vector<int> > other_degs(size-1, vector<int>(n));
+      int source = 1;
+      for(vector< vector<int> >::iterator v = other_degs.begin(); v != other_degs.end(); v++) {
+	MPI_Recv(&v->front(), n, MPI_INT, source, i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	source++;
+      }
+      // average across all processes
+      for(int j = 0; j < other_degs.size(); j++) {
+	for(int k = 0; k < n; k++) {
+	  degs_to_project[i][k] += other_degs[j][k];
+	}
+      }
+      for(int j = 0; j < n; j++) {
+	degs_to_project[i][j] /= size;
+      }
+    }
+    new_degs = project_degs(degs_to_project, time, actual_proj_step, "", "./junk");
+    // std::cout << "here RSS5-1" << std::endl;
+  }
+  // std::cout << "here RSS6-1" << std::endl;
+  MPI_Bcast(&new_degs.front(), n, MPI_INT, root, MPI_COMM_WORLD);
+  // end MPI
+	  
+  return new_degs;
+}
+
 /**
 ******************** TODO ********************
 takes adjacency matrices vs time in the form of a vector of matrices (vector of a vector of a vector) and simple vector, projects with some funciton
@@ -446,7 +534,7 @@ decrease time vector to be the same during each projection, else values will bec
     save_coeffs(eigval_tosave, *eigval_data);
 }
 
-vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data, const std::vector<double>& times, const int proj_step, const string run_id, const string dir) {
+vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data, const std::vector<double>& times, int& proj_step, const string run_id, const string dir) {
   // if proj_step is too small due negative degree restarts, simply return the current degree distribution
   // the choice of cutoff is arbitrary
   if(proj_step < m) {
@@ -565,8 +653,8 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
 	// TESTING
 	// projected_degs[i] = 0;
 	// TESTING
-
-	return project_degs(deg_data, times, proj_step/2, run_id, dir);
+	proj_step /= 2;
+	return project_degs(deg_data, times, proj_step, run_id, dir);
       }
     }
 

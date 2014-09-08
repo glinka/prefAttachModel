@@ -1,0 +1,98 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx, subcaption, enumitem}
+\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+\graphicspath{ {./figs/} }
+\pagestyle{plain}
+\def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
+\let\endchangemargin=\endlist 
+\begin{document}
+\title{\vspace{-5mm}Initial evaluation of degree-based CPI}
+\author{Alexander Holiday}
+\maketitle
+
+\textbf{Parameters:}
+\begin{itemize}[label=]
+\item \begin{itemize}[label=-]
+\item $n=100$
+  \item $m=\frac{n*(n-1)}{2}$ (a complete graph)
+  \item $\kappa=1$
+  \item Total steps: 2e6 ($2n^3$)
+  \item Waiting period (system approaching slow manifold): 2e4 steps
+  \item Data collection period (system on slow manifold): 5e4 steps
+  \item  \textbf{Projection interval: 3e4 steps}
+\end{itemize}
+\end{itemize}
+
+To perform coarse projective integration (CPI) with the preferential attachment model, we first run the simulation for a certain number of steps, waiting for the system to reach the slow manifold. Then we begin collecting data, in this case recording the degree sequences, over a certain period. Fitting each of the collected degree sequences to a sixth-order polynomial, we obtain the evolution of our reduced, seven-variable, i.e. the evolution of the polynomia's coefficients in time. The timecourse of each coefficient is then fit linearly, and projected forward. The projected degree sequence is then specified by the seven, new projected coefficients. The system must conserve the total number of edges, but there is typically a discrepancy of around $(-\frac{n}{2})$ edges in the new sequence. To remedy this, starting with the highest-degree node, degrees are added one at a time until edges are conserved. Thus, if the new sequence totals five less than necessary, the vertices with the five largest degrees will each gain a single degree. Then a Havel-Hakimi algorithm is used as the lifting operation, instantiating a new system from the new degree sequence, and the process repeats until the desired number of steps have been completed. \\
+
+Below, we see that there is a consistent but relatively small error between the evolution of the CPI-accelerated degree sequence and that of a plain run. The gaps in the plots arise from the projection step.
+
+\begin{figure}[!h]
+  \includegraphics[width=0.8\textwidth]{deg_cpi_comp_n2}
+  \caption{Difference in degree sequence resulting from CPI-accelerated runs and normal runs}
+  \label{fig:degcomp_n2}
+\end{figure}
+
+\begin{figure}[!h]
+  \includegraphics[width=0.8\textwidth]{deg_cpi_comp_n3}
+  \caption{Same as Fig. \ref{fig:degcomp_n2}, but plotted over a longer time}
+\end{figure}
+
+
+It is also worthwhile to investigate the variation that would arise within normal runs. The following two figures show the differences in degree sequences of two ensembles of normal runs. In each run, the evolution of 200 independent systems was averaged. The difference arising between two such runs is what is shown below.
+
+\begin{figure}[!h]
+  \includegraphics[width=0.8\textwidth]{deg_nocpi_selfcomp_n2}
+  \caption{Difference in degree sequence resulting from two, 200-system ensembles of runs}
+  \label{fig:degcomp_n2}
+\end{figure}
+
+\begin{figure}[!h]
+  \includegraphics[width=0.8\textwidth]{deg_nocpi_selfcomp_n3}
+  \caption{Same as Fig. \ref{fig:degcomp_n2}, but plotted over a longer time}
+\end{figure}
+
+As our ensemble size grows, we would expect these differences to disappear; however, the above plots give a sense of the degree-sequence variability in smaller ensembles of runs. \\
+
+\clearpage
+
+In an effort to improve the projection, a parabolic fit of the coefficients was used in the following runs, instead of a linear one as was used above. This significantly reduced errors, and allowed for a larger projection stepsize. \\
+
+\textbf{Parameters:}
+\begin{itemize}[label=]
+\item \begin{itemize}[label=-]
+\item $n=100$
+  \item $m=\frac{n*(n-1)}{2}$ (a complete graph)
+  \item $\kappa=1$
+  \item Total simulation length: 2e6 ($2n^3$) steps
+  \item Waiting period (system approaching slow manifold): 3e4 steps
+  \item Data collection period (system on slow manifold): 5e4 steps
+  \item  \textbf{Projection interval: 5e4 steps}
+\end{itemize}
+\end{itemize}
+
+\begin{figure}[!h]
+  \includegraphics[width=0.8\textwidth]{deg_cpi_comp_n2_parab}
+  \caption{Difference in degree sequence resulting from CPI-accelerated runs and normal runs, parabolic fit of coefficients}
+  \label{fig:degcomp_n2_parab}
+\end{figure}
+
+\begin{figure}[!h]
+  \includegraphics[width=0.8\textwidth]{deg_cpi_comp_n3_parab}
+  \caption{Same as Fig. \ref{fig:degcomp_n2_parab}, but plotted over a longer time, parabolic fit of coefficients}
+\end{figure}
+
+
+Finally, Fig. \ref{fig:evo_3d} is a direct, three-dimensional plot of the degree distribution's evolution with cpi (red), and without (blue). It is difficult to see, but the agreement is quite good.
+
+\begin{figure}[!h]
+  \includegraphics[width=0.8\textwidth]{deg_cpi_comp_3d}
+  \caption{Evolution of degree sequence with and without CPI}
+  \label{fig:evo_3d}
+\end{figure}
+
+
+%% \bibliographystyle{abbrv}
+%% \bibliography{$HOME/Documents/bibTex/library}
+
+\end{document}

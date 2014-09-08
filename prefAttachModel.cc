@@ -52,6 +52,11 @@ prefAttachModel::prefAttachModel(const int n, const int m, const double kappa): 
   unsigned seed = chrono::system_clock::now().time_since_epoch().count();
   mt = new mt19937(seed);
   rnNormalization = (double) (mt->max()+1);
+  A = new int*[n];
+  degs = new int[n];
+  for(int i = 0; i < n; i++) {
+    A[i] = new int[n];
+  }
 };
 
 double prefAttachModel::genURN() {
@@ -61,11 +66,6 @@ double prefAttachModel::genURN() {
 void prefAttachModel::init_complete_graph() {
   // init a complete graph with loops
   m = (n*n + n)/2;
-  A = new int*[n];
-  degs = new int[n];
-  for(int i = 0; i < n; i++) {
-    A[i] = new int[n];
-  }
   for(int i = 0; i < n; i++) {
     A[i][i] = 2;
     for(int j = i+1; j < n; j++) {
@@ -80,11 +80,6 @@ void prefAttachModel::initGraph() {
   int i, j;
   //init random number generator
   //init adjacency matrix and edge vector
-  A = new int*[n];
-  degs = new int[n];
-  for(i = 0; i < n; i++) {
-    A[i] = new int[n];
-  }
   int nEdges = (n*(n-1))/2 + n;
   int *edges = new int[nEdges];
   for(i = 0; i < nEdges; i++) {
@@ -534,7 +529,7 @@ bool reverse_comp(const double i, const double j) {
 }
 
 void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
-  // sort in increasing order
+  // sort in decreasing order
   sort(new_degs.begin(), new_degs.end(), reverse_comp);
   
   // check if the sum is even, if not, add one to largest degree

@@ -6,6 +6,9 @@
 #include <string>
 #include <vector>
 
+// TESTING
+#include <iostream>
+
 struct graphData {
     int *degSeq;
     int **A;
@@ -22,9 +25,7 @@ class prefAttachModel {
     int *degs;
     std::mt19937 *mt;
     double genURN();
-    void initGraph();
     void initGraph(int **newA);
-    void init_complete_graph();
     void init_graph_loosehh(std::vector<int> degs);
     graphData *step(bool saveFlag);
     int consistencyCheck();
@@ -43,6 +44,8 @@ class prefAttachModel {
     void save_coeffs(const std::vector< std::vector< double > > &data, std::ofstream &fileHandle);
     void save_coeffs(const std::vector< std::vector<int> > &data, std::ofstream &fileHandle);
  public:
+    void initGraph();
+    void init_complete_graph();
     void run(long int nSteps, long int dataInterval, std::string init_type);
     std::ofstream* createFile(const std::string base, const std::string dir, std::vector<double> &addtnlData, std::vector<std::string> &addtnlDataLabels);
     prefAttachModel(int n, int m, double kappa);
@@ -57,8 +60,12 @@ class prefAttachModel {
 
     // rule of three you dumbass
  prefAttachModel(const prefAttachModel& tocopy): m(tocopy.m), kappa(tocopy.kappa), n(tocopy.n) {
+
+      /* std::cout << "here prefattachcopy1 " << n << std::endl; */
+
       A = new int*[n];
       degs = new int[n];
+      /* std::cout << "here prefattachcopy2" << std::endl; */
       for(int i = 0; i < n; i++) {
 	degs[i] = tocopy.degs[i];
 	A[i] = new int[n];
@@ -66,6 +73,7 @@ class prefAttachModel {
 	  A[i][j] = tocopy.A[i][j];
 	}
       }
+      /* std::cout << "here prefattachcopy3" << std::endl; */
       unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
       mt = new std::mt19937(seed);
       rnNormalization = (double) (mt->max()+1);
@@ -81,6 +89,7 @@ class prefAttachModel {
       // I shall take the easier path and simply assume that
       // all such values are the same for both lhs and rhs
       else {
+	/* std::cout << "here prefattachassign" << std::endl; */
 	for(int i = 0; i < n; i++) {
 	  degs[i] = rhs.degs[i];
 	  for(int j = 0; j < n; j++) {

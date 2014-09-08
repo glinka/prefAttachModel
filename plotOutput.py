@@ -1037,7 +1037,7 @@ def plot_time_projection(degs, times, params, fig_title="", cmap='autumn_r', ax_
     # ax_fig.set_yticklabels([str(i) for i in np.linspace(0, 100, 11)/100.0])
     textcolor = ax_fig.get_ymajorticklabels()[0].get_color()
     ax_fig.set_title(fig_title, fontsize=FONTSIZE, color=textcolor)
-    ax_cb.text(0.25, 1.04, 'time', fontsize=FONTSIZE-4, color=textcolor)
+    ax_cb.text(0.25, 1.04, 'step', fontsize=FONTSIZE-4, color=textcolor)
     LABELSIZE = 36
     ax_fig.tick_params(axis='both', which='both', labelsize=LABELSIZE)
     ax_cb.tick_params(axis='both', which='both', labelsize=LABELSIZE)
@@ -1104,7 +1104,7 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     ax_cb.tick_params(axis='both', which='both', labelsize=LABELSIZE)
 
     textcolor = ax.get_ymajorticklabels()[0].get_color()
-    ax_cb.text(0.0, 1.04, cb_label, fontsize=FONTSIZE-4, color=textcolor)
+    ax_cb.text(-0.5, 1.04, cb_label, fontsize=FONTSIZE-4, color=textcolor)
     ax.set_title(fig_title, fontsize=FONTSIZE, color=textcolor)
     
     plt.show()
