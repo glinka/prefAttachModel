@@ -4,7 +4,7 @@ MODEL_OBJECTS=$(MODEL_SRCS:.cc=.o)
 NG_OBJECTS=$(NG_SRCS:.cc=.o)
 
 # CXX = g++
-CXXFLAGS = -I/home/holiday/build/Eigen -debug full -std=c++0x -mkl -gxx-name=/usr/bin/g++ -O3 #-openmp # #/home/oakridge/holiday/build/bin/g++
+CXXFLAGS = -I/home/holiday/build/Eigen -debug full -std=c++0x -mkl -gxx-name=/usr/bin/g++ -O3 -traceback #-openmp # #/home/oakridge/holiday/build/bin/g++
 
 # CXX = g++
 # CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x #-O3
