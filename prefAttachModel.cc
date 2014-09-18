@@ -539,7 +539,7 @@ void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
     degcount += new_degs[i];
   }
   if(degcount % 2 != 0) {
-    new_degs.front()++;
+    new_degs[0]++;
     degs[0]++;
     degcount++;
   }
@@ -551,11 +551,21 @@ void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
     }
   }
 
+  // TESTING
+  for(int i = 0; i < n; i++) {
+    if(degs[i] < 0) {
+      cout << "ERRRRRRRRRRRRRR: " << degs[i] << endl;
+    }
+  }
+  // cout <<  << endl;
+  // END TESTING
+
   // try to havel-hakimi the sequence
   // recall that the result is a multigraph
   for(int i = 0; i < n; i++) {
     int j = 0;
     while(new_degs[i] > 0) {
+      // cout << i << ",";
       if(new_degs[(i+j+1) % n] > 0) {
 	if((((i+j+1) % n) != i) || (new_degs[(i+j+1) % n] > 1)) {
 	  A[i][(i+j+1) % n]++;

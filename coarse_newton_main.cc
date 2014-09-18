@@ -24,6 +24,7 @@ int main(int argc, char** argv) {
   int off_manifold_wait = 20000;
   int nmicrosteps = 100000;
   double h = 0.1;
+  int nkrylov = 6;
   std::string init_type = "erdos";
   //parse command line args, could be moved to separate fn?
   for(int i = 1; i < argc; i++) {
@@ -63,6 +64,9 @@ int main(int argc, char** argv) {
       else if(current_label == "-h") {
 	h = std::atof(current_arg);
       }
+      else if(current_label == "-nkrylov") {
+	nkrylov = std::atoi(current_arg);
+      }
       else {
 	std::cout << "Your entry of: " << current_label << " is an invalid argument" << std::endl;
       }
@@ -92,8 +96,8 @@ int main(int argc, char** argv) {
     start_time = time(NULL);
     // root process is responsible for running newton-gmres
     Newton newton(10, 1e-2, 100);
-    Eigen::VectorXd x = newton.find_zero(newton_wrapper::F, n*Eigen::VectorXd::Ones(n), h, GMRES(1e-4, 6), model);
-    std::cout << "HERRRRRRRRRRRRR" << std::endl;
+    Eigen::VectorXd x = newton.find_zero(newton_wrapper::F, n*Eigen::VectorXd::Ones(n), h, GMRES(1e-4, nkrylov), model);
+    std::cout << "CELEBRAAAAAAAAAATE" << std::endl;
     // stop other processes from receiving input
     bool receive_data = false;
     MPI_Bcast(&receive_data, 1, MPI_INT, 0, MPI_COMM_WORLD);

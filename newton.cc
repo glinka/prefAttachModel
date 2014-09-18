@@ -56,7 +56,12 @@ Eigen::VectorXd Newton::find_zero(Eigen::VectorXd (*F)(const Eigen::VectorXd&, p
   while(r > r0*tol_rel_ + tol_abs_ && iters < itermax_) {
     // default to initial x = {0, 0, ..., 0}
     std::cout << "newton residual: " << r << std::endl;
-    x += ls.solve_linear_system(F, x, zeros, dx, model);
+    Eigen::VectorXd dx_newton = ls.solve_linear_system(F, x, zeros, dx, model);
+    // do a line search
+    while((x+dx_newton).minCoeff() < 0) {
+      dx_newton /= 2;
+    }
+    x += dx_newton;
     r = F(x, model).norm();
     iters++;
   }

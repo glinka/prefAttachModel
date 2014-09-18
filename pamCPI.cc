@@ -150,6 +150,7 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 		}
 		else {
 		  // toProject.push_back(*step(true));
+		  step(false);
 		  time.push_back(totalSteps);
 		  selfloop_densities.push_back(compute_selfloop_density());
 		  degs_to_project.push_back(calcGraphProps::get_sorted_degrees(A, n));
@@ -287,18 +288,10 @@ vector<int> pamCPI::run_single_step(const vector<int>& degree_seq) {
   vector<double> time;
   int totalSteps = 0;
   for(int microStep = 0; microStep < nMicroSteps; microStep++) {
-    if(microStep < offManifoldWait) {
-      step(false);
-    }
-    else {
-      int nOnManifoldSteps = microStep - offManifoldWait;
-      if((nOnManifoldSteps)%collectInterval == 0) {
+    step(false);
+    if((microStep >= offManifoldWait) && (microStep-offManifoldWait)%collectInterval == 0) {
 	time.push_back(totalSteps);
 	degs_to_project.push_back(calcGraphProps::get_sorted_degrees(A, n));
-      }
-      else {
-	step(false);
-      }
     }
     totalSteps++;
   }
@@ -319,6 +312,13 @@ vector<int> pamCPI::run_single_step(const vector<int>& degree_seq) {
   int size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  /* 
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     files are created anew every time this
+     method is called, which is not the desired
+     behavior
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  */
   string dir;
   if(rank == root) {
     dir = create_files("loosehh");
