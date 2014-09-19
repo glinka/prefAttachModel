@@ -1571,6 +1571,27 @@ def compare_deg_cpi_3d(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_times,
     ax.tick_params(axis='both', which='both', labelsize=fs)
     plt.show()
 
+def newton_deg_evo(deg_seqs):
+    import matplotlib.cm as cm
+    import matplotlib.colors as colors
+
+    ndeg_seqs = deg_seqs.shape[0]
+    colornorm = colors.Normalize(vmin=0, vmax=ndeg_seqs-1)
+    colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
+
+    n = deg_seqs.shape[1]
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    for i in range(ndeg_seqs):
+        ax.plot(np.arange(n) + 1, np.sort(deg_seqs[i,:]), c=colormap.to_rgba(1.0*i))
+    plt.show()
+
+def newton_resid_evo(resids):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(np.arange(resids.shape[0]), resids)
+    plt.show()
+
             
 if __name__=="__main__":
     import argparse
@@ -1613,6 +1634,7 @@ if __name__=="__main__":
     parser.add_argument('--comp-deg-cpi', action='store_true', default=False)
     parser.add_argument('--comp-deg-cpi-3d', action='store_true', default=False)
     parser.add_argument('--comp-deg-cpi-timeproj', action='store_true', default=False)
+    parser.add_argument('--newton', action='store_true', default=False)
     args = parser.parse_args()
     # this whole file is a huge piece of
     # the atrocities below won't be noticed
@@ -1766,6 +1788,15 @@ if __name__=="__main__":
         ax.set_ylabel('selfloop density', fontsize=24)
         ax.tick_params(axis='both', which='both', labelsize=24)
         plt.show()
+    elif args.newton:
+        for f in args.inputFiles:
+            if 'xs' in f:
+                xs, g = get_data(f)
+            elif 'resid' in f:
+                resids, g = get_data(f)
+        newton_deg_evo(xs)
+        newton_resid_evo(resids)
+
             
     else:
         for fileName in args.inputFiles:
