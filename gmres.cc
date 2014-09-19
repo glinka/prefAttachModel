@@ -279,7 +279,21 @@ Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::Vec
     r = b;
   }
   else {
-    r = b - v_next(x, x0, dx, F, model);
+    // ERROR TESTING
+    // do some checking to see if the submitted degree sequences are workable
+    int direction = 1;
+    if((x + dx*x.norm()*x0/(x0.norm())).minCoeff() < 0) {
+      if((x - dx*x.norm()*x0/(x0.norm())).minCoeff() < 0) {
+	std::cout << "ungraphical degree sequence (degree less than zero), exiting" << std::endl;
+	exit(1);
+      }
+      else {
+	// can flip direction
+	direction = -1;
+      }
+    }
+    // ERROR TESTING
+    r = b - v_next(x, x0, direction*dx, F, model);
   }    
   V.col(0) = r/r.norm();
   double rho = r.norm();
@@ -296,7 +310,20 @@ Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::Vec
   // select appropriate method for determining v_{k+1}
   while(rho > tol_*b_norm && k < kmax_-1) {
     k++;
-    V.col(k+1) = v_next(x, V.col(k), dx, F, model);
+    // ERROR TESTING
+    // do some checking to see if the submitted degree sequences are workable
+    int direction = 1;
+    if((x + dx*x.norm()*V.col(k)/(V.col(k).norm())).minCoeff() < 0) {
+      if((x - dx*x.norm()*V.col(k)/(V.col(k).norm())).minCoeff() < 0) {
+	std::cout << "ungraphical degree sequence (degree less than zero), exiting" << std::endl;
+	exit(1);
+      }
+      else {
+	direction = -1;
+      }
+    }
+    // ERROR TESTING
+    V.col(k+1) = v_next(x, V.col(k), direction*dx, F, model);
     std::cout << "V_" << k+2 << " 1-norm: " << V.col(k+1).sum() << std::endl;
     for(int j = 0; j < k+1; j++) {
       h(j) = V.col(k+1).dot(V.col(j));
