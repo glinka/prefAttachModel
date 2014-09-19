@@ -25,6 +25,8 @@ int main(int argc, char** argv) {
   int nmicrosteps = 100000;
   double h = 0.1;
   int nkrylov = 6;
+  double abs_tol = 100;
+  double rel_tol = 1e-2;
   std::string init_type = "erdos";
   //parse command line args, could be moved to separate fn?
   for(int i = 1; i < argc; i++) {
@@ -67,6 +69,12 @@ int main(int argc, char** argv) {
       else if(current_label == "-nkrylov") {
 	nkrylov = std::atoi(current_arg);
       }
+      else if(current_label == "-abstol") {
+	abs_tol = std::atof(current_arg);
+      }
+      else if(current_label == "-reltol") {
+	rel_tol = std::atof(current_arg);
+      }
       else {
 	std::cout << "Your entry of: " << current_label << " is an invalid argument" << std::endl;
       }
@@ -95,7 +103,7 @@ int main(int argc, char** argv) {
     // time from root process
     start_time = time(NULL);
     // root process is responsible for running newton-gmres
-    Newton newton(10, 1e-2, 100);
+    Newton newton(abs_tol, rel_tol, 100);
     Eigen::VectorXd x = newton.find_zero(newton_wrapper::F, n*Eigen::VectorXd::Ones(n), h, GMRES(1e-4, nkrylov), model);
     std::cout << "CELEBRAAAAAAAAAATE" << std::endl;
     // stop other processes from receiving input
