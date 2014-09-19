@@ -1004,7 +1004,8 @@ def plot_time_projection(degs, times, params, fig_title="", cmap='autumn_r', ax_
         ax_fig = fig.add_subplot(gspec[:6,:5])
         ax_cb = fig.add_subplot(gspec[:,5])
         show = True
-    sorted_degs = np.sort(degs)
+    sorted_degs = np.sort(degs, axis=1)
+    print times.shape, sorted_degs.shape
     n = params['n']
     indices = np.linspace(1, n, n)
     nplotted_pts = 60
@@ -1016,6 +1017,7 @@ def plot_time_projection(degs, times, params, fig_title="", cmap='autumn_r', ax_
     colornorm = colors.Normalize(vmin=0, vmax=nplotted_pts-1)
     colormap = cm.ScalarMappable(norm=colornorm, cmap=cmap)
 
+    print times.shape, sorted_degs.shape
     for i in range(nplotted_pts):
         ax_fig.plot(indices, sorted_degs[i,:], lw=2, c=colormap.to_rgba(1.0*i), alpha=0.6)
         # ax_fig.plot(indices , sorted_degs[i*PLOT_INTERVAL,:], linewidths=0, c=colormap.to_rgba(1.0*i), alpha=0.3)
@@ -1592,6 +1594,14 @@ def newton_resid_evo(resids):
     ax.plot(np.arange(resids.shape[0]), resids)
     plt.show()
 
+def comp_newton(xs, deg_seqs):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    n = xs.shape[1]
+    ax.plot(np.arange(n), np.sort(xs[-1,:]), c='b')
+    ax.plot(np.arange(n), np.sort(deg_seqs[-1,:]), c='g')
+    plt.show()
+
             
 if __name__=="__main__":
     import argparse
@@ -1635,6 +1645,7 @@ if __name__=="__main__":
     parser.add_argument('--comp-deg-cpi-3d', action='store_true', default=False)
     parser.add_argument('--comp-deg-cpi-timeproj', action='store_true', default=False)
     parser.add_argument('--newton', action='store_true', default=False)
+    parser.add_argument('--newton-custom', action='store_true', default=False)
     args = parser.parse_args()
     # this whole file is a huge piece of
     # the atrocities below won't be noticed
@@ -1669,7 +1680,7 @@ if __name__=="__main__":
             plot_time_projection_diff(deg_data, time_data)
         if args.ds_time_proj:
             # n3
-            plot_time_projection(deg_data, time_data, params, r'$n^3$')
+            plot_time_projection(deg_data[0], time_data, params, r'$n^3$')
             # n2
             n = params['n']
             time_limit = 5*(params['proj_step'] + params['nms'])
@@ -1796,7 +1807,13 @@ if __name__=="__main__":
                 resids, g = get_data(f)
         newton_deg_evo(xs)
         newton_resid_evo(resids)
-
+    elif args.newton_custom:
+        for f in args.inputFiles:
+            if 'xs' in f:
+                xs, g = get_data(f, header_rows=0)
+            if 'degs' in f:
+                degs, g = get_data(f)
+        comp_newton(xs, degs)
             
     else:
         for fileName in args.inputFiles:

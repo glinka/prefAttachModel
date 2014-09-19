@@ -45,3 +45,4 @@ test.cc
 *.pdf
 .depend
 err
+SPECIAL_DATA
