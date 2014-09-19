@@ -1,12 +1,21 @@
-#include <Eigen/Dense>
+ #include <Eigen/Dense>
 #include "newton.h"
 #include "gmres.h"
 #include "iters_exception.h"
 #include "pamCPI.h"
+#include <fstream>
 
 // TESTING
-#include <iostream>
+// #include <iostream>
 
+namespace utils {
+  void save_vector(const Eigen::VectorXd& v, std::ofstream& file) {
+    for(int i = 0; i < v.size() - 1; i++) {
+      file << v[i] << ",";
+    }
+    file << v[v.size()-1] << std::endl;
+  }
+}
 
 Newton::Newton(const double tol_abs, const double tol_rel, const int itermax): tol_abs_(tol_abs), tol_rel_(tol_rel), itermax_(itermax) {}
 
@@ -53,9 +62,16 @@ Eigen::VectorXd Newton::find_zero(Eigen::VectorXd (*F)(const Eigen::VectorXd&, p
   Eigen::VectorXd zeros = Eigen::VectorXd::Zero(n);
   Eigen::VectorXd x = x0;
   int iters = 0;
+  // save residual and x_out
+  std::ofstream resid_out("./newton_data/resids.csv");
+  std::ofstream x_out("./newton_data/xs.csv");
   while(r > r0*tol_rel_ + tol_abs_ && iters < itermax_) {
-    // default to initial x = {0, 0, ..., 0}
+
     std::cout << "newton residual: " << r << std::endl;
+    utils::save_vector(x, x_out);
+    resid_out << r << std::endl;
+
+    // default to initial x = {0, 0, ..., 0}
     Eigen::VectorXd dx_newton = ls.solve_linear_system(F, x, zeros, dx, model);
     // do a line search
     while((x+dx_newton).minCoeff() < 0) {
