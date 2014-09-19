@@ -52,7 +52,7 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   string dir;
   if(rank == root) {
-    dir = create_files(init_type, new_init);  
+    dir = create_files(init_type, new_init, run_id);  
   }
 
   if(init_type == "erdos") {
