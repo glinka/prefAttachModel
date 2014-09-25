@@ -1111,7 +1111,7 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     
     plt.show()
 
-def plot_vertex_projection(degs, times):
+def plot_vertex_projection_avg(degs, times):
     import matplotlib.cm as cm
     import matplotlib.colors as colors
     import matplotlib.colorbar as colorbar
@@ -1131,6 +1131,25 @@ def plot_vertex_projection(degs, times):
     ax.set_ylabel('vertex degree', fontsize=25)
     ax.tick_params(axis='both', which='both', labelsize=24)
     plt.show()
+
+def plot_vertex_projection(degs, times):
+    import matplotlib.cm as cm
+    import matplotlib.colors as colors
+    import matplotlib.colorbar as colorbar
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    n = degs.shape[1]
+    colornorm = colors.Normalize(vmin=0, vmax=n-1)
+    colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
+
+    for i in range(n):
+        ax.scatter(times, degs[:, i], c=colormap.to_rgba(1.0*i), lw=0, alpha=0.8)
+    ax.set_xlim((0, np.max(times)))
+    ax.set_xlabel('step', fontsize=25)
+    ax.set_ylabel('vertex degree', fontsize=25)
+    ax.tick_params(axis='both', which='both', labelsize=24)
+    plt.show()
+
 
 def plot_vertex_projection_old(degs, times, n3=True):
     import matplotlib.cm as cm
@@ -1602,6 +1621,53 @@ def comp_newton(xs, deg_seqs):
     ax.plot(np.arange(n), np.sort(deg_seqs[-1,:]), c='g')
     plt.show()
 
+def pa_dmaps_embedding(eigvals, eigvects, t=0):
+    eigvals = np.abs(eigvals)
+    sorted_indices = np.argsort(eigvals)
+    eigvals = eigvals[sorted_indices]
+    eigvects = eigvects[sorted_indices, :]
+    eigvects_to_plot = np.array([eigvects[-i,:] for i in range(2, eigvects.shape[0] + 1)])
+    eigvals_to_plot = np.array([eigvals[-i] for i in range(2, eigvals.shape[0] + 1)])
+    nvects = 6 # eigvals.shape[0] - 1
+    output_filename = "pa_embedding_"
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.hold(False)
+    n = eigvects.shape[1]
+    for i in range(nvects):
+        for j in range(i+1, nvects):
+            xvals = np.power(eigvals_to_plot[i], t)*eigvects_to_plot[i,:]
+            yvals = np.power(eigvals_to_plot[j], t)*eigvects_to_plot[j,:]
+            ax.scatter(xvals , yvals, c=np.arange(n), lw=0, alpha=0.7)
+            ax.set_xlim((np.min(xvals), np.max(xvals)))
+            ax.set_ylim((np.min(yvals), np.max(yvals)))
+            ax.set_xlabel('eigvect ' + str(i+1))
+            ax.set_ylabel('eigvect ' + str(j+1))
+            ax.set_title('pa dmaps embedding')
+            plt.savefig("./figs/embeddings/dmaps/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + ".png")
+
+def pa_pca_embedding(eigvals, eigvects, orig_data):
+    # recall eigenvectors are stored in rows
+    eigvals = np.abs(eigvals)
+    sorted_indices = np.argsort(eigvals)
+    eigvals = eigvals[sorted_indices]
+    eigvects = eigvects[sorted_indices, :]
+    newbasis_data = np.dot(orig_data, np.transpose(eigvects))
+    nvects = 10 # eigvals.shape[0] - 1
+    output_filename = "pa_embedding_"
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.hold(False)
+    n = orig_data.shape[0]
+    for i in range(nvects):
+        for j in range(i+1, nvects):
+            ax.scatter(newbasis_data[:, i] , newbasis_data[:, j], c=np.arange(n), lw=0, alpha=0.7)
+            # ax.set_xlim((np.min(xvals), np.max(xvals)))
+            # ax.set_ylim((np.min(yvals), np.max(yvals)))
+            ax.set_xlabel('basis vector ' + str(i+1))
+            ax.set_ylabel('basis vector ' + str(j+1))
+            ax.set_title('pa pca embedding')
+            plt.savefig("./figs/embeddings/pca/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + ".png")
             
 if __name__=="__main__":
     import argparse
@@ -1630,6 +1696,7 @@ if __name__=="__main__":
     parser.add_argument('-ds', '--plot-degree-surface', action='store_true', default=False)
     parser.add_argument('-dst', '--ds-time-proj', action='store_true', default=False)
     parser.add_argument('-dsv', '--ds-vertex-proj', action='store_true', default=False)
+    parser.add_argument('-dsvavg', '--ds-vertex-proj-avg', action='store_true', default=False)
     parser.add_argument('-dsd', '--ds-degree-proj', action='store_true', default=False)
     parser.add_argument('-dstd', '--ds-time-proj-diff', action='store_true', default=False)
     parser.add_argument('-dsva', '--ds-vertex-proj-analytical', action='store_true', default=False)
@@ -1646,6 +1713,8 @@ if __name__=="__main__":
     parser.add_argument('--comp-deg-cpi-timeproj', action='store_true', default=False)
     parser.add_argument('--newton', action='store_true', default=False)
     parser.add_argument('--newton-custom', action='store_true', default=False)
+    parser.add_argument('--dmaps-embeddings', action='store_true', default=False)
+    parser.add_argument('--pca-embeddings', action='store_true', default=False)
     args = parser.parse_args()
     # this whole file is a huge piece of
     # the atrocities below won't be noticed
@@ -1690,8 +1759,10 @@ if __name__=="__main__":
             plot_time_projection(deg_data[:i, :], time_data[:i], params, r'$n^2$')
         if args.ds_vertex_proj_analytical:
             plot_vertex_projection_analytical(deg_data, time_data)
+        if  args.ds_vertex_proj_avg:
+            plot_vertex_projection_avg(np.array(deg_data), time_data)
         if  args.ds_vertex_proj:
-            plot_vertex_projection(np.array(deg_data), time_data)
+            plot_vertex_projection(deg_data[0], time_data)
         if args.ds_degree_proj:
             # n3
             plot_degree_projection(deg_data[0], time_data, fig_title=r'$n^3$')
@@ -1814,7 +1885,22 @@ if __name__=="__main__":
             if 'degs' in f:
                 degs, g = get_data(f)
         comp_newton(xs, degs)
-            
+    elif args.dmaps_embeddings:
+        for f in args.inputFiles:
+            if 'eigvects' in f:
+                eigvects, g = get_data(f, header_rows=0)
+            if 'eigvals' in f:
+                eigvals, g = get_data(f, header_rows=0)
+        pa_dmaps_embedding(eigvals, eigvects)
+    elif args.pca_embeddings:
+        for f in args.inputFiles:
+            if 'eigvects' in f:
+                eigvects, g = get_data(f, header_rows=0)
+            elif 'eigvals' in f:
+                eigvals, g = get_data(f, header_rows=0)
+            elif 'graph_embeddings' in f:
+                ges, g = get_data(f, header_rows=0)
+        pa_pca_embedding(eigvals, eigvects, ges)
     else:
         for fileName in args.inputFiles:
             params, data = genData(fileName)

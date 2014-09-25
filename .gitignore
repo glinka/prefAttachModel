@@ -21,6 +21,7 @@
 pref_attach
 prefAttachModel
 coarse_ng
+graph_embedding
 #png of plots
 *.png
 #.txt from plotOutput
@@ -46,3 +47,4 @@ test.cc
 .depend
 err
 SPECIAL_DATA
+*pa_run_data

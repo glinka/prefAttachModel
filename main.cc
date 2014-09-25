@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <mpi.h>
 #include "pamCPI.h"
+#include "util_fns.h"
+#include "calcGraphProps.h"
 
 using namespace std;
 const int ASCII_CHAR_OFFSET = 48;
@@ -64,7 +66,7 @@ int main(int argc, char *argv[]) {
   int offManifoldWait = 5000;
   int nMicroSteps = 20000;
   int nruns = 1;
-  string init_type = "complete";
+  string init_type = "erdos";
   int nthreads = 2;
   //parse command line args, could be moved to separate fn?
   for(int i = 1; i < argc; i++) {
@@ -173,10 +175,28 @@ int main(int argc, char *argv[]) {
 
   }
   else {
-    prefAttachModel model(n, m, kappa);
-    for(int i = 0; i < nruns; i++) {
-      model.run(nSteps, savetofile_interval, init_type);
+    prefAttachModel model(n, kappa);
+    if(init_type == "erdos") {
+      model.init_er_graph(n*n);
     }
+    else if(init_type == "complete") {
+      model.init_complete_graph();
+    }
+
+    const int nintervals = 500;
+    const int interval = 5*std::pow(n, 3)/nintervals;
+    ofstream degs_out("./pa_run_data/degs.out");
+    ofstream times_out("./pa_run_data/times.out");
+    vector< vector<int> > degs(nintervals);
+    vector<int> times(nintervals);
+
+    for(int i = 0; i < nintervals; i++) {
+      degs[i] = calcGraphProps::get_sorted_degrees(model.run_nsteps(interval));
+      times[i] = (i+1)*interval;
+    }
+
+    utils::save_matrix(degs, degs_out);
+    utils::save_vector(times, times_out);
   }
   return 0;
 }

@@ -27,6 +27,7 @@ class prefAttachModel {
     double genURN();
     void initGraph(int **newA);
     void init_graph_loosehh(std::vector<int> degs);
+    void step();
     graphData *step(bool saveFlag);
     int consistencyCheck();
     double simplified_edge_density();
@@ -46,9 +47,12 @@ class prefAttachModel {
  public:
     void initGraph();
     void init_complete_graph();
+    void init_er_graph(const int m);
     void run(long int nSteps, long int dataInterval, std::string init_type);
+    std::vector< std::vector<int> > run_nsteps(const int nsteps);
     std::ofstream* createFile(const std::string base, const std::string dir, std::vector<double> &addtnlData, std::vector<std::string> &addtnlDataLabels);
     prefAttachModel(int n, int m, double kappa);
+    prefAttachModel(const int n, const double kappa);
     ~prefAttachModel() {
 	for(int i = 0; i < n; i++) {
 	    delete[] A[i];

@@ -14,6 +14,7 @@ class calcGraphProps {
   static double *getLaplEigVals(int **A, const int n);
   static double **getLaplEigVects(int **A, const int n);
   static std::vector<int> get_sorted_degrees(int **A, const int n);
+  static std::vector<int> get_sorted_degrees(const std::vector< std::vector<int> >& A);
 };
 
 #endif

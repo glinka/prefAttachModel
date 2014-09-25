@@ -116,7 +116,7 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 
 	// take one step and save this data, start microStep at 1
 	// graphData* d = 
-	step(true);
+	step();
 	// toPlot.push_back(*d);
 	// degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
 	times_to_save.push_back(totalSteps);
@@ -125,13 +125,13 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 	    if(microStep < offManifoldWait) {
 		if((microStep+1)%save_interval == 0) {
 		  // graphData* d = 
-		  step(true);
+		  step();
 		  // toPlot.push_back(*d);
 		  // degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
 		  times_to_save.push_back(totalSteps);
 		}
 		else {
-		    step(false);
+		    step();
 		}
 	    }
 	    else {
@@ -139,7 +139,7 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 	      if((nOnManifoldSteps)%collectInterval == 0 || nOnManifoldSteps == nMicroSteps - offManifoldWait) {
 		if((microStep+1)%save_interval == 0) {
 		  // graphData* d = 
-		  step(true);
+		  step();
 		  // toPlot.push_back(*d);
 		  // degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
 		  times_to_save.push_back(totalSteps);
@@ -150,7 +150,7 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 		}
 		else {
 		  // toProject.push_back(*step(true));
-		  step(false);
+		  step();
 		  time.push_back(totalSteps);
 		  selfloop_densities.push_back(compute_selfloop_density());
 		  degs_to_project.push_back(calcGraphProps::get_sorted_degrees(A, n));
@@ -159,13 +159,13 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 	      else {
 		if((microStep+1)%save_interval == 0) {
 		  // graphData* d =
-		  step(true);
+		  step();
 		  // toPlot.push_back(*d);
 		  // degs_to_save.push_back(vector<int>(d->degSeq, d->degSeq+n));
 		  times_to_save.push_back(totalSteps);
 		}
 		else {
-		  step(false);
+		  step();
 		}
 	      }
 	    }
@@ -288,7 +288,7 @@ vector<int> pamCPI::run_single_step(const vector<int>& degree_seq) {
   vector<double> time;
   int totalSteps = 0;
   for(int microStep = 0; microStep < nMicroSteps; microStep++) {
-    step(false);
+    step();
     if((microStep >= offManifoldWait) && (microStep-offManifoldWait)%collectInterval == 0) {
 	time.push_back(totalSteps);
 	degs_to_project.push_back(calcGraphProps::get_sorted_degrees(A, n));

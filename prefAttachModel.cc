@@ -57,7 +57,18 @@ prefAttachModel::prefAttachModel(const int n, const int m, const double kappa): 
   for(int i = 0; i < n; i++) {
     A[i] = new int[n];
   }
-};
+}
+
+prefAttachModel::prefAttachModel(const int n, const double kappa): kappa(kappa), n(n) {
+  unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+  mt = new mt19937(seed);
+  rnNormalization = (double) (mt->max()+1);
+  A = new int*[n];
+  degs = new int[n];
+  for(int i = 0; i < n; i++) {
+    A[i] = new int[n];
+  }
+}
 
 double prefAttachModel::genURN() {
     return (*mt)()/(rnNormalization);
@@ -75,6 +86,42 @@ void prefAttachModel::init_complete_graph() {
     degs[i] = n+1;
   }
 }
+
+void prefAttachModel::init_er_graph(const int m) {
+  //init adjacency matrix and edge vector
+  this->m = m;
+  int nedges = (n*n + n)/2;
+  int edges[nedges];
+  for(int i = 0; i < nedges; i++) {
+      edges[i] = 0;
+  }
+  for(int i = 0; i < n; i++) {
+      degs[i] = 0;
+  }
+  int new_edge;
+  //assign m edges uniformly
+  for(int i = 0; i < m; i++) {
+    new_edge = (int) (nedges*genURN());
+    edges[new_edge]++;
+  }
+  int index = 0;
+  for(int i = 0; i < n; i++) {
+      A[i][i] = 2*edges[index++];
+      degs[i] = degs[i] + A[i][i];
+    for(int j = i+1; j < n; j++) {
+      A[i][j] = edges[index++];
+      A[j][i] = A[i][j];
+      degs[i] = degs[i] + A[i][j];
+      degs[j] = degs[j] + A[j][i];
+    }
+  }
+  
+  if(consistencyCheck() == 1) {
+      cout << "init error" << endl;
+  }
+
+}
+  
 
 void prefAttachModel::initGraph() {
   int i, j;
@@ -160,6 +207,43 @@ void prefAttachModel::initGraph(int **newA) {
     m = temp_m;
 }
 
+void prefAttachModel::step() {
+  int i = 0, degCount = 0;
+  int oldEdge = ((int) floor(2*m*genURN())) + 1;
+  while(degCount < oldEdge) {
+    degCount += degs[i++];
+  }
+  degCount -= degs[--i];
+  int j = 0;
+  while(degCount < oldEdge) {
+      degCount += A[i][j++];
+  }
+  j--;
+  int uOld, v;
+  if(genURN() > 0.5) {
+    uOld = i;
+    v = j;
+  }
+  else {
+    uOld = j;
+    v = i;
+  }
+  //find new edge based on linear preferential attachment
+  double p = genURN();
+  double sum = 0;
+  i = 0;
+  while(sum <= p) {
+    sum += (degs[i++]+kappa)/(2*m+n*kappa);
+  }
+  int uNew = --i;
+  A[uOld][v]--;
+  A[v][uOld]--;
+  A[uNew][v]++;
+  A[v][uNew]++;
+  degs[uOld]--;
+  degs[uNew]++;
+}
+
 graphData *prefAttachModel::step(bool saveFlag) {
   int i = 0, degCount = 0;
   int oldEdge = ((int) floor(2*m*genURN())) + 1;
@@ -200,19 +284,19 @@ graphData *prefAttachModel::step(bool saveFlag) {
       cout << "step error" << endl;
   }
   **/
-  // if(saveFlag) {
-  //     graphData *data = new graphData;
-  //     data->degSeq = new int[n];
-  //     data->A = new int*[n];
-  //     for(i = 0; i < n; i++) {
-  // 	  data->A[i] = new int[n];
-  // 	  data->degSeq[i] = degs[i];
-  // 	  for(j = 0; j < n; j++) {
-  // 	      data->A[i][j] = A[i][j];
-  // 	  }
-  //     }
-  //     return data;
-  // }
+  if(saveFlag) {
+      graphData *data = new graphData;
+      data->degSeq = new int[n];
+      data->A = new int*[n];
+      for(i = 0; i < n; i++) {
+  	  data->A[i] = new int[n];
+  	  data->degSeq[i] = degs[i];
+  	  for(j = 0; j < n; j++) {
+  	      data->A[i][j] = A[i][j];
+  	  }
+      }
+      return data;
+  }
 }
 
 ofstream* prefAttachModel::createFile(const string base, const string dir, vector<double> &addtnlData, vector<string> &addtnlDataLabels) {
@@ -314,6 +398,26 @@ void prefAttachModel::run(long int nSteps, long int dataInterval, string init_ty
 
 // template void prefAttachModel::saveData<int>(vector < int > &data, ofstream &fileHandle);
 // template void prefAttachModel::saveData<double>(vector < double > &data, ofstream &fileHandle);
+
+
+
+
+std::vector< std::vector<int> > prefAttachModel::run_nsteps(const int nsteps) {
+  for(int i = 0; i < nsteps; i++) {
+    step();
+  }
+  std::vector< std::vector<int> > adj_mat_out(n, std::vector<int>(n));
+  for(int i = 0; i < n; i++) {
+    for(int j = 0; j < n; j++) {
+      adj_mat_out[i][j] = A[i][j];
+    }
+  }
+  return adj_mat_out;
+}
+
+
+
+
 
 void prefAttachModel::save_degrees(const vector< vector<int> > &degs, ofstream &fileHandle) {
   vector<int>::const_iterator val;
