@@ -19,6 +19,11 @@ ALL FIXED IN NEWTON_GMRES
 #include <Eigen/Dense>
 #include "gmres.h"
 #include "iters_exception.h"
+#include "pamCPI.h"
+
+//TESTING
+#include <iostream>
+//TESTING
 
 GMRES::GMRES(const double tol, const int kmax): tol_(tol), kmax_(kmax) {}
 
@@ -218,7 +223,7 @@ namespace la {
 
 }
 
-Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::VectorXd&), const Eigen::VectorXd& x, const Eigen::VectorXd& x0, const double dx) const {
+Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::VectorXd&, pamCPI), const Eigen::VectorXd& x, const Eigen::VectorXd& x0, const double dx, pamCPI model) const {
   Eigen::VectorXd b = -F(x, model);
   const int n = b.size();
   /*
@@ -228,7 +233,7 @@ Eigen::VectorXd GMRES::solve_linear_system(Eigen::VectorXd (*F)(const Eigen::Vec
   Eigen::MatrixXd V(n, kmax_ + 1);
   Eigen::MatrixXd H = Eigen::MatrixXd::Zero(kmax_ + 1, kmax_);
   // V[0] is really x0, and not part of the Krylov subspace
-  Eigen::VectorXd (*v_next)(const Eigen::VectorXd& x, const Eigen::VectorXd& w, const double h, Eigen::VectorXd (*F)(const Eigen::VectorXd&));
+  Eigen::VectorXd (*v_next)(const Eigen::VectorXd& x, const Eigen::VectorXd& w, const double h, Eigen::VectorXd (*F)(const Eigen::VectorXd&, pamCPI), pamCPI model);
   Eigen::VectorXd r;
   // assume w.norm (= V.col(k).norm) \neq 0 in further iterations
   // otherwise we should have ended earlier

@@ -14,7 +14,7 @@ CXXFLAGS = -I ~/build/Eigen -debug full -std=c++0x -mkl -gxx-name=/usr/bin/g++ -
 CXX = mpic++
 # CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x #-O3
 
-all: graph_embedding # pref_attach # coarse_ng 
+all: graph_embedding pref_attach coarse_ng 
 
 %.o: %.c
 	$(CXX) -c $<  $(CXXFLAGS)
