@@ -121,7 +121,6 @@ int main(int argc, char *argv[]) {
       }
       else if(currentLabel == "-init_type" || currentLabel == "-init") {
 	init_type.assign(currentArg);
-	cout << "initial graph is type: " << init_type << endl;
       }
       else if(currentLabel == "-withoutinit" || currentLabel == "-noinit") {
 	new_init = false;

@@ -61,6 +61,10 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
   else if(init_type == "complete") {
     init_complete_graph();
   }
+  else if(init_type == "hhtesting") {
+    vector<int> init_degs(n, n);
+    init_graph_loosehh(init_degs);
+  }
   // initGraph() is default
   else {
     initGraph();
