@@ -11,6 +11,7 @@ class pamCPI : public prefAttachModel {
   pamCPI(const int n, const int m, const double kappa, const int projStep, const int collectInterval, const int offManifoldWait, const int nMicroSteps, const int save_interval);
     ~pamCPI() {};
     void runCPI(const int nSteps, const std::string init_type, const std::string run_id="", const bool new_init=true);
+    void run_fromfile(const int nsteps, const std::string input_filename, const std::string run_id="");
     std::vector<int> run_single_step(const std::vector<int>& degree_seq);
 
  pamCPI(const pamCPI& tocopy): prefAttachModel(tocopy), projStep(tocopy.projStep), collectInterval(tocopy.collectInterval), offManifoldWait(tocopy.offManifoldWait), nMicroSteps(tocopy.nMicroSteps), save_interval(tocopy.save_interval) {

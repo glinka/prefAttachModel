@@ -277,6 +277,71 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
     // delete eigval_data;
 }
 
+void pamCPI::run_fromfile(const int nsteps, const string input_filename, const string run_id) {
+  // open files once to clear them, afterwards data will be appended
+
+  // MPI Start
+  // only root process needs these files
+  const int root = 0;
+  int size, rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  vector<int> init_degs(n);
+  string dir;
+  if(rank == root) {
+    ifstream input_file(input_filename);
+    init_degs = utils::read_data(input_file).back();
+    dir = "./fromfile_init/";
+    // clear the files we'll save into
+    ofstream times_out(dir + "times" + run_id + ".csv");
+    ofstream degs_out(dir + "degs" + run_id + ".csv");
+    times_out << "n=" << n << endl;
+    degs_out << "n=" << n << endl;
+  }
+
+
+  MPI_Bcast(&init_degs.front(), n, MPI_INT, root, MPI_COMM_WORLD);
+  init_graph_loosehh(init_degs);
+  const int nsaves = 100;
+  const int save_interval = nsteps/nsaves;
+  for(int i = 0; i < nsteps; i++) {
+    if(i % save_interval == 0) {
+      // start MPI
+      if(rank != root) {
+	int tag = 0;
+	vector<int> degs = calcGraphProps::get_sorted_degrees(A, n);
+	MPI_Send(&degs.front(), n, MPI_INT, root, tag, MPI_COMM_WORLD);
+      }
+
+      else {
+	int tag = 0;
+	vector< vector<int> > all_degs(size, vector<int>(n));
+	all_degs[0] = calcGraphProps::get_sorted_degrees(A, n);
+	for(int j = 1; j < size; j++) {
+	  MPI_Recv(&all_degs[j].front(), n, MPI_INT, j, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	}
+	// average across all processes
+	for(int j = 1; j < size; j++) {
+	  for(int k = 0; k < n; k++) {
+	    all_degs[0][k] += all_degs[j][k];
+	  }
+	}
+	for(int j = 0; j < n; j++) {
+	  all_degs[0][j] /= size;
+	}
+	// save averaged degrees
+	ofstream times_out(dir + "times" + run_id + ".csv", ios_base::app);
+	ofstream degs_out(dir + "degs" + run_id + ".csv", ios_base::app);
+	times_out << i << endl;
+	save_coeffs(vector< vector<int> >(1, all_degs[0]), degs_out);
+      }
+      // END MPI
+    }
+    step();
+  }
+}
+
+
 vector<int> pamCPI::run_single_step(const vector<int>& degree_seq) {
   // based on the provided degree sequence, runs one full projective step
   // starting with the inialization of a full system up to and including
@@ -697,7 +762,7 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     saveData(times, times_out);
     // save_coeffs(vector< vector<double> >(1, std::vector<double>(deg_data.back().begin(), deg_data.back().end())), pre_proj_degs_out);
     save_coeffs(deg_data, pre_proj_degs_out);
-    save_coeffs(vector< vector<double> >(1, std::vector<double>(projected_degs.begin(), projected_degs.end())), post_proj_degs_out);
+    save_coeffs(vector< vector<double> >(1, vector<double>(projected_degs.begin(), projected_degs.end())), post_proj_degs_out);
     // save_coeffs(vector< vector<double> >(1, deg_fitted_coeffs.back()), fitted_coeffs_out);
     save_coeffs(deg_fitted_coeffs, fitted_coeffs_out);
     // save_coeffs(vector< vector<double> >(1, new_coeffs), fitted_coeffs_out);

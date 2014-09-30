@@ -67,6 +67,8 @@ int main(int argc, char *argv[]) {
   int nMicroSteps = 20000;
   int nruns = 1;
   string init_type = "erdos";
+  string input_filename = "./VSPECIAL_DATA/xs.csv";
+  bool from_file = true;
   int nthreads = 2;
   //parse command line args, could be moved to separate fn?
   for(int i = 1; i < argc; i++) {
@@ -124,6 +126,10 @@ int main(int argc, char *argv[]) {
       else if(currentLabel == "-withoutinit" || currentLabel == "-noinit") {
 	new_init = false;
       }
+      else if(currentLabel == "-input_filename") {
+	input_filename.assign(currentArg);
+	from_file = true;
+      }
       // else if(currentLabel == "-nruns") {
       // 	nruns = atoi(currentArg);
       // }
@@ -174,6 +180,18 @@ int main(int argc, char *argv[]) {
     // end MPI
 
   }
+  else if(from_file) {
+    // start MPI
+    int mpierr = MPI_Init(NULL, NULL);
+    if(mpierr != MPI_SUCCESS) {
+      cout << "Error initializing MPI, terminating" << endl;
+      MPI_Abort(MPI_COMM_WORLD, mpierr);
+    }
+    pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps, savetofile_interval);
+    model.run_fromfile(nSteps, input_filename);
+    MPI_Finalize();
+    // end MPI
+  }    
   else {
     prefAttachModel model(n, kappa);
     if(init_type == "erdos") {

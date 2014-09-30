@@ -46,5 +46,5 @@ test.cc
 *.pdf
 .depend
 err
-SPECIAL_DATA
+*SPECIAL_DATA
 *pa_run_data

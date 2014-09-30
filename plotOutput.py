@@ -1005,10 +1005,12 @@ def plot_time_projection(degs, times, params, fig_title="", cmap='autumn_r', ax_
         ax_cb = fig.add_subplot(gspec[:,5])
         show = True
     sorted_degs = np.sort(degs, axis=1)
-    print times.shape, sorted_degs.shape
     n = params['n']
     indices = np.linspace(1, n, n)
     nplotted_pts = 60
+    if nplotted_pts > times.shape[0]:
+        print "not enough data to plot", nplotted_pts, "points"
+        return
     sorted_degs = thin_array(sorted_degs, new_npts=nplotted_pts)
     times.shape = (times.shape[0], 1)
     times = thin_array(times, new_npts=nplotted_pts)
@@ -1017,7 +1019,6 @@ def plot_time_projection(degs, times, params, fig_title="", cmap='autumn_r', ax_
     colornorm = colors.Normalize(vmin=0, vmax=nplotted_pts-1)
     colormap = cm.ScalarMappable(norm=colornorm, cmap=cmap)
 
-    print times.shape, sorted_degs.shape
     for i in range(nplotted_pts):
         ax_fig.plot(indices, sorted_degs[i,:], lw=2, c=colormap.to_rgba(1.0*i), alpha=0.6)
         # ax_fig.plot(indices , sorted_degs[i*PLOT_INTERVAL,:], linewidths=0, c=colormap.to_rgba(1.0*i), alpha=0.3)
@@ -1712,7 +1713,7 @@ if __name__=="__main__":
     parser.add_argument('--comp-deg-cpi-3d', action='store_true', default=False)
     parser.add_argument('--comp-deg-cpi-timeproj', action='store_true', default=False)
     parser.add_argument('--newton', action='store_true', default=False)
-    parser.add_argument('--newton-custom', action='store_true', default=False)
+    parser.add_argument('--newton-comp', action='store_true', default=False)
     parser.add_argument('--dmaps-embeddings', action='store_true', default=False)
     parser.add_argument('--pca-embeddings', action='store_true', default=False)
     args = parser.parse_args()
@@ -1752,11 +1753,14 @@ if __name__=="__main__":
             plot_time_projection(deg_data[0], time_data, params, r'$n^3$')
             # n2
             n = params['n']
-            time_limit = 5*(params['proj_step'] + params['nms'])
+            if 'proj_step' in params.keys() and 'nms' in params.keys():
+                time_limit = 5*(params['proj_step'] + params['nms'])
+            else:
+                time_limit = np.power(n, 3)/10.0
             i = 0
             while time_data[i] <= time_limit:
                 i = i + 1
-            plot_time_projection(deg_data[:i, :], time_data[:i], params, r'$n^2$')
+            plot_time_projection(deg_data[0][:i, :], time_data[:i], params, r'$n^2$')
         if args.ds_vertex_proj_analytical:
             plot_vertex_projection_analytical(deg_data, time_data)
         if  args.ds_vertex_proj_avg:
@@ -1878,7 +1882,7 @@ if __name__=="__main__":
                 resids, g = get_data(f)
         newton_deg_evo(xs)
         newton_resid_evo(resids)
-    elif args.newton_custom:
+    elif args.newton_comp:
         for f in args.inputFiles:
             if 'xs' in f:
                 xs, g = get_data(f, header_rows=0)
