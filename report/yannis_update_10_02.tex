@@ -1,0 +1,85 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx, subcaption, enumitem}
+\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+\graphicspath{ {./figs/} }
+\pagestyle{plain}
+\let\endchangemargin=\endlist 
+\begin{document}
+\title{\vspace{-10mm}Coarse-grained computation and dimensionality reduction}
+\author{Alexander Holiday}
+\maketitle
+
+\section{Coarse-grained compuations}
+
+Employing a degree-based coarsening of the preferential attachment model, a coarse-projective integration routine was established. This was subsequently used in coarse fixed-point calculations through matrix-free Newton-GMRES. Representative results are shown in the figures below.
+
+\subsection{Coarse-projective integration}
+
+To perform coarse projective integration (CPI) with the preferential attachment model, we first run the simulation for a certain number of steps, waiting for the system to reach the slow manifold. Then we begin collecting data, in this case recording the degree sequences, over a certain period. Fitting each of the collected degree sequences to a sixth-order polynomial, we obtain the evolution of our reduced, seven-variable, i.e. the evolution of the polynomia's coefficients in time. The timecourse of each coefficient is then fit quadratically, and projected forward. The projected degree sequence is then specified by the seven, new projected coefficients. Finally, a Havel-Hakimi algorithm is used as the lifting operation, instantiating a new system from the new degree sequence, and the process repeats until the desired number of steps have been completed. \\
+
+In the following figures, obtained in the parameter regime specified below, we see that there is a consistent but relatively small error between the evolution of the CPI-accelerated degree sequence and that of a plain run. The gaps in the plots arise from the projection step.
+
+\textbf{Parameters:}
+\begin{itemize}[label=]
+\item \begin{itemize}[label=-]
+\item $n=100$
+  \item $m=\frac{n*(n-1)}{2}$ (a complete graph)
+  \item $\kappa=1$
+  \item Total simulation length: 2e6 ($2n^3$) steps
+  \item Waiting period (system approaching slow manifold): 3e4 steps
+  \item Data collection period (system on slow manifold): 5e4 steps
+  \item  \textbf{Projection interval: 5e4 steps}
+\end{itemize}
+\end{itemize}
+
+\begin{figure}[!h]
+  \includegraphics[width=0.8\textwidth]{deg_cpi_comp_n2_parab}
+  \caption{Difference in degree sequence resulting from CPI-accelerated runs and normal runs, parabolic fit of coefficients}
+  \label{fig:degcomp_n2_parab}
+\end{figure}
+
+\begin{figure}[!h]
+  \includegraphics[width=0.8\textwidth]{deg_cpi_comp_n3_parab}
+  \caption{Same as Fig. \ref{fig:degcomp_n2_parab}, but plotted over a longer time, parabolic fit of coefficients}
+\end{figure}
+
+\subsection{Coarse Newton-GMRES}
+
+Coarse fixed-point calculations were accomplished by combining the CPI routine described above with matrix-free Newton-GMRES. The solution must satisfy two constraints: the degree sequence must be non-negative, and the number of edges, or equivalently degrees, must be conserved. The latter is naturally satisfied throughout the course of Newton-GMRES as each Krylov basis vector will have a zero one-norm, i.e. $\| v_i \|_1 = 0$, $i = 1,2,...,k$. The solution at each step, as a combination of these vectors, will therefore also have zero one-norms as desired. The former, non-negativity condition is satisfied through a combination of decreasing the difference-approximation step-size and switching to backward-differences when forward-differences yield negative values. The figures below illustrate the effectiveness of this procedure.
+
+\begin{figure}[!h]
+  \includegraphics[width=0.8\textwidth]{newton_deg_comp}
+  \caption{Comparison of stationary distribution obtained through Newton-GMRES and direct simulation.}
+\end{figure}
+
+\begin{figure}[!h]
+  \includegraphics[width=0.8\textwidth]{newton_resids}
+  \caption{Residual decrease (two-norm of solution vector) vs. newton iteration number.} 
+\end{figure}
+
+\clearpage
+
+\section{Dimensionality reduction}
+
+Both PCA and DMAPS were applied to the model to investigate the underlying dimensionality. Both suggested a one-dimensional data set.
+
+\subsection{PCA}
+
+PCA was performed on time-series of degree sequences, i.e. each data point was a degree sequence from a model simulation. The embedding on the first two components, colored by time, is shown below.
+
+\begin{figure}[!h]
+  \includegraphics[width=0.8\textwidth]{pca_embedding}
+  \caption{PCA embedding on first two principal components, colored by simulation time.}
+\end{figure}
+
+\subsection{DMAPS}
+
+DMAPS was performed directly on time-series of graphs using the spectral-embedding/random-walk based method to map each network into a vector, which was subsequently used in DMAPS analysis. Again, the analysis suggests a one-dimensional description.
+
+\begin{figure}[!h]
+  \includegraphics[width=0.8\textwidth]{dmaps_embedding}
+  \caption{DMAPS embedding on first eigenvectors, colored by simulation time.}
+\end{figure}
+
+
+\end{document}
