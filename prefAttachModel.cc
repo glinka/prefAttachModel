@@ -669,7 +669,7 @@ void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
   for(int i = 0; i < n; i++) {
     int j = 0;
     while(new_degs[i] > 0) {
-      // cout << i << ",";
+      // cout << i << "," << endl;
       if(new_degs[(i+j+1) % n] > 0) {
 	if((((i+j+1) % n) != i) || (new_degs[(i+j+1) % n] > 1)) {
 	  A[i][(i+j+1) % n]++;

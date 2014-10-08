@@ -222,6 +222,7 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 	  new_degs = project_degs(degs_to_project, time, actual_proj_step, run_id, dir);
 	}
 	MPI_Bcast(&new_degs.front(), n, MPI_INT, root, MPI_COMM_WORLD);
+	MPI_Bcast(&actual_proj_step, 1, MPI_INT, root, MPI_COMM_WORLD);
 	// end MPI
 	  
 	// vector<int> new_degs = project_degs(degs_to_project, time, projStep, run_id);
@@ -267,7 +268,6 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 	// degs_to_save.clear();
 	// times_to_save.clear();
 	// toPlot.clear();
-
     }
     // *eigVectData << endl;
     // *eigval_data << endl;
@@ -629,6 +629,7 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     for(int i = 0; i < degree_discrepancy; i++) {
       projected_degs[n - 1 - i%n] += adjustment;
     }
+    proj_step = 0;
     return projected_degs;
   }
 
