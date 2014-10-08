@@ -129,6 +129,9 @@ int main(int argc, char *argv[]) {
 	input_filename.assign(currentArg);
 	from_file = true;
       }
+      else {
+	cout << currentLabel << " not recognized as input argument" << endl;
+      }
       // else if(currentLabel == "-nruns") {
       // 	nruns = atoi(currentArg);
       // }
