@@ -629,6 +629,7 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     for(int i = 0; i < degree_discrepancy; i++) {
       projected_degs[n - 1 - i%n] += adjustment;
     }
+    cout << "failed to project at t= " << times.back() << endl;
     proj_step = 0;
     return projected_degs;
   }
