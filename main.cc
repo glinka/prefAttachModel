@@ -122,6 +122,9 @@ int main(int argc, char *argv[]) {
       else if(currentLabel == "-withoutinit" || currentLabel == "-noinit") {
 	new_init = false;
       }
+      else {
+	cout << currentLabel << " not recognized" << endl;
+      }
       // else if(currentLabel == "-nruns") {
       // 	nruns = atoi(currentArg);
       // }

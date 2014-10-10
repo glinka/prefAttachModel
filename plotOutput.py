@@ -9,10 +9,10 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-from mpltools import style
-from mpltools import layout
+# from mpltools import style
+# from mpltools import layout
 
-style.use('ggplot')
+# style.use('ggplot')
 
 def thin_array(array, frac_to_keep=0.5, new_npts=None):
     #

@@ -450,6 +450,7 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
   // if proj_step is too small due negative degree restarts, simply return the current degree distribution
   // the choice of cutoff is arbitrary
   if(proj_step < m) {
+    cout << "failed to project at t= " << times.back();
     return deg_data.back();
   }
 
