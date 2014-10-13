@@ -27,6 +27,7 @@ class prefAttachModel {
     double genURN();
     void initGraph(int **newA);
     void init_graph_loosehh(std::vector<int> degs);
+    void init_lopsided_graph();
     void step();
     graphData *step(bool saveFlag);
     int consistencyCheck();

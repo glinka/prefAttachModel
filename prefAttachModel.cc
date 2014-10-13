@@ -123,6 +123,16 @@ void prefAttachModel::init_er_graph(const int m) {
 }
   
 
+void prefAttachModel::init_lopsided_graph() {
+  vector<int> new_degs(n, 0);
+  degcount = 0;
+  while(degcount < 2*m) {
+    new_degs[degcount % (n/2)]++;
+    degcount++;
+  }
+  init_graph_loosehh(new_degs);
+}
+
 void prefAttachModel::initGraph() {
   int i, j;
   //init random number generator
