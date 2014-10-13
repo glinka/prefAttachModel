@@ -55,6 +55,9 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
     init_complete_graph();
   }
   // initGraph() is default
+  else if(init_type == "lopsided") {
+    init_lopsided_graph();
+  }
   else {
     initGraph();
   }

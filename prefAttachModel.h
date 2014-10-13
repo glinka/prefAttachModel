@@ -26,6 +26,7 @@ class prefAttachModel {
     void initGraph(int **newA);
     void init_complete_graph();
     void init_graph_loosehh(std::vector<int> degs);
+    void init_lopsided_graph();
     graphData *step(bool saveFlag);
     int consistencyCheck();
     double simplified_edge_density();
