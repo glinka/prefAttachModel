@@ -77,6 +77,11 @@ void prefAttachModel::init_complete_graph() {
 }
 
 void prefAttachModel::init_lopsided_graph() {
+  A = new int*[n];
+  degs = new int[n];
+  for(int i = 0; i < n; i++) {
+    A[i] = new int[n];
+  }
   vector<int> new_degs(n, 0);
   int degcount = 0;
   while(degcount < 2*m) {
@@ -546,7 +551,6 @@ bool reverse_comp(const double i, const double j) {
 void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
   // sort in increasing order
   sort(new_degs.begin(), new_degs.end(), reverse_comp);
-  
   // check if the sum is even, if not, add one to largest degree
   int degcount = 0;
   for(int i = 0; i < n; i++) {
