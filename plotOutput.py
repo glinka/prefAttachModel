@@ -9,10 +9,10 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-from mpltools import style
-from mpltools import layout
+# from mpltools import style
+# from mpltools import layout
 
-style.use('ggplot')
+# style.use('ggplot')
 
 def thin_array(array, frac_to_keep=0.5, new_npts=None):
     #
@@ -606,6 +606,11 @@ def plot_degree_surface(degs, times, sort=True, title='', zlabel=None, ax=None, 
     LABELSIZE = 0.75*FONTSIZE
     LEGENDSIZE = 0.5*FONTSIZE
     ALPHA = 0.8
+
+    new_npts = 20
+    times.shape = (times.shape[0], 1)
+    times = thin_array(times, new_npts=new_npts)
+    degs = thin_array(degs, new_npts=new_npts)
 
     if sort:
         sorted_degs = np.sort(degs)
@@ -1549,14 +1554,14 @@ def compare_deg_cpi(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_times, no
     cpi_degs = np.sort(cpi_degs)
     nocpi_degs = np.sort(nocpi_degs)
     # n3
-    plot_degree_projection((cpi_degs - nocpi_degs)/nocpi_degs, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error')
+    plot_degree_projection((cpi_degs - nocpi_degs), mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error') #/nocpi_degs, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error')
     # n2
     n = cpi_params['n']
     time_limit = 5*(cpi_params['proj_step']+cpi_params['nms'])
     i = 0
     while mutual_times[i] < time_limit:
         i = i + 1
-    plot_degree_projection((cpi_degs[:i,:] - nocpi_degs[:i,:])/nocpi_degs[:i,:], mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='relative error')
+    plot_degree_projection((cpi_degs[:i,:] - nocpi_degs[:i,:]), mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='relative error') #/nocpi_degs[:i,:], mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='relative error')
 
 def compare_deg_cpi_3d(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_times, nocpi_params):
     from mpl_toolkits.mplot3d import Axes3D
@@ -1957,40 +1962,46 @@ if __name__=="__main__":
                     nocpi_times, g = get_data(f)
         import matplotlib.gridspec as gs
         from mpl_toolkits.mplot3d import Axes3D
-        fig = plt.figure()
+        fig = plt.figure(facecolor='w')
         gspec = gs.GridSpec(36,12)
         gspec.update(wspace=1.5, hspace=30.0)
 
+        fs = 20
         # cpi
         ax_3d = fig.add_subplot(gspec[:12, :6], projection='3d', axisbg='w')
-        ax_proj = fig.add_subplot(gspec[:12, 6:-1])
+        ax_proj_cpi = fig.add_subplot(gspec[:12, 6:-1])
         ax_proj_cb = fig.add_subplot(gspec[:12, -1])
         cpi_times.shape = (cpi_times.shape[0], 1)
         cpi_degs_3d = thin_array(cpi_degs, new_npts=50)
         cpi_times_3d = thin_array(cpi_times, new_npts=50)
-        fs = 20
         plot_degree_surface(cpi_degs_3d, cpi_times_3d, ax=ax_3d, FONTSIZE=fs, zlabel=r'$d_{CPI}$')
-        plot_degree_projection(cpi_degs, cpi_times, axes=[ax_proj, ax_proj_cb], FONTSIZE=fs)
+        plot_degree_projection(cpi_degs, cpi_times, axes=[ax_proj_cpi, ax_proj_cb], FONTSIZE=fs)
+        # hide axis labels
+        ax_proj_cpi.set_xlabel('')
+        ax_proj_cpi.tick_params(axis='x', which='both', labelsize=0, direction='out', top=False)
+        ax_proj_cpi.xaxis.get_children()[1].set_size(0)
         
         # no cpi
         ax_3d = fig.add_subplot(gspec[12:24, :6], projection='3d', axisbg='w')
-        ax_proj = fig.add_subplot(gspec[12:24, 6:-1])
+        ax_proj_nocpi = fig.add_subplot(gspec[12:24, 6:-1])
         ax_proj_cb = fig.add_subplot(gspec[12:24, -1])
         nocpi_times.shape = (nocpi_times.shape[0], 1)
         nocpi_degs_3d = thin_array(nocpi_degs, new_npts=50)
         nocpi_times_3d = thin_array(nocpi_times, new_npts=50)
         plot_degree_surface(nocpi_degs_3d, nocpi_times_3d, ax=ax_3d, FONTSIZE=fs, zlabel=r'$d_p$')
-        plot_degree_projection(nocpi_degs, nocpi_times, axes=[ax_proj, ax_proj_cb], FONTSIZE=fs)
+        plot_degree_projection(nocpi_degs, nocpi_times, axes=[ax_proj_nocpi, ax_proj_cb], FONTSIZE=fs, cb_label='')
+        ax_proj_nocpi.set_xlabel('')
+        ax_proj_nocpi.tick_params(axis='x', which='both', labelsize=0, direction='out', top=False)
+        ax_proj_nocpi.xaxis.get_children()[1].set_size(0)
 
         # the diff between nocpi and cpi
         ax_3d = fig.add_subplot(gspec[24:, :6], projection='3d', axisbg='w')
-        ax_proj = fig.add_subplot(gspec[24:, 6:-1])
+        ax_proj_diff = fig.add_subplot(gspec[24:, 6:-1])
         ax_proj_cb = fig.add_subplot(gspec[24:, -1])
         mutual_times, cpi_degs, nocpi_degs = align_degs(cpi_times, cpi_degs, nocpi_times, nocpi_degs)
         plot_degree_surface(np.sort(cpi_degs) - np.sort(nocpi_degs), mutual_times, sort=False, ax=ax_3d, FONTSIZE=fs, zlabel=r'$d_{CPI}-d_p$')
-        plot_degree_projection(np.sort(cpi_degs) - np.sort(nocpi_degs), mutual_times, sort=False, axes=[ax_proj, ax_proj_cb], FONTSIZE=fs)
-        
-
+        plot_degree_projection(np.sort(cpi_degs) - np.sort(nocpi_degs), mutual_times, sort=False, axes=[ax_proj_diff, ax_proj_cb], FONTSIZE=fs, cb_label='')
+        ax_proj_diff.tick_params(direction='out', top=False)
 
         fig.subplots_adjust(left=0.01, right=0.93)
         plt.show(fig)
