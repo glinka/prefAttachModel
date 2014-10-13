@@ -974,14 +974,14 @@ def plot_time_projection_diff(degs, times):
     # ax.set_ylim((-2100, 1000))
     plt.show()
 
-def plot_time_projection(degs, times, params, fig_title="", cmap='autumn_r', ax_fig=None, ax_cb=None):
+def plot_time_projection(degs, times, params, fig_title="", cmap='jet', ax_fig=None, ax_cb=None):
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.cm as cm
     import matplotlib.colors as colors
     import matplotlib.colorbar as colorbar
     import matplotlib.gridspec as gs
 
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     gspec = gs.GridSpec(6,6)
     show = False
     if ax_fig is None or ax_cb is None:
@@ -1019,6 +1019,7 @@ def plot_time_projection(degs, times, params, fig_title="", cmap='autumn_r', ax_
     ax_fig.set_xlabel('vertex', fontsize=FONTSIZE)
     ax_fig.set_ylabel('degree', fontsize=FONTSIZE)
     ax_fig.set_xlim((0, n))
+    ax_fig.set_xticklabels([str(int(i)) for i in np.linspace(1, n, 6)])
     # ax_fig.set_xlim(left=)
     # ax_fig.set_yticks([i for i in np.linspace(0, n, 11)])
     # ax_fig.set_yticklabels([str(i) for i in np.linspace(0, 100, 11)/100.0])
@@ -1052,8 +1053,9 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     else:
         sorted_degs = degs
     times.shape = (npts, 1)
-    thinned_sorted_degs = thin_array(sorted_degs, new_npts=100)
-    thinned_times = thin_array(times, new_npts=100)
+    new_npts=200
+    thinned_sorted_degs = thin_array(sorted_degs, new_npts=new_npts)
+    thinned_times = thin_array(times, new_npts=new_npts)
     ones_vect = np.ones(thinned_times.shape[0])
 
     # next_max = np.amax(sorted_degs[:,:-1])
@@ -1063,7 +1065,7 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
 
     show = False
     if axes is None:
-        fig = plt.figure()
+        fig = plt.figure(facecolor='w')
         gspec = gs.GridSpec(6,6)
         ax = fig.add_subplot(gspec[:,:5], axisbg='white')
         ax_cb = fig.add_subplot(gspec[:, 5])
@@ -1084,6 +1086,7 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     ax.set_ylabel('vertex', fontsize=FONTSIZE)
     ax.set_xlim((0, thinned_times[-1]))
     ax.set_ylim((0, n))
+    ax.set_yticklabels([str(int(i)) for i in np.linspace(1, n, 6)])
     ax.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
     ax.tick_params(axis='both', which='major', labelsize=LABELSIZE)
     ax.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
@@ -1091,7 +1094,7 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
 
     # colorbarnorm = colors.Normalize(vmin=0, vmax=log_next_max)
     # formatting function to prevent long decimal labels
-    format_fn = lambda val, pos: "%.2f" % val
+    format_fn = lambda val, pos: "%i" % val
     cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colornorm, orientation='vertical', format=ticker.FuncFormatter(format_fn))
     cb.set_ticks(np.linspace(mindeg, maxdeg, 5))
     ax_cb.tick_params(axis='both', which='both', labelsize=LABELSIZE)
@@ -1128,18 +1131,36 @@ def plot_vertex_projection(degs, times):
     import matplotlib.cm as cm
     import matplotlib.colors as colors
     import matplotlib.colorbar as colorbar
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+    import matplotlib.gridspec as gs
+    degs = np.sort(degs)
     n = degs.shape[1]
     colornorm = colors.Normalize(vmin=0, vmax=n-1)
     colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
 
+    FONTSIZE=48
+    LABELSIZE = 0.75*FONTSIZE
+    LEGENDSIZE = 0.5*FONTSIZE
+    ALPHA = 0.8
+
+    gspec = gs.GridSpec(6,6)
+    fig = plt.figure(facecolor='w')
+    ax = fig.add_subplot(gspec[:,:5])
     for i in range(n):
         ax.scatter(times, degs[:, i], c=colormap.to_rgba(1.0*i), lw=0, alpha=0.8)
+
     ax.set_xlim((0, np.max(times)))
-    ax.set_xlabel('step', fontsize=25)
-    ax.set_ylabel('vertex degree', fontsize=25)
-    ax.tick_params(axis='both', which='both', labelsize=24)
+    ax.set_xlabel('step', fontsize=FONTSIZE)
+    ax.set_ylabel('degree', fontsize=FONTSIZE)
+    ax.tick_params(axis='both', which='both', labelsize=LABELSIZE)
+    SCALESIZE = 24
+    ax.xaxis.get_children()[1].set_size(SCALESIZE)
+    # make colorbar
+    ax_cb = fig.add_subplot(gspec[:,5])
+    cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colornorm, orientation='vertical')
+    cb.set_ticks([int(i) for i in np.linspace(0, n-1, 6)])
+    cb.set_ticklabels([str(int(i)) for i in np.linspace(1, n, 6)])
+    ax_cb.tick_params(axis='both', which='both', labelsize=LABELSIZE)
+    fig.text(0.8, 0.93, 'vertex', fontsize=FONTSIZE-4)
     plt.show()
 
 
@@ -1790,6 +1811,7 @@ if __name__=="__main__":
                 time_limit = 5*(params['proj_step'] + params['nms'])
             else:
                 time_limit = np.power(n, 3)/10.0
+            time_limit = 1.2*np.power(n, 2)
             i = 0
             while time_data[i] <= time_limit:
                 i = i + 1
