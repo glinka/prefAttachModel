@@ -211,6 +211,16 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 	    }
 	  }
 	  new_degs = project_degs(degs_to_project, time, projStep, run_id, dir);
+	  // TEMPORARY
+	  // TESTING
+	  // when init_type == lopsided, nothing projects
+	  if(init_type == "lopsided") {
+	    ofstream times_out(dir + "times" + run_id + ".csv", ios_base::app);
+	    ofstream pre_proj_degs_out(dir + "pre_proj_degs" + run_id + ".csv", ios_base::app);
+	    saveData(time, times_out);
+	    save_coeffs(degs_to_project, pre_proj_degs_out);
+	  }
+	  // END TEMP
 	}
 	MPI_Bcast(&new_degs.front(), n, MPI_INT, root, MPI_COMM_WORLD);
 	// end MPI
