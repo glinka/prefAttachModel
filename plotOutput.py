@@ -597,17 +597,17 @@ def plot_vectors_tc(data, params, plot_name=""):
         plt.savefig("coeffs/" + plot_name + "coeff" + str(i) + ".png")
     #ax.legend(loc=6)
 
-def plot_degree_surface(degs, times, sort=True, title='', zlabel=None, ax=None, FONTSIZE=48):
+def plot_degree_surface(degs, times, sort=True, title='', zlabel=None, ax=None, FONTSIZE=48, colornorm=None, zlim=None):
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.cm as cm
     import matplotlib.colors as colors
     import matplotlib.colorbar as colorbar
 
-    LABELSIZE = 0.75*FONTSIZE
+    LABELSIZE = 0.65*FONTSIZE
     LEGENDSIZE = 0.5*FONTSIZE
     ALPHA = 0.8
 
-    new_npts = 20
+    new_npts = 50
     times.shape = (times.shape[0], 1)
     times = thin_array(times, new_npts=new_npts)
     degs = thin_array(degs, new_npts=new_npts)
@@ -622,7 +622,8 @@ def plot_degree_surface(degs, times, sort=True, title='', zlabel=None, ax=None, 
     mindeg = np.amin(sorted_degs)
     # color by deg (z val), not vertex (x val)
     # colornorm = colors.Normalize(vmin=0, vmax=n-1)
-    colornorm = colors.Normalize(vmin=mindeg, vmax=maxdeg)
+    if colornorm is None:
+        colornorm = colors.Normalize(vmin=mindeg, vmax=maxdeg)
     colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
     ntimes = times.shape[0]
 
@@ -637,21 +638,38 @@ def plot_degree_surface(degs, times, sort=True, title='', zlabel=None, ax=None, 
         ax.scatter(100.0*v*np.ones(npts)/n, times, sorted_degs[:,v], linewidths=0, c=colormap.to_rgba(1.0*sorted_degs[:,v])) # *v))
     ax.set_xlim(left=0, right = 100)
     ax.set_ylim(bottom=0)
-    ax.set_zlim((mindeg-(maxdeg-mindeg)*0.1, maxdeg+(maxdeg-mindeg)*0.1))
+    if zlim is None:
+        zlim = (mindeg-(maxdeg-mindeg)*0.1, maxdeg+(maxdeg-mindeg)*0.1)
+        ax.set_zlim(zlim)
+    else:
+        ax.set_zlim(zlim)
     ax.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
     ax.tick_params(axis='both', which='major', labelsize=LABELSIZE)
     ax.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
-    ax.set_xlabel('vertex', fontsize=FONTSIZE)
-    ax.set_ylabel('step', fontsize=FONTSIZE)
+    ax.set_xlabel('\nvertex', fontsize=FONTSIZE)
+    ax.set_ylabel('\nstep', fontsize=FONTSIZE)
     if zlabel is None:
         zlabel = 'degree'
     ax.set_zlabel(zlabel, fontsize=FONTSIZE)
     ax.set_title(title, fontsize=FONTSIZE)
-    # increase size of axes scaling number
-    ax.yaxis.get_children()[1].set_size(LABELSIZE)
+    # increase size of axes scaling number and add padding
+    # scale_pos = ax.yaxis.get_children()[1].get_position()
+    # print ax.yaxis.get_children()[1]
+    # ax.yaxis.get_children()[1].set_text("\n" + str(scale_txt))
+    ax.yaxis.get_children()[1].set_size(0)
+    # SUPER DAMN STUPID, BUT I DON'T KNOW HOW TO PROGRAMMATICALLY FIND THE EXPONENTIAL SCALE VALUE
+    # DAMMIT
+    print "******************************"
+    print "watch yo damn self, the axis scale '1e7' has been added by hand and may not be correct"
+    print "******************************"
+    ax.text(1.15*n, times[-1], zlim[0]-0.3*(zlim[1] - zlim[0]), '1e7', fontsize=LABELSIZE)
+    # scale_txt = ax.yaxis.get_children()[1].get_text()
+    # ax.yaxis.get_children()[1].set_position((1, -0.1))
+    # ax.yaxis.get_children()[1].set_va('bottom')
     if show:
         fig.tight_layout()
         plt.show()
+    return zlim
 
 def plot_degree_surface_v2(degs, times):
     # this method has become overly specialized: it plots many different things, none of which, in fact, is a degree surface
@@ -1034,7 +1052,41 @@ def plot_time_projection(degs, times, params, fig_title="", cmap='jet', ax_fig=N
         plt.show(fig)
     return ax_fig
 
-def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degree', axes=None, FONTSIZE=48):
+def plot_degree_projection_superfig(degs, times, ax, colornorm, sort=True, fig_title='', cb_label='degree', FONTSIZE=48):
+    import matplotlib.cm as cm
+    LABELSIZE = 0.75*FONTSIZE
+    LEGENDSIZE = 0.5*FONTSIZE
+    ALPHA = 0.8
+
+    n = degs.shape[1]
+    npts = times.shape[0]
+    npts_kept = int(0.2*npts)
+    if sort:
+        sorted_degs = np.sort(degs)
+    else:
+        sorted_degs = degs
+    times.shape = (npts, 1)
+    new_npts=200
+    thinned_sorted_degs = thin_array(sorted_degs, new_npts=new_npts)
+    thinned_times = thin_array(times, new_npts=new_npts)
+    ones_vect = np.ones(thinned_times.shape[0])
+
+    colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
+    for v in range(n):
+        ax.scatter(thinned_times, v*ones_vect, color=colormap.to_rgba(thinned_sorted_degs[:, v]), s=30, lw=0, alpha=ALPHA)
+
+    ax.set_xlabel('step', fontsize=FONTSIZE)
+    ax.set_ylabel('vertex', fontsize=FONTSIZE)
+    ax.set_xlim((0, thinned_times[-1]))
+    ax.set_ylim((0, n))
+    ax.set_yticklabels([str(int(i)) for i in np.linspace(1, n, 6)])
+    ax.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
+    ax.tick_params(axis='both', which='major', labelsize=LABELSIZE)
+    ax.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
+    ax.xaxis.get_children()[1].set_size(LABELSIZE)
+
+
+def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degree', axes=None, FONTSIZE=48, show_colorbar=True):
     import matplotlib.cm as cm
     import matplotlib.colors as colors
     import matplotlib.colorbar as colorbar
@@ -1087,24 +1139,24 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     ax.set_xlim((0, thinned_times[-1]))
     ax.set_ylim((0, n))
     ax.set_yticklabels([str(int(i)) for i in np.linspace(1, n, 6)])
+    ax.tick_params(axis='x', direction='out', top=False)
     ax.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
-    ax.tick_params(axis='both', which='major', labelsize=LABELSIZE)
-    ax.tick_params(axis='both', which='minor', labelsize=LABELSIZE)
+    ax.tick_params(axis='both', which='both', labelsize=LABELSIZE)
     ax.xaxis.get_children()[1].set_size(LABELSIZE)
 
     # colorbarnorm = colors.Normalize(vmin=0, vmax=log_next_max)
     # formatting function to prevent long decimal labels
-    format_fn = lambda val, pos: "%i" % val
-    cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colornorm, orientation='vertical', format=ticker.FuncFormatter(format_fn))
-    cb.set_ticks(np.linspace(mindeg, maxdeg, 5))
-    ax_cb.tick_params(axis='both', which='both', labelsize=LABELSIZE)
-
     textcolor = ax.get_ymajorticklabels()[0].get_color()
-    ax_cb.text(0, 1.04, cb_label, fontsize=FONTSIZE-4, color=textcolor)
     ax.set_title(fig_title, fontsize=FONTSIZE, color=textcolor)
-
+    if show_colorbar:
+        format_fn = lambda val, pos: "%i" % val
+        cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colornorm, orientation='vertical', format=ticker.FuncFormatter(format_fn))
+        cb.set_ticks(np.linspace(mindeg, maxdeg, 5))
+        ax_cb.tick_params(axis='both', which='both', labelsize=LABELSIZE)
+        ax_cb.text(0, 1.04, cb_label, fontsize=FONTSIZE-4, color=textcolor)
     if show:
         plt.show()
+    return colornorm
 
 def plot_vertex_projection_avg(degs, times):
     import matplotlib.cm as cm
@@ -1478,16 +1530,27 @@ def compare_deg_recon(pre_recon, post_recon, poly_coeffs):
     nrecons = pre_recon.shape[0]
     ncoeffs = poly_coeffs.shape[1]
     indices = np.arange(n)
-    for i in range(nrecons):
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.scatter(indices, np.sort(pre_recon[i,:]), lw=0, c='b')
-        ax.scatter(indices, post_recon[i,:], lw=0, c='r')
+    fig = plt.figure(facecolor='w')
+    ax = fig.add_subplot(111)
+    FONTSIZE=48
+    LABELSIZE=.75*FONTSIZE
+    for i in (2000,):#(500, 1000, 2000):
+        ax.scatter(indices, np.sort(pre_recon[i,:]), lw=0, c='b', s=25)
+        ax.set_ylabel('degree', fontsize=FONTSIZE)
+        ax.set_xlabel('vertex', fontsize=FONTSIZE)
+        ax.set_xlim((0,n))
+        ax.set_xticklabels([str(int(j)) for j in np.linspace(1, n, 6)])
+        ax.tick_params(axis='both', which='both', labelsize=LABELSIZE)
+        # ax.scatter(indices, post_recon[i,:], lw=0, c='r')
         recon = np.zeros(n)
         for j in range(ncoeffs):
             recon = indices*recon + np.ones(n)*poly_coeffs[i,ncoeffs-j-1]
-        ax.plot(indices, recon, c='g')
+        # ax.plot(indices, recon, c='g', lw=4)
+        # eqn_str = "{:1.2e} + ".format(poly_coeffs[i,0]) +  "{:1.2e}".format(poly_coeffs[i,1]) + r'$x$' + " + " +  "{:1.2e}".format(poly_coeffs[i,2]) + r'$x^2$' + " + " +  "{:1.2e}".format(poly_coeffs[i,3]) + r'$x^3$' + " + " +  "{:1.2e}".format(poly_coeffs[i,4]) + r'$x^4$' + " + " +  "{:1.2e}".format(poly_coeffs[i,5]) + r'$x^5$'
+        # fig.text(0.15, 0.7, eqn_str, fontsize=0.5*FONTSIZE)
+        plt.show()
         plt.savefig('./deg_cpi_data/comparison' + str(i+1) + '.png')
+        ax.cla()
 # 59.112032033903844, 2.5954064014015832, -0.12128778079321469, 0.0032341112645995402, -3.8690293051141307e-05, 1.6932667805213894e-07
 
 def deg_recon_discrepancy(times, degs, params):
@@ -1757,6 +1820,7 @@ if __name__=="__main__":
     parser.add_argument('--dmaps-embeddings', action='store_true', default=False)
     parser.add_argument('--pca-embeddings', action='store_true', default=False)
     parser.add_argument('--super-fig', action='store_true', default=False)
+    parser.add_argument('--diffinit-comp', action='store_true', default=False)
     args = parser.parse_args()
     # this whole file is a huge piece of
     # the atrocities below won't be noticed
@@ -1844,16 +1908,13 @@ if __name__=="__main__":
                 time_data, params = get_data(fileName)
         plot_densities(density_data, time_data, params)
     elif args.comp_deg_recon:
-        pre = None
-        post = None
-        coeffs = None
         for fileName in args.inputFiles:
             if 'pre' in fileName:
-                pre, params = get_data(fileName, header_rows=0)
+                pre, params = get_data(fileName, header_rows=1)
             elif 'post' in fileName:
-                post, params = get_data(fileName, header_rows=0)
+                post, params = get_data(fileName, header_rows=1)
             elif 'coeffs' in fileName:
-                coeffs, params = get_data(fileName, header_rows=0)
+                coeffs, params = get_data(fileName, header_rows=1)
         compare_deg_recon(pre, post, coeffs)
     elif args.deg_recon_discrepancy:
         times = None
@@ -1883,7 +1944,7 @@ if __name__=="__main__":
         cpi_params = None
         nocpi_params = None
         for fileName in args.inputFiles:
-            if 'withinit' in fileName or '08' in fileName:
+            if 'withinit' in fileName or 'SUPA' in fileName:
                 if 'times' in fileName:
                     times_cpi, cpi_params = get_data(fileName, header_rows=1)
                 elif 'degs' in fileName:
@@ -1970,9 +2031,34 @@ if __name__=="__main__":
             elif 'graph_embeddings' in f:
                 ges, g = get_data(f, header_rows=0)
         pa_pca_embedding(eigvals, eigvects, ges)
+    # elif args.diffinit_comp:
+    #     from mpl_toolkits.mplot3d import Axes3D
+    #     for f in args.inputFiles:
+    #         if 'degs1' in f:
+    #             degs1, g = get_data(f)
+    #         elif 'degs2' in f:
+    #             degs2, g = get_data(f)
+    #         elif 'times1' in f:
+    #             times1, g = get_data(f)
+    #         elif 'times2' in f:
+    #             times2, g = get_data(f)
+    #     mutual_times, mdegs1, mdegs2 = align_degs(times1, degs1, times2, degs2)
+    #     print mutual_times.shape
+    #     i = 0
+    #     while times2[i] != mutual_times[-1]:
+    #         i += 1
+    #     fig = plt.figure()
+    #     ax = fig.add_subplot(111, projection='3d')
+    #     plot_degree_surface(mdegs1, mutual_times, ax=ax, c='b')
+    #     plot_degree_surface(mdegs2, mutual_times, ax=ax, c='r')
+    #     plot_degree_surface(np.ones((degs2.shape[0]-i, degs2.shape[1]))*degs1[-1,:], times2[i:], ax=ax, c='b')
+    #     plot_degree_surface(degs2[i:,:], times2[i:], ax=ax, c='r')
+    #     plt.show(fig)
+
     elif args.super_fig:
         for f in args.inputFiles:
-            if 'withinit' in f:
+            # it's too late
+            if 'withinit' in f or 'SUPA' in f:
                 if 'degs' in f:
                     cpi_degs, g = get_data(f)
                 elif 'times' in f:
@@ -1983,21 +2069,29 @@ if __name__=="__main__":
                 elif 'times' in f:
                     nocpi_times, g = get_data(f)
         import matplotlib.gridspec as gs
+        import matplotlib.colorbar as colorbar
         from mpl_toolkits.mplot3d import Axes3D
+
         fig = plt.figure(facecolor='w')
         gspec = gs.GridSpec(36,12)
         gspec.update(wspace=1.5, hspace=30.0)
-
         fs = 20
+
+        mutual_times, cpi_degs, nocpi_degs = align_degs(cpi_times, cpi_degs, nocpi_times, nocpi_degs)
+        mutual_times.shape = (mutual_times.shape[0], 1)
+        # mutual_times = thin_array(mutual_times, new_npts=50)
+        # cpi_degs = thin_array(cpi_degs, new_npts=50)
+        # nocpi_degs = thin_array(nocpi_degs, new_npts=50)
+
         # cpi
         ax_3d = fig.add_subplot(gspec[:12, :6], projection='3d', axisbg='w')
-        ax_proj_cpi = fig.add_subplot(gspec[:12, 6:-1])
-        ax_proj_cb = fig.add_subplot(gspec[:12, -1])
+        ax_proj_cpi = fig.add_subplot(gspec[:12, 7:-1])
+        # ax_proj_cb = fig.add_subplot(gspec[:12, -1])
         cpi_times.shape = (cpi_times.shape[0], 1)
-        cpi_degs_3d = thin_array(cpi_degs, new_npts=50)
-        cpi_times_3d = thin_array(cpi_times, new_npts=50)
-        plot_degree_surface(cpi_degs_3d, cpi_times_3d, ax=ax_3d, FONTSIZE=fs, zlabel=r'$d_{CPI}$')
-        plot_degree_projection(cpi_degs, cpi_times, axes=[ax_proj_cpi, ax_proj_cb], FONTSIZE=fs)
+        # cpi_degs_3d = thin_array(cpi_degs, new_npts=50)
+        # cpi_times_3d = thin_array(cpi_times, new_npts=50)
+        zlim = plot_degree_surface(cpi_degs, mutual_times, ax=ax_3d, FONTSIZE=fs, zlabel=r'$d_{CPI}$')
+        cn = plot_degree_projection(cpi_degs, mutual_times, axes=[ax_proj_cpi, None], FONTSIZE=fs, show_colorbar=False)
         # hide axis labels
         ax_proj_cpi.set_xlabel('')
         ax_proj_cpi.tick_params(axis='x', which='both', labelsize=0, direction='out', top=False)
@@ -2005,27 +2099,36 @@ if __name__=="__main__":
         
         # no cpi
         ax_3d = fig.add_subplot(gspec[12:24, :6], projection='3d', axisbg='w')
-        ax_proj_nocpi = fig.add_subplot(gspec[12:24, 6:-1])
-        ax_proj_cb = fig.add_subplot(gspec[12:24, -1])
-        nocpi_times.shape = (nocpi_times.shape[0], 1)
-        nocpi_degs_3d = thin_array(nocpi_degs, new_npts=50)
-        nocpi_times_3d = thin_array(nocpi_times, new_npts=50)
-        plot_degree_surface(nocpi_degs_3d, nocpi_times_3d, ax=ax_3d, FONTSIZE=fs, zlabel=r'$d_p$')
-        plot_degree_projection(nocpi_degs, nocpi_times, axes=[ax_proj_nocpi, ax_proj_cb], FONTSIZE=fs, cb_label='')
+        ax_proj_nocpi = fig.add_subplot(gspec[12:24, 7:-1])
+        # ax_proj_cb = fig.add_subplot(gspec[12:24, -1])
+        # nocpi_times.shape = (nocpi_times.shape[0], 1)
+        # nocpi_degs_3d = thin_array(nocpi_degs, new_npts=50)
+        # nocpi_times_3d = thin_array(nocpi_times, new_npts=50)
+        plot_degree_surface(nocpi_degs, mutual_times, ax=ax_3d, FONTSIZE=fs, zlabel=r'$d_p$', colornorm=cn, zlim=zlim)
+        plot_degree_projection_superfig(nocpi_degs, mutual_times, ax_proj_nocpi, cn, FONTSIZE=fs, cb_label='')
         ax_proj_nocpi.set_xlabel('')
         ax_proj_nocpi.tick_params(axis='x', which='both', labelsize=0, direction='out', top=False)
         ax_proj_nocpi.xaxis.get_children()[1].set_size(0)
 
+        LABELSIZE=18
+        # one large colorbar
+
+        ax_cb = fig.add_subplot(gspec[1:23, -1])
+        format_fn = lambda val, pos: "%i" % val
+        cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=cn, orientation='vertical', format=ticker.FuncFormatter(format_fn))
+        ax_cb.tick_params(axis='both', which='both', labelsize=LABELSIZE)
+        ax_cb.text(-.3, 1.04, 'degree', fontsize=20, color='k')
+
         # the diff between nocpi and cpi
         ax_3d = fig.add_subplot(gspec[24:, :6], projection='3d', axisbg='w')
-        ax_proj_diff = fig.add_subplot(gspec[24:, 6:-1])
-        ax_proj_cb = fig.add_subplot(gspec[24:, -1])
-        mutual_times, cpi_degs, nocpi_degs = align_degs(cpi_times, cpi_degs, nocpi_times, nocpi_degs)
+        ax_proj_diff = fig.add_subplot(gspec[24:, 7:-1])
+        ax_proj_cb = fig.add_subplot(gspec[25:-1, -1])
         plot_degree_surface(np.sort(cpi_degs) - np.sort(nocpi_degs), mutual_times, sort=False, ax=ax_3d, FONTSIZE=fs, zlabel=r'$d_{CPI}-d_p$')
         plot_degree_projection(np.sort(cpi_degs) - np.sort(nocpi_degs), mutual_times, sort=False, axes=[ax_proj_diff, ax_proj_cb], FONTSIZE=fs, cb_label='')
-        ax_proj_diff.tick_params(direction='out', top=False)
+        ax_proj_cb.text(-1.5, 1.1, 'degree difference', fontsize=20, color='k')
 
         fig.subplots_adjust(left=0.01, right=0.93)
+        plt.draw()
         plt.show(fig)
     else:
         for fileName in args.inputFiles:
