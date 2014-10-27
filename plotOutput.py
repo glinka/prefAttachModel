@@ -629,14 +629,15 @@ def plot_degree_surface(degs, times, sort=True, title='', zlabel=None, ax=None, 
 
     show = False
     if ax is None:
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d', axisbg='white')
+        fig = plt.figure(facecolor='w')
+        ax = fig.add_subplot(111, projection='3d')
         show = True
 
     npts = times.shape[0]
     for v in range(n):
-        ax.scatter(100.0*v*np.ones(npts)/n, times, sorted_degs[:,v], linewidths=0, c=colormap.to_rgba(1.0*sorted_degs[:,v])) # *v))
-    ax.set_xlim(left=0, right = 100)
+        ax.scatter(v*np.ones(npts), times, sorted_degs[:,v], linewidths=0, c='b')#colormap.to_rgba(1.0*sorted_degs[:,v])) # *v))
+    ax.set_xlim((0,n))
+    ax.set_xticklabels([str(int(i)) for i in np.linspace(1, n, 6)])
     ax.set_ylim(bottom=0)
     if zlim is None:
         zlim = (mindeg-(maxdeg-mindeg)*0.1, maxdeg+(maxdeg-mindeg)*0.1)
@@ -661,8 +662,10 @@ def plot_degree_surface(degs, times, sort=True, title='', zlabel=None, ax=None, 
     # DAMMIT
     print "******************************"
     print "watch yo damn self, the axis scale '1e7' has been added by hand and may not be correct"
+    print "final time =", times[-1]
     print "******************************"
-    ax.text(1.15*n, times[-1], zlim[0]-0.3*(zlim[1] - zlim[0]), '1e7', fontsize=LABELSIZE)
+    print n
+    ax.text(1.1*n, times[-1], zlim[0]-0.3*(zlim[1] - zlim[0]), '1e8', fontsize=LABELSIZE, zorder=5)
     # scale_txt = ax.yaxis.get_children()[1].get_text()
     # ax.yaxis.get_children()[1].set_position((1, -0.1))
     # ax.yaxis.get_children()[1].set_va('bottom')
@@ -1105,7 +1108,7 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     else:
         sorted_degs = degs
     times.shape = (npts, 1)
-    new_npts=200
+    new_npts=300
     thinned_sorted_degs = thin_array(sorted_degs, new_npts=new_npts)
     thinned_times = thin_array(times, new_npts=new_npts)
     ones_vect = np.ones(thinned_times.shape[0])
@@ -1132,7 +1135,7 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
 
     for v in range(n):
-        ax.scatter(thinned_times, v*ones_vect, color=colormap.to_rgba(thinned_sorted_degs[:, v]), s=30, lw=0, alpha=ALPHA)
+        ax.scatter(thinned_times, v*ones_vect, color=colormap.to_rgba(thinned_sorted_degs[:, v]), s=80, lw=0, alpha=ALPHA)
 
     ax.set_xlabel('step', fontsize=FONTSIZE)
     ax.set_ylabel('vertex', fontsize=FONTSIZE)
@@ -1149,11 +1152,11 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     textcolor = ax.get_ymajorticklabels()[0].get_color()
     ax.set_title(fig_title, fontsize=FONTSIZE, color=textcolor)
     if show_colorbar:
-        format_fn = lambda val, pos: "%i" % val
+        format_fn = lambda val, pos: "%.2f" % val
         cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colornorm, orientation='vertical', format=ticker.FuncFormatter(format_fn))
         cb.set_ticks(np.linspace(mindeg, maxdeg, 5))
         ax_cb.tick_params(axis='both', which='both', labelsize=LABELSIZE)
-        ax_cb.text(0, 1.04, cb_label, fontsize=FONTSIZE-4, color=textcolor)
+        ax_cb.text(-.2, 1.06, cb_label, fontsize=FONTSIZE-4, color=textcolor)
     if show:
         plt.show()
     return colornorm
@@ -1545,9 +1548,9 @@ def compare_deg_recon(pre_recon, post_recon, poly_coeffs):
         recon = np.zeros(n)
         for j in range(ncoeffs):
             recon = indices*recon + np.ones(n)*poly_coeffs[i,ncoeffs-j-1]
-        # ax.plot(indices, recon, c='g', lw=4)
-        # eqn_str = "{:1.2e} + ".format(poly_coeffs[i,0]) +  "{:1.2e}".format(poly_coeffs[i,1]) + r'$x$' + " + " +  "{:1.2e}".format(poly_coeffs[i,2]) + r'$x^2$' + " + " +  "{:1.2e}".format(poly_coeffs[i,3]) + r'$x^3$' + " + " +  "{:1.2e}".format(poly_coeffs[i,4]) + r'$x^4$' + " + " +  "{:1.2e}".format(poly_coeffs[i,5]) + r'$x^5$'
-        # fig.text(0.15, 0.7, eqn_str, fontsize=0.5*FONTSIZE)
+        ax.plot(indices, recon, c='g', lw=4)
+        eqn_str = "{:1.2e} + ".format(poly_coeffs[i,0]) +  "{:1.2e}".format(poly_coeffs[i,1]) + r'$x$' + " + " +  "{:1.2e}".format(poly_coeffs[i,2]) + r'$x^2$' + " + " +  "{:1.2e}".format(poly_coeffs[i,3]) + r'$x^3$' + " + " +  "{:1.2e}".format(poly_coeffs[i,4]) + r'$x^4$' + " + " +  "{:1.2e}".format(poly_coeffs[i,5]) + r'$x^5$'
+        fig.text(0.05, .95, eqn_str, fontsize=0.7*FONTSIZE)
         plt.show()
         plt.savefig('./deg_cpi_data/comparison' + str(i+1) + '.png')
         ax.cla()
@@ -1638,14 +1641,14 @@ def compare_deg_cpi(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_times, no
     cpi_degs = np.sort(cpi_degs)
     nocpi_degs = np.sort(nocpi_degs)
     # n3
-    plot_degree_projection((cpi_degs - nocpi_degs), mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error') #/nocpi_degs, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error')
+    plot_degree_projection((cpi_degs - nocpi_degs)/nocpi_degs, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error') #, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error') 
     # n2
     n = cpi_params['n']
     time_limit = 5*(cpi_params['proj_step']+cpi_params['nms'])
     i = 0
     while mutual_times[i] < time_limit:
         i = i + 1
-    plot_degree_projection((cpi_degs[:i,:] - nocpi_degs[:i,:]), mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='relative error') #/nocpi_degs[:i,:], mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='relative error')
+    plot_degree_projection((cpi_degs[:i,:] - nocpi_degs[:i,:])/nocpi_degs[:i,:], mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='relative error') #, mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='relative error') 
 
 def compare_deg_cpi_3d(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_times, nocpi_params):
     from mpl_toolkits.mplot3d import Axes3D
@@ -1852,11 +1855,14 @@ if __name__=="__main__":
         if args.plot_degree_surface:
             # n3
             time_data.shape = (time_data.shape[0], 1)
-            degs = thin_array(deg_data[0], new_npts=50)
-            times = thin_array(time_data, new_npts=50)
+            # degs = thin_array(deg_data[0], new_npts=50)
+            # times = thin_array(time_data, new_npts=50)
+            degs = deg_data[0]
+            times = time_data
             plot_degree_surface(degs, times, title=r'$n^3$')
             # n2
             n = params['n']
+            print "n=", n
             time_limit = np.power(n, 3)/10.0
             i = 0
             while time_data[i] <= time_limit:
