@@ -630,13 +630,14 @@ def plot_degree_surface(degs, times, sort=True, title='', zlabel=None, ax=None, 
     show = False
     if ax is None:
         fig = plt.figure(facecolor='w')
-        ax = fig.add_subplot(111, projection='3d', axisbg='white')
+        ax = fig.add_subplot(111, projection='3d')
         show = True
 
     npts = times.shape[0]
     for v in range(n):
-        ax.scatter(100.0*v*np.ones(npts)/n, times, sorted_degs[:,v], linewidths=0, c=colormap.to_rgba(1.0*sorted_degs[:,v])) # *v))
-    ax.set_xlim(left=0, right = 100)
+        ax.scatter(v*np.ones(npts), times, sorted_degs[:,v], linewidths=0, c='b')#colormap.to_rgba(1.0*sorted_degs[:,v])) # *v))
+    ax.set_xlim((0,n))
+    ax.set_xticklabels([str(int(i)) for i in np.linspace(1, n, 6)])
     ax.set_ylim(bottom=0)
     if zlim is None:
         zlim = (mindeg-(maxdeg-mindeg)*0.1, maxdeg+(maxdeg-mindeg)*0.1)
@@ -661,8 +662,10 @@ def plot_degree_surface(degs, times, sort=True, title='', zlabel=None, ax=None, 
     # DAMMIT
     print "******************************"
     print "watch yo damn self, the axis scale '1e7' has been added by hand and may not be correct"
+    print "final time =", times[-1]
     print "******************************"
-    ax.text(1.15*n, times[-1], zlim[0]-0.3*(zlim[1] - zlim[0]), '1e7', fontsize=LABELSIZE)
+    print n
+    ax.text(1.1*n, times[-1], zlim[0]-0.3*(zlim[1] - zlim[0]), '1e8', fontsize=LABELSIZE, zorder=5)
     # scale_txt = ax.yaxis.get_children()[1].get_text()
     # ax.yaxis.get_children()[1].set_position((1, -0.1))
     # ax.yaxis.get_children()[1].set_va('bottom')
@@ -1105,7 +1108,7 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     else:
         sorted_degs = degs
     times.shape = (npts, 1)
-    new_npts=200
+    new_npts=300
     thinned_sorted_degs = thin_array(sorted_degs, new_npts=new_npts)
     thinned_times = thin_array(times, new_npts=new_npts)
     ones_vect = np.ones(thinned_times.shape[0])
@@ -1132,7 +1135,7 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
 
     for v in range(n):
-        ax.scatter(thinned_times, v*ones_vect, color=colormap.to_rgba(thinned_sorted_degs[:, v]), s=30, lw=0, alpha=ALPHA)
+        ax.scatter(thinned_times, v*ones_vect, color=colormap.to_rgba(thinned_sorted_degs[:, v]), s=80, lw=0, alpha=ALPHA)
 
     ax.set_xlabel('step', fontsize=FONTSIZE)
     ax.set_ylabel('vertex', fontsize=FONTSIZE)
@@ -1149,11 +1152,11 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     textcolor = ax.get_ymajorticklabels()[0].get_color()
     ax.set_title(fig_title, fontsize=FONTSIZE, color=textcolor)
     if show_colorbar:
-        format_fn = lambda val, pos: "%i" % val
+        format_fn = lambda val, pos: "%.2f" % val
         cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colornorm, orientation='vertical', format=ticker.FuncFormatter(format_fn))
         cb.set_ticks(np.linspace(mindeg, maxdeg, 5))
         ax_cb.tick_params(axis='both', which='both', labelsize=LABELSIZE)
-        ax_cb.text(0, 1.04, cb_label, fontsize=FONTSIZE-4, color=textcolor)
+        ax_cb.text(-.2, 1.06, cb_label, fontsize=FONTSIZE-4, color=textcolor)
     if show:
         plt.show()
     return colornorm
@@ -1545,9 +1548,9 @@ def compare_deg_recon(pre_recon, post_recon, poly_coeffs):
         recon = np.zeros(n)
         for j in range(ncoeffs):
             recon = indices*recon + np.ones(n)*poly_coeffs[i,ncoeffs-j-1]
-        # ax.plot(indices, recon, c='g', lw=4)
-        # eqn_str = "{:1.2e} + ".format(poly_coeffs[i,0]) +  "{:1.2e}".format(poly_coeffs[i,1]) + r'$x$' + " + " +  "{:1.2e}".format(poly_coeffs[i,2]) + r'$x^2$' + " + " +  "{:1.2e}".format(poly_coeffs[i,3]) + r'$x^3$' + " + " +  "{:1.2e}".format(poly_coeffs[i,4]) + r'$x^4$' + " + " +  "{:1.2e}".format(poly_coeffs[i,5]) + r'$x^5$'
-        # fig.text(0.15, 0.7, eqn_str, fontsize=0.5*FONTSIZE)
+        ax.plot(indices, recon, c='g', lw=4)
+        eqn_str = "{:1.2e} + ".format(poly_coeffs[i,0]) +  "{:1.2e}".format(poly_coeffs[i,1]) + r'$x$' + " + " +  "{:1.2e}".format(poly_coeffs[i,2]) + r'$x^2$' + " + " +  "{:1.2e}".format(poly_coeffs[i,3]) + r'$x^3$' + " + " +  "{:1.2e}".format(poly_coeffs[i,4]) + r'$x^4$' + " + " +  "{:1.2e}".format(poly_coeffs[i,5]) + r'$x^5$'
+        fig.text(0.05, .95, eqn_str, fontsize=0.7*FONTSIZE)
         plt.show()
         plt.savefig('./deg_cpi_data/comparison' + str(i+1) + '.png')
         ax.cla()
@@ -1638,14 +1641,14 @@ def compare_deg_cpi(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_times, no
     cpi_degs = np.sort(cpi_degs)
     nocpi_degs = np.sort(nocpi_degs)
     # n3
-    plot_degree_projection((cpi_degs - nocpi_degs), mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error') #/nocpi_degs, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error')
+    plot_degree_projection((cpi_degs - nocpi_degs)/nocpi_degs, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error') #, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error') 
     # n2
     n = cpi_params['n']
     time_limit = 5*(cpi_params['proj_step']+cpi_params['nms'])
     i = 0
     while mutual_times[i] < time_limit:
         i = i + 1
-    plot_degree_projection((cpi_degs[:i,:] - nocpi_degs[:i,:]), mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='relative error') #/nocpi_degs[:i,:], mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='relative error')
+    plot_degree_projection((cpi_degs[:i,:] - nocpi_degs[:i,:])/nocpi_degs[:i,:], mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='relative error') #, mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='relative error') 
 
 def compare_deg_cpi_3d(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_times, nocpi_params):
     from mpl_toolkits.mplot3d import Axes3D
@@ -1702,44 +1705,35 @@ def newton_deg_evo(deg_seqs):
 def newton_resid_evo(resids):
     fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
-    fs = 48
-    ls = .75*fs
-    ax.plot(np.arange(resids.shape[0]), resids, zorder=1, lw=3)
-    ax.scatter(np.arange(resids.shape[0]), resids, lw=1, c='r', zorder=2, s=50)
+    ax.plot(np.arange(resids.shape[0]), resids, zorder=1)
+    ax.scatter(np.arange(resids.shape[0]), resids, lw=0, c='k', zorder=2)
     ax.set_xlim((0,resids.shape[0]-1))
-    ax.set_xlabel('iteration (' + r'$k$' + ')', fontsize=fs)
-    ax.set_ylabel(r'$\parallel d^{(k)} -  \Phi(d^{(k)}) \parallel_2$', fontsize=fs)
-    ax.tick_params(axis='both', which='both', labelsize=ls)
+    ax.set_xlabel('iteration', fontsize=24)
+    ax.set_ylabel(r'$\parallel F(x^{(k)}) \parallel_2$', fontsize=24)
+    ax.tick_params(axis='both', which='both', labelsize=24)
     plt.show()
 
 def comp_newton(xs, deg_seqs, ax=None):
     if ax is None:
         fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(111)
-    fs = 48
-    ls = .75*fs
     n = xs.shape[1]
-    ax.plot(np.arange(n), np.sort(xs[-1,:]), c='b', label='newton solution', lw=3)
-    ax.plot(np.arange(n), np.sort(deg_seqs[-1,:]), c='g', label='direct simulation', lw=3)
-    ax.set_xlabel('vertex', fontsize=fs)
-    ax.set_ylabel('degree', fontsize=fs)
-    ax.set_title('stationary state', fontsize=fs)
-    ax.set_xlim((0,n))
-    ax.set_xticklabels([str(int(j)) for j in np.linspace(1, n, 6)])
-    ax.tick_params(axis='both', which='both', labelsize=ls)
-    ax.legend(loc=2, fontsize=ls)
+    ax.plot(np.arange(n), np.sort(xs[-1,:]), c='b', label='Newton solution')
+    ax.plot(np.arange(n), np.sort(deg_seqs[-1,:]), c='g', label='Direct simulation')
+    ax.set_xlabel('vertex', fontsize=24)
+    ax.set_ylabel('degree', fontsize=24)
+    ax.tick_params(axis='both', which='both', labelsize=24)
+    ax.legend(loc=2, fontsize=18)
     plt.show()
 
 def pa_dmaps_embedding(eigvals, eigvects, t=0):
-    fs = 42
-    ls = 0.75*fs
     eigvals = np.abs(eigvals)
     sorted_indices = np.argsort(eigvals)
     eigvals = eigvals[sorted_indices]
     eigvects = eigvects[sorted_indices, :]
     eigvects_to_plot = np.array([eigvects[-i,:] for i in range(2, eigvects.shape[0] + 1)])
     eigvals_to_plot = np.array([eigvals[-i] for i in range(2, eigvals.shape[0] + 1)])
-    nvects = eigvals.shape[0] - 1
+    nvects = 6 # eigvals.shape[0] - 1
     output_filename = "pa_embedding_"
     fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
@@ -1752,14 +1746,9 @@ def pa_dmaps_embedding(eigvals, eigvects, t=0):
             ax.scatter(xvals , yvals, c=np.arange(n), lw=0, alpha=0.7)
             ax.set_xlim((np.min(xvals), np.max(xvals)))
             ax.set_ylim((np.min(yvals), np.max(yvals)))
-            ax.set_xlabel(r'$\Phi_{0:d}$'.format(i+1), fontsize=fs)
-            ax.set_ylabel(r'$\Phi_{0:d}$'.format(j+1), fontsize=fs)
-            ax.ticklabel_format(axis='both', style='sci', scilimits=(-2, 2))
-            ax.tick_params(axis='both', which='both', labelsize=ls)
-            ax.xaxis.get_children()[1].set_size(.5*fs)
-            ax.yaxis.get_children()[1].set_size(.5*fs)
-            fig.subplots_adjust(left=0.22, right=.95, bottom=.2)
-            # ax.set_title('pa dmaps embedding')
+            ax.set_xlabel('eigvect ' + str(i+1))
+            ax.set_ylabel('eigvect ' + str(j+1))
+            ax.set_title('pa dmaps embedding')
             plt.savefig("./figs/embeddings/dmaps/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + ".png")
 
 def pa_pca_embedding(eigvals, eigvects, orig_data):
@@ -1866,11 +1855,14 @@ if __name__=="__main__":
         if args.plot_degree_surface:
             # n3
             time_data.shape = (time_data.shape[0], 1)
-            degs = thin_array(deg_data[0], new_npts=50)
-            times = thin_array(time_data, new_npts=50)
+            # degs = thin_array(deg_data[0], new_npts=50)
+            # times = thin_array(time_data, new_npts=50)
+            degs = deg_data[0]
+            times = time_data
             plot_degree_surface(degs, times, title=r'$n^3$')
             # n2
             n = params['n']
+            print "n=", n
             time_limit = np.power(n, 3)/10.0
             i = 0
             while time_data[i] <= time_limit:
