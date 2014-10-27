@@ -114,7 +114,7 @@ def animateContour(data, params, cmap='Paired', fps=10, bitrate=14400, container
     import matplotlib.animation as animation
     nData = params['nSteps']/params['dataInterval']
     n = params['n']
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     plt.text(n/2,1.05*params['n'],'Evolution of adjacency matrix in preferential attachment model', ha='center', fontsize=16)
     newFolder = makeFolder('contourPlots')
     for i in range(nData):
@@ -129,7 +129,7 @@ def animateRawData(data, params, fps=10, bitrate=14400, containerType='.mkv'):
     from mpl_toolkits.mplot3d import Axes3D
     nData = params['nSteps']/params['dataInterval']
     n = params['n']
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     plt.figtext(0.5, 0.92 ,'Evolution of adjacency matrix in preferential attachment model', ha='center', fontsize=16)
     spAxes = [fig.add_subplot(i, projection='3d') for i in range(221, 225)]
     spAxes[0].view_init(-2.0, 45.0)
@@ -155,7 +155,7 @@ def animateReconstruction(data, params, fps=10, bitrate=1600, containerType='.mk
     from mpl_toolkits.mplot3d import Axes3D
     n = params['n']
     nData = data.shape[0]/n
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax1 = fig.add_subplot(211, projection='3d')
     ax2 = fig.add_subplot(212, projection='3d')
     ax1.grid(b=False)
@@ -210,7 +210,7 @@ def plotCRecon(data, params):
     from mpl_toolkits.mplot3d import Axes3D
     n = params['n']
     nData = data.shape[0]/(2*n)
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax1 = fig.add_subplot(211, projection='3d')
     ax2 = fig.add_subplot(212, projection='3d')
     xgrid, ygrid = np.meshgrid(np.arange(n),np.arange(n))
@@ -260,7 +260,7 @@ def compare_recon(data_list, params):
     max_err = np.empty(npts)
     avg_err = np.empty(npts)
     # avg the data, then plot
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
     colornorm = colors.Normalize(vmin=0, vmax=npts-1)
     colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
@@ -291,7 +291,7 @@ def compare_recon(data_list, params):
     ax.set_ylabel('degree difference (actual - reconstruction)', fontsize=30)
     ax.tick_params(axis='both', which='major', labelsize=24)
     plt.show()
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
     ax.plot(range(npts), err, c='c', label='cumulative')
     ax.plot(range(npts), avg_err, c='g', label='average')
@@ -306,7 +306,7 @@ def compare_recon(data_list, params):
 def plotEigVectRecon(data, params):
     n = params['n']
     nData = data.shape[0]/(2)
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax1 = fig.add_subplot(111)
     yMin = np.amin(data)
     yMax = np.amax(data)
@@ -329,7 +329,7 @@ def plotFittedData(data, params, fns):
     from mpl_toolkits.mplot3d import Axes3D
     nData = params['nSteps']/params['dataInterval']
     n = params['n']
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     fig.hold(True)
     spAxes = [fig.add_subplot(i, projection='3d') for i in range(221, 225)]
     spAxes[0].view_init(-2.0, 45.0)
@@ -360,7 +360,7 @@ def plotFittedData(data, params, fns):
 def animateVector(data, params, fn, fps=10, bitrate=14400, containerType='.mkv'):
     n = params['n']
     nData = data.shape[0]/n
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
     ax.set_xlabel('Vector index')
     ax.set_ylabel('Vector value')
@@ -395,7 +395,7 @@ def comp_eigvect_recon(coeffs, params, plot_name=""):
         plot_name = plot_name + "_"
     line = np.arange(n)
     for i in range(nprojs):
-        fig = plt.figure()
+        fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(111)
         for j in range(nsaves_per_proj):
             recon = np.zeros(n)
@@ -411,7 +411,7 @@ def comp_eigvect_recon(coeffs, params, plot_name=""):
 def animate_eigvals(eigvals, params, fps=10, bitrate=14400, containerType='.mkv'):
     n = params['n']
     nvects = eigvals.shape[0]
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
     ax.set_xlabel('Index')
     ax.set_ylabel('Eigenvalue')
@@ -435,7 +435,7 @@ def scalarEvolution(data, params, fn):
     nData = params['nSteps']/params['dataInterval']
     stepSize = params['dataInterval']
     n = params['n']
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
     newFolder = makeFolder('vector')
     fileName = ""
@@ -449,7 +449,7 @@ def scalarEvolution(data, params, fn):
 
 def plotReconstruction((x, y, z, zlim, xylim, folder, fileName)):
     from mpl_toolkits.mplot3d import Axes3D
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax1 = fig.add_subplot(211, projection='3d')
     ax2 = fig.add_subplot(212, projection='3d')
     ax1.grid(b=False)
@@ -480,7 +480,7 @@ def compareProjection(fullData, fullParams, cpiData, cpiParams):
     cpiProjStep = cpiParams['projStep']
     #on manifold steps, with any luck is an integer
     cpiOMS = (cpiNMS - cpiOMW)/cpiCI
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111, projection='3d')
     ax.set_zlabel('degree')
     ax.set_ylabel('steps')
@@ -507,8 +507,8 @@ def makeDegSurface(data, params, fn):
     from mpl_toolkits.mplot3d import Axes3D
     n = params['n']
     nData = data.shape[0]/n
-    fig = plt.figure()
-    fig2 = plt.figure()
+    fig = plt.figure(facecolor='w')
+    fig2 = plt.figure(facecolor='w')
     ax2 = fig2.add_subplot(111, projection='3d')
     fig.hold(True)
     #spAxes = [fig.add_subplot(i, projection='3d') for i in range(211, 213)]
@@ -559,7 +559,7 @@ def plot_coeffs(times, coeffs_list, plot_name=""):
     if plot_name is not "":
         plot_name = plot_name + "_"
     for i in range(ncoeffs):
-        fig = plt.figure()
+        fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(111)
         ax.scatter(times, coeffs[:,i], lw=0)
         plt.savefig("coeffs/" + plot_name + "coeff" + str(i) + ".png")
@@ -581,12 +581,12 @@ def plot_vectors_tc(data, params, plot_name=""):
     print nprojs, nsaves_per_proj
     nvects = data.shape[1]
     nyvects = nvects - 1
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
     if plot_name is not "":
         plot_name = plot_name + "_"
     for i in range(nyvects):
-        fig = plt.figure()
+        fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(111)
         for j in range(nprojs):
             ax.scatter(data[j*nsaves_per_proj:(j+1)*nsaves_per_proj,nyvects], data[j*nsaves_per_proj:(j+1)*nsaves_per_proj,i], c=(np.sin(float(i)/nyvects), np.cos(float(1-i)/nyvects), 1-float(i)/nyvects), label="coeff: " + str(i+1), lw=0)
@@ -629,7 +629,7 @@ def plot_degree_surface(degs, times, sort=True, title='', zlabel=None, ax=None, 
 
     show = False
     if ax is None:
-        fig = plt.figure()
+        fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(111, projection='3d', axisbg='white')
         show = True
 
@@ -692,7 +692,7 @@ def plot_degree_surface_v2(degs, times):
     PLOT_INTERVAL = int(ntimes/NPLOTTED_PTS)
     FONTSIZE = 20
     LABELSIZE = 16
-    fig1 = plt.figure()
+    fig1 = plt.figure(facecolor='w')
     ax1_ = fig1.add_subplot(111, projection='3d')
     ax1_.set_xlabel('percentile', fontsize=FONTSIZE)
     ax1_.set_ylabel('step', fontsize=FONTSIZE)
@@ -721,7 +721,7 @@ def plot_degree_surface_v2(degs, times):
     ax1_.set_ylim(bottom=0)
     ax1_.set_zlim(bottom=0)
 #    plt.show()
-    fig2 = plt.figure()
+    fig2 = plt.figure(facecolor='w')
     ax1_ = fig2.add_subplot(111, projection='3d')
     ax1_.set_xlabel('percentile', fontsize=FONTSIZE)
     ax1_.set_ylabel('step', fontsize=FONTSIZE)
@@ -748,7 +748,7 @@ def plot_degree_surface_v2(degs, times):
     for i in range(NPLOTTED_PTS):
         deg_diff.append(sorted_degs[i*PLOT_INTERVAL, :] - sorted_degs[(i+1)*PLOT_INTERVAL, :])
     deg_diff = np.array(deg_diff)
-    fig13 = plt.figure()
+    fig13 = plt.figure(facecolor='w')
     ax = fig13.add_subplot(111)
     colornorm = colors.Normalize(vmin=0, vmax=NPLOTTED_PTS-1)
     colormap = cm.ScalarMappable(norm=colornorm, cmap='RdBu')
@@ -767,7 +767,7 @@ def plot_degree_surface_v2(degs, times):
     for i in range(NPLOTTED_PTS):
         deg_diff.append(sorted_degs[i*PLOT_INTERVAL, :] - sorted_degs[(i+1)*PLOT_INTERVAL, :])
     deg_diff = np.array(deg_diff)
-    fig14 = plt.figure()
+    fig14 = plt.figure(facecolor='w')
     ax = fig14.add_subplot(111)
     for time in range(NPLOTTED_PTS):
         ax.scatter(indices, deg_diff[time], linewidths=0, c=colormap.to_rgba(1.0*time), alpha=alphaval)
@@ -781,7 +781,7 @@ def plot_degree_surface_v2(degs, times):
     colornorm = colors.Normalize(vmin=0, vmax=n-1)
     colorbarnorm = colors.Normalize(vmin=0, vmax=100)
     colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
-    fig6 = plt.figure()
+    fig6 = plt.figure(facecolor='w')
     # trimmed_degs = sorted_degs
     ax6_ = fig6.add_subplot(111)
     PLOT_INTERVAL = int(npoints/NPLOTTED_PTS)
@@ -795,7 +795,7 @@ def plot_degree_surface_v2(degs, times):
     ax6_.set_xticklabels([str(i) for i in np.linspace(0, 100, 11)])
     ax6_.tick_params(axis='both', which='major', labelsize=LABELSIZE)
     plt.show()
-    fig7 = plt.figure()
+    fig7 = plt.figure(facecolor='w')
     ax6_ = fig7.add_subplot(111)
     PLOT_INTERVAL = int(ntimes/NPLOTTED_PTS)
     for time in range(NPLOTTED_PTS):
@@ -811,14 +811,14 @@ def plot_degree_surface_v2(degs, times):
 #     for v in range(n):
 #         ax6_.scatter(100.0*v*ones/n, trimmed_degs[[i*PLOT_INTERVAL for i in range(NPLOTTED_PTS)],v], linewidths=0, c=colormap.to_rgba(1.0*v), alpha= 1.0*v/n)
 #def holdout():
-    # fig2 = plt.figure()
+    # fig2 = plt.figure(facecolor='w')
     # ax2_ = fig2.add_subplot(111)
     # ax2_.set_xlabel('simulation step', fontsize=FONTSIZE)
     # ax2_.set_ylabel('max vertex degree', fontsize=FONTSIZE)
     # ax2_.plot(times, max_degs)
     # plt.show()
     #fig 3 is a mess in order to get the colormap and colobars working, requires many of the imports seen at the beginning of the fn
-    fig3 = plt.figure()
+    fig3 = plt.figure(facecolor='w')
     gspec = gs.GridSpec(6,6)
     ax31_ = fig3.add_subplot(gspec[:6,:5])
     maxtime = times[-1]
@@ -841,7 +841,7 @@ def plot_degree_surface_v2(degs, times):
     max_index = 0
     while times[max_index] < 10*np.power(n, 3):
         max_index = max_index + 1
-    # fig4 = plt.figure()
+    # fig4 = plt.figure(facecolor='w')
     # ax41_ = fig4.add_subplot(gspec[:6,:5])
     # ax42_ = fig4.add_subplot(gspec[:,5])
     # ax41_.set_xlabel('simulation step', fontsize=FONTSIZE)
@@ -868,7 +868,7 @@ def plot_degree_surface_v2(degs, times):
     interval_times = np.array(interval_times)
     trimmed_degs = np.array(trimmed_degs)
     maxtime = interval_times[-1]
-    fig5 = plt.figure()
+    fig5 = plt.figure(facecolor='w')
     ax51_ = fig5.add_subplot(gspec[:6,:5])
     ax52_ = fig5.add_subplot(gspec[:,5])
     ax51_.set_xlabel('simulation step', fontsize=FONTSIZE)
@@ -927,7 +927,7 @@ def plot_time_projection_diff(degs, times):
     formatter = ticker.ScalarFormatter()
     formatter.set_scientific(True)
     formatter.set_powerlimits((-2, 2))
-    fig13 = plt.figure()
+    fig13 = plt.figure(facecolor='w')
     ax = fig13.add_subplot(gspec[:6,:5])
     ax2 = fig13.add_subplot(gspec[:,5])
     colornorm = colors.Normalize(vmin=0, vmax=NPLOTTED_PTS-1)
@@ -964,7 +964,7 @@ def plot_time_projection_diff(degs, times):
     for i in range(NPLOTTED_PTS):
         deg_diff.append(sorted_degs[i*PLOT_INTERVAL, :] - sorted_degs[(i+1)*PLOT_INTERVAL, :])
     deg_diff = np.array(deg_diff)
-    fig14 = plt.figure()
+    fig14 = plt.figure(facecolor='w')
     ax = fig14.add_subplot(gspec[:6,:5])
     ax2 = fig14.add_subplot(gspec[:,5])
     for time in range(NPLOTTED_PTS):
@@ -1162,7 +1162,7 @@ def plot_vertex_projection_avg(degs, times):
     import matplotlib.cm as cm
     import matplotlib.colors as colors
     import matplotlib.colorbar as colorbar
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
     n = degs.shape[1]
     degs = np.sort(degs, 1)
@@ -1241,7 +1241,7 @@ def plot_vertex_projection_old(degs, times, n3=True):
     # n3
     if n3:
         n3 = np.power(n, 3)
-        fig = plt.figure()
+        fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(gspec[:6,:5])
         maxtime = times[-1]
         n_n3s = float(maxtime/n3)
@@ -1279,7 +1279,7 @@ def plot_vertex_projection_old(degs, times, n3=True):
         ax.xaxis.get_children()[1].set_size(LABELSIZE)
         plt.show()
     # n2
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(gspec[:6,:5])
     ax_cb = fig.add_subplot(gspec[:,5])
     n2 = np.power(n, 2)
@@ -1421,7 +1421,7 @@ def plot_vertex_projection_analytical(degs, times):
     colornorm = colors.Normalize(vmin=0, vmax=n-1)
     colorbarnorm = colors.Normalize(vmin=0, vmax=100)
     colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(gspec[:6,:5])
     ax.set_xticks([i*maxtime/10.0 for i in range(11)])
     ax_cb = fig.add_subplot(gspec[:,5])
@@ -1450,7 +1450,7 @@ def plot_densities(densities, times, params):
     ticksize=24
     if n_ncubeds > 0:
         ncubed_times = np.array([i*spacing for i in range(1, n_ncubeds+1)]) - 1
-        fig = plt.figure()
+        fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(111)
         # n3
         ax.scatter(times, densities, lw=0, alpha=0.7)
@@ -1466,7 +1466,7 @@ def plot_densities(densities, times, params):
         ax.set_ylim((0, 1))
         plt.show()
     # n2
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
     time_limit = 5*(params['proj_step'] + params['nms'])
     times_short = np.array(filter(lambda t: t <= time_limit, times))
@@ -1491,7 +1491,7 @@ def plot_densities_analytic(times, params, ax, **kwargs):
 
 def plot_degrees(degs, ax=None):
     if ax is None:
-        fig = plt.figure()
+        fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(111)
     n = degs.shape[0]
     ax.scatter(np.arange(1, n + 1), -1*np.sort(-degs)/n, lw=0, alpha=0.7)
@@ -1501,7 +1501,7 @@ def plot_degrees(degs, ax=None):
 
 def comp_selfloops(selfloops, times, params, ax, **kwargs):
     # nms = params['nms']
-    # fig = plt.figure()
+    # fig = plt.figure(facecolor='w')
     # ax = fig.add_subplot(111)
     # colors = ['b', 'r', 'g', 'k', 'c']
     nruns = len(selfloops)
@@ -1556,7 +1556,7 @@ def compare_deg_recon(pre_recon, post_recon, poly_coeffs):
 def deg_recon_discrepancy(times, degs, params):
     n = params['n']
     m = n*n/2
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
     print degs.shape
     ax.plot(times, np.sum(degs, 1)/2 - m)
@@ -1606,7 +1606,7 @@ def compare_deg_cpi_timeproj(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_
     # uncomment if you want to plot more than one piece of data on the same
     # figure, but this makes things nearly impossible to interpret
     # gspec = gs.GridSpec(6,6)
-    # fig = plt.figure()
+    # fig = plt.figure(facecolor='w')
     # ax_fig = fig.add_subplot(gspec[:6,:5])
     # ax_cb = fig.add_subplot(gspec[:,5])
     # plot_time_projection(np.abs(cpi_degs - nocpi_degs)/nocpi_degs, mutual_times, cpi_params, fig_title=r'$n^3$', cmap='jet', ax_fig=ax_fig, ax_cb=ax_cb)
@@ -1623,7 +1623,7 @@ def compare_deg_cpi_timeproj(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_
     while mutual_times[i] < time_limit:
         i = i + 1
 
-    # fig = plt.figure()
+    # fig = plt.figure(facecolor='w')
     # ax_fig = fig.add_subplot(gspec[:6,:5])
     # ax_cb = fig.add_subplot(gspec[:,5])
     # plot_time_projection(np.abs(cpi_degs[:i, :] - nocpi_degs[:i, :])/nocpi_degs[:i, :], mutual_times[:i], cpi_params, fig_title=r'$n^2$', cmap='jet', ax_fig=ax_fig, ax_cb=ax_cb)
@@ -1663,7 +1663,7 @@ def compare_deg_cpi_3d(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_times,
 
     n = params['n']
     i = 0
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111, projection='3d')
     for t in mutual_times:
         ax.plot(np.linspace(1,n,n), np.ones(n)*t, np.sort(cpi_degs[i,:]), c='r')
@@ -1691,7 +1691,7 @@ def newton_deg_evo(deg_seqs):
     colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
 
     n = deg_seqs.shape[1]
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
     for i in range(ndeg_seqs):
         ax.plot(np.arange(n) + 1, np.sort(deg_seqs[i,:]), c=colormap.to_rgba(1.0*i))
@@ -1700,39 +1700,48 @@ def newton_deg_evo(deg_seqs):
     plt.show()
 
 def newton_resid_evo(resids):
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
-    ax.plot(np.arange(resids.shape[0]), resids, zorder=1)
-    ax.scatter(np.arange(resids.shape[0]), resids, lw=0, c='k', zorder=2)
+    fs = 48
+    ls = .75*fs
+    ax.plot(np.arange(resids.shape[0]), resids, zorder=1, lw=3)
+    ax.scatter(np.arange(resids.shape[0]), resids, lw=1, c='r', zorder=2, s=50)
     ax.set_xlim((0,resids.shape[0]-1))
-    ax.set_xlabel('iteration', fontsize=24)
-    ax.set_ylabel(r'$\parallel F(x^{(k)}) \parallel_2$', fontsize=24)
-    ax.tick_params(axis='both', which='both', labelsize=24)
+    ax.set_xlabel('iteration (' + r'$k$' + ')', fontsize=fs)
+    ax.set_ylabel(r'$\parallel d^{(k)} -  \Phi(d^{(k)}) \parallel_2$', fontsize=fs)
+    ax.tick_params(axis='both', which='both', labelsize=ls)
     plt.show()
 
 def comp_newton(xs, deg_seqs, ax=None):
     if ax is None:
-        fig = plt.figure()
+        fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(111)
+    fs = 48
+    ls = .75*fs
     n = xs.shape[1]
-    ax.plot(np.arange(n), np.sort(xs[-1,:]), c='b', label='Newton solution')
-    ax.plot(np.arange(n), np.sort(deg_seqs[-1,:]), c='g', label='Direct simulation')
-    ax.set_xlabel('vertex', fontsize=24)
-    ax.set_ylabel('degree', fontsize=24)
-    ax.tick_params(axis='both', which='both', labelsize=24)
-    ax.legend(loc=2, fontsize=18)
+    ax.plot(np.arange(n), np.sort(xs[-1,:]), c='b', label='newton solution', lw=3)
+    ax.plot(np.arange(n), np.sort(deg_seqs[-1,:]), c='g', label='direct simulation', lw=3)
+    ax.set_xlabel('vertex', fontsize=fs)
+    ax.set_ylabel('degree', fontsize=fs)
+    ax.set_title('stationary state', fontsize=fs)
+    ax.set_xlim((0,n))
+    ax.set_xticklabels([str(int(j)) for j in np.linspace(1, n, 6)])
+    ax.tick_params(axis='both', which='both', labelsize=ls)
+    ax.legend(loc=2, fontsize=ls)
     plt.show()
 
 def pa_dmaps_embedding(eigvals, eigvects, t=0):
+    fs = 42
+    ls = 0.75*fs
     eigvals = np.abs(eigvals)
     sorted_indices = np.argsort(eigvals)
     eigvals = eigvals[sorted_indices]
     eigvects = eigvects[sorted_indices, :]
     eigvects_to_plot = np.array([eigvects[-i,:] for i in range(2, eigvects.shape[0] + 1)])
     eigvals_to_plot = np.array([eigvals[-i] for i in range(2, eigvals.shape[0] + 1)])
-    nvects = 6 # eigvals.shape[0] - 1
+    nvects = eigvals.shape[0] - 1
     output_filename = "pa_embedding_"
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
     ax.hold(False)
     n = eigvects.shape[1]
@@ -1743,9 +1752,14 @@ def pa_dmaps_embedding(eigvals, eigvects, t=0):
             ax.scatter(xvals , yvals, c=np.arange(n), lw=0, alpha=0.7)
             ax.set_xlim((np.min(xvals), np.max(xvals)))
             ax.set_ylim((np.min(yvals), np.max(yvals)))
-            ax.set_xlabel('eigvect ' + str(i+1))
-            ax.set_ylabel('eigvect ' + str(j+1))
-            ax.set_title('pa dmaps embedding')
+            ax.set_xlabel(r'$\Phi_{0:d}$'.format(i+1), fontsize=fs)
+            ax.set_ylabel(r'$\Phi_{0:d}$'.format(j+1), fontsize=fs)
+            ax.ticklabel_format(axis='both', style='sci', scilimits=(-2, 2))
+            ax.tick_params(axis='both', which='both', labelsize=ls)
+            ax.xaxis.get_children()[1].set_size(.5*fs)
+            ax.yaxis.get_children()[1].set_size(.5*fs)
+            fig.subplots_adjust(left=0.22, right=.95, bottom=.2)
+            # ax.set_title('pa dmaps embedding')
             plt.savefig("./figs/embeddings/dmaps/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + ".png")
 
 def pa_pca_embedding(eigvals, eigvects, orig_data):
@@ -1757,7 +1771,7 @@ def pa_pca_embedding(eigvals, eigvects, orig_data):
     newbasis_data = np.dot(np.dot(orig_data, np.transpose(eigvects)), eigvects)
     nvects = 10 # eigvals.shape[0] - 1
     output_filename = "pa_embedding_"
-    fig = plt.figure()
+    fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
     ax.hold(False)
     n = orig_data.shape[0]
@@ -1967,7 +1981,7 @@ if __name__=="__main__":
         selfloops_cpi = []
         times_cpi = None
         params_cpi = None
-        fig = plt.figure()
+        fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(111)
         for fileName in args.inputFiles:
             if 'noinit' in fileName:
@@ -2047,7 +2061,7 @@ if __name__=="__main__":
     #     i = 0
     #     while times2[i] != mutual_times[-1]:
     #         i += 1
-    #     fig = plt.figure()
+    #     fig = plt.figure(facecolor='w')
     #     ax = fig.add_subplot(111, projection='3d')
     #     plot_degree_surface(mdegs1, mutual_times, ax=ax, c='b')
     #     plot_degree_surface(mdegs2, mutual_times, ax=ax, c='r')

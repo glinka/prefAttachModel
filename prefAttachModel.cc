@@ -74,6 +74,22 @@ double prefAttachModel::genURN() {
     return (*mt)()/(rnNormalization);
 }
 
+void prefAttachModel::init(std::string init_type) {
+  if(init_type == "complete") {
+    init_complete_graph();
+  }
+  else if(init_type == "erdos") {
+    initGraph();
+  }
+  else if(init_type == "lopsided") {
+    init_lopsided_graph();
+  }
+  else {
+    cout << init_type << " unrecognized as an init_type" << endl;
+  }
+}
+
+
 void prefAttachModel::init_complete_graph() {
   // init a complete graph with loops
   m = (n*n + n)/2;
@@ -125,7 +141,7 @@ void prefAttachModel::init_er_graph(const int m) {
 
 void prefAttachModel::init_lopsided_graph() {
   vector<int> new_degs(n, 0);
-  degcount = 0;
+  int degcount = 0;
   while(degcount < 2*m) {
     new_degs[degcount % (n/2)]++;
     degcount++;

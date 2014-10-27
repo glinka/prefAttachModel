@@ -11,29 +11,31 @@
 
 int main(int argc, char** argv) {
 
+  typedef std::vector< std::vector<int> > adj_mat;
+
   std::cout << "<---------------------------------------->" << std::endl;
 
   const int graph_size = 100;
   const int kappa = 1;
-  const int ngraphs = std::atoi(argv[1]);
-  const std::string init_type = "erdos";
+  const int m = graph_size*(graph_size + 1)/2;
+  prefAttachModel model(graph_size, m, kappa);
+
+  const int ngraphs_per_type = std::atoi(argv[1]);
   // run_interval calculated based on 5*n^3 total steps
-  const int run_interval = 2*std::pow(graph_size, 3)/ngraphs;
-  typedef std::vector< std::vector<int> > adj_mat;
-  std::vector<adj_mat> pa_graphs(ngraphs);
-  prefAttachModel model(graph_size, kappa);
-  if(init_type == "erdos") {
-    model.init_er_graph(std::pow(graph_size, 2));
-  }
-  else if(init_type == "complete") {
-    model.init_complete_graph();
-  }
-  else {
-    std::cout << "init type: " << init_type << " unrecognized, exiting." << std::endl;
-    std::exit(1);
-  }
-  for(int i = 0; i < ngraphs; i++) {
-    pa_graphs[i] = model.run_nsteps(run_interval);
+  const int run_interval = 6*std::pow(graph_size, 3)/ngraphs_per_type;
+
+  std::vector<std::string> init_types;
+  init_types.push_back("erdos");
+  // init_types.push_back("complete");
+  init_types.push_back("lopsided");
+  const int ntypes = init_types.size();
+  const int ngraphs = ngraphs_per_type*ntypes;
+  std::vector<adj_mat> pa_graphs(ntypes*ngraphs);
+  for(int i = 0; i < ntypes; i++) {
+    model.init(init_types[i]);
+    for(int j = 0; j < ngraphs_per_type; j++) {
+      pa_graphs[i*ngraphs_per_type+j] = model.run_nsteps(run_interval);
+    }
   }
 
   // make evenly spaced number of spectral params (maybe should be logarithmically evenly spaced?)
@@ -50,6 +52,7 @@ int main(int argc, char** argv) {
   for(int i = 0; i < ngraphs; i++) {
     graph_embeddings[i] = spectral_embedding(pa_graphs[i], spectral_params);
   }
+  const std::string init_type = "many";
   std::cout << "--> Graphs generated and embedded" << std::endl;
   std::cout << "--> Graph embeddings saved in: ./embedding_data" << std::endl;
   std::ofstream output_ges("./embedding_data/" + init_type + "_graph_embeddings.csv");
