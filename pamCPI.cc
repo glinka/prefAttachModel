@@ -749,6 +749,7 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     }
 
     // TESTING
+    cout << "old integral: " << avg_integral << endl;
     cout << "new integral: " << integrals.back() << endl;
     // END TESTING
 
@@ -796,7 +797,9 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
 	// projected_degs[i] = 0;
 	// TESTING
 	proj_step /= 2;
-	return project_degs(deg_data, times, proj_step, run_id, dir);
+	// TESTING
+	// return project_degs(deg_data, times, proj_step, run_id, dir);
+	// END TESTING
       }
     }
 

@@ -50,13 +50,13 @@ vector<double> fitCurves::fitFx_constrained(const vector<double>& time_data, con
   const int nindices = index_data.size();
 
   MatrixXd A_sub(n, k);
-  VectorXd y(n*p);
   for(int i = 0; i < n; i++) {
     for(int j = 0; j < k; j++) {
       A_sub(i, j) = (to_fit_coeff_evo[j])(time_data[i]);
     }
   }
 
+  VectorXd y(n*p);
   for(int i = 0; i < p; i++) {
     for(int j = 0; j < n; j++) {
       y(i*n + j) = ydata[i][j];
@@ -90,7 +90,7 @@ vector<double> fitCurves::fitFx_constrained(const vector<double>& time_data, con
   vector<double> new_coeffs(p, 0);
   for(int i = 0; i < p; i++) {
     for(int j = 0; j < k; j++) {
-      new_coeffs[i] += (to_fit_coeff_evo[j])(tproj);
+      new_coeffs[i] += coeffs(i*k + j)*(to_fit_coeff_evo[j])(tproj);
     }
   }
   return new_coeffs;
