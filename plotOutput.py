@@ -562,6 +562,9 @@ def plot_coeffs(times, coeffs_list, plot_name=""):
         fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(111)
         ax.scatter(times, coeffs[:,i], lw=0)
+        maxcoeff = np.amax(coeffs[:,i])
+        mincoeff = np.amin(coeffs[:,i])
+        ax.set_ylim((mincoeff - 0.1*(maxcoeff - mincoeff), maxcoeff + 0.1*(maxcoeff - mincoeff)))
         plt.savefig("coeffs/" + plot_name + "coeff" + str(i) + ".png")
 
 def plot_vectors_tc(data, params, plot_name=""):
