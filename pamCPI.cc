@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <memory>
 #include <mpi.h>
 #include "pamCPI.h"
 #include "calcGraphProps.h"
@@ -23,17 +24,28 @@ string pamCPI::create_files(const string init_type, const bool new_init, const s
   }
   dir = "./" + dir + "_" + init_type + "_cpi_data/";
 
-  ofstream times_out(dir + "times" + run_id + ".csv");
-  ofstream pre_proj_degs_out(dir + "pre_proj_degs" + run_id + ".csv");
-  ofstream post_proj_degs_out(dir + "post_proj_degs" + run_id + ".csv");
-  ofstream fitted_coeffs_out(dir + "fitted_coeffs" + run_id + ".csv");
-  times_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
-  pre_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
-  post_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
-  fitted_coeffs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
-  pre_proj_degs_out.close();
-  post_proj_degs_out.close();
-  fitted_coeffs_out.close();
+  vector< unique_ptr<ofstream> > files;
+  files.push_back(unique_ptr<ofstream>(new ofstream(dir + "times" + run_id + ".csv")));
+  files.push_back(unique_ptr<ofstream>(new ofstream(dir + "pre_proj_degs" + run_id + ".csv")));
+  files.push_back(unique_ptr<ofstream>(new ofstream(dir + "post_proj_degs" + run_id + ".csv")));
+  files.push_back(unique_ptr<ofstream>(new ofstream(dir + "fitted_coeffs" + run_id + ".csv")));
+  files.push_back(unique_ptr<ofstream>(new ofstream(dir + "integrals" + run_id + ".csv")));
+
+  for(vector< unique_ptr<ofstream> >::iterator f = files.begin(); f != files.end(); f++) {
+    **f << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  }
+
+  // ofstream times_out(dir + "times" + run_id + ".csv");
+  // ofstream pre_proj_degs_out(dir + "pre_proj_degs" + run_id + ".csv");
+  // ofstream post_proj_degs_out(dir + "post_proj_degs" + run_id + ".csv");
+  // ofstream fitted_coeffs_out(dir + "fitted_coeffs" + run_id + ".csv");
+  // times_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  // pre_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  // post_proj_degs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  // fitted_coeffs_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  // pre_proj_degs_out.close();
+  // post_proj_degs_out.close();
+  // fitted_coeffs_out.close();
   
   return dir;
 }
@@ -74,45 +86,45 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
   }
   //set up save file and write header
   vector<double> forFile;
-    forFile.push_back(projStep);
-    forFile.push_back(offManifoldWait);
-    forFile.push_back(nMicroSteps);
-    forFile.push_back(collectInterval);
-    vector<string> forFileStrs;
-    forFileStrs.push_back("proj_step");
-    forFileStrs.push_back("off_manifold_wait");
-    forFileStrs.push_back("nms");
-    forFileStrs.push_back("collection_interval");
-    //open all the files
-    // stringstream ss;
-    // int folder_counter = 0;
-    // string dir_base = "./csv_data";
-    // string dir;
-    // bool isdir = true;
-    // struct stat stat_dir;
-    // do {
-    //   ss.str("");
-    //   ss << dir_base << folder_counter << "/";
-    //   folder_counter++;
-    //   dir = ss.str();
-    //   int check = stat(dir.c_str(), &stat_dir);
-    //   if(check == -1) {
-    // 	mkdir(dir.c_str(), 0700);
-    // 	isdir = false;
-    //   }
-    // } while (isdir);
-    // ofstream* paDataCPI = createFile("paDataCPI" + run_id, dir, forFile, forFileStrs);
-    // ofstream* projData = createFile("projData" + run_id, dir, forFile, forFileStrs);
-    // ofstream* eigVectData = createFile("eigVectData" + run_id, dir, forFile, forFileStrs);
-    // ofstream* eigval_data = createFile("eigval_data" + run_id, dir, forFile, forFileStrs);
-    // ofstream* deg_data = createFile("deg_data" + run_id, dir, forFile, forFileStrs);
-    // ofstream* time_data = createFile("time_data" + run_id, dir , forFile, forFileStrs);
-    //after waiting for the system to reach the slow manifold, collect data every collectInterval number of steps
-    int totalSteps = 0;
-    ofstream selfloops_out(dir + "selfloop_densities" + run_id + ".csv");
-    selfloops_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
-    while(totalSteps < nSteps) {
-	int microStep;
+  forFile.push_back(projStep);
+  forFile.push_back(offManifoldWait);
+  forFile.push_back(nMicroSteps);
+  forFile.push_back(collectInterval);
+  vector<string> forFileStrs;
+  forFileStrs.push_back("proj_step");
+  forFileStrs.push_back("off_manifold_wait");
+  forFileStrs.push_back("nms");
+  forFileStrs.push_back("collection_interval");
+  //open all the files
+  // stringstream ss;
+  // int folder_counter = 0;
+  // string dir_base = "./csv_data";
+  // string dir;
+  // bool isdir = true;
+  // struct stat stat_dir;
+  // do {
+  //   ss.str("");
+  //   ss << dir_base << folder_counter << "/";
+  //   folder_counter++;
+  //   dir = ss.str();
+  //   int check = stat(dir.c_str(), &stat_dir);
+  //   if(check == -1) {
+  // 	mkdir(dir.c_str(), 0700);
+  // 	isdir = false;
+  //   }
+  // } while (isdir);
+  // ofstream* paDataCPI = createFile("paDataCPI" + run_id, dir, forFile, forFileStrs);
+  // ofstream* projData = createFile("projData" + run_id, dir, forFile, forFileStrs);
+  // ofstream* eigVectData = createFile("eigVectData" + run_id, dir, forFile, forFileStrs);
+  // ofstream* eigval_data = createFile("eigval_data" + run_id, dir, forFile, forFileStrs);
+  // ofstream* deg_data = createFile("deg_data" + run_id, dir, forFile, forFileStrs);
+  // ofstream* time_data = createFile("time_data" + run_id, dir , forFile, forFileStrs);
+  //after waiting for the system to reach the slow manifold, collect data every collectInterval number of steps
+  int totalSteps = 0;
+  // ofstream selfloops_out(dir + "selfloop_densities" + run_id + ".csv");
+  // selfloops_out << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
+  while(totalSteps < nSteps) {
+    int microStep;
 	vector<graphData> toPlot;
 	// vector<graphData> toProject;
 	vector< vector<int> > degs_to_project;
@@ -237,9 +249,9 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 
 
 	// save selfloop data
-	for(int i = 0; i < selfloop_densities.size(); i++) {
-	  selfloops_out << selfloop_densities[i] << endl;
-	}
+	// for(int i = 0; i < selfloop_densities.size(); i++) {
+	//   selfloops_out << selfloop_densities[i] << endl;
+	// }
 
 
 	// old projection method
@@ -658,43 +670,72 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     }
     
   vector< vector<double> > deg_fitted_coeffs(npts, vector<double>());
-    for(int i = 0; i < npts; i++) {
-      vector<double> degrees(deg_data[i].begin(), deg_data[i].end());
-      sort(degrees.begin(), degrees.end());
-      deg_fitted_coeffs[i] = fitCurves::fitFx(indices, degrees, deg_fit_fns);
+  vector<double> integrals(npts + 1, 0);
+  const int ncoeffs = deg_fit_fns.size();
+
+  for(int i = 0; i < npts; i++) {
+    vector<double> degrees(deg_data[i].begin(), deg_data[i].end());
+    sort(degrees.begin(), degrees.end());
+    deg_fitted_coeffs[i] = fitCurves::fitFx(indices, degrees, deg_fit_fns);
+    // calculate approximate integral of function over indices, then use this to constrain the best-fit line
+    double integral = 0;
+    for(int j = 0; j < n; j++) {
+      for(int k = 0; k < ncoeffs; k++) {
+	integral += (*deg_fit_fns[k])(indices[j])*deg_fitted_coeffs[i][k];
+      }
     }
+    integrals[i] = integral;
+  }
+
+  double avg_integral = 0;
+  for(double i : integrals) {
+    avg_integral += i;
+  }
+  avg_integral /= npts;
+  
     
     // fit each coefficient's evolution with a parabola
-    const int ncoeffs = deg_fit_fns.size();
     fxs coeff_fit_fns;
     coeff_fit_fns.push_back(const_offset);
     coeff_fit_fns.push_back([] (double x) { return x;});
-    coeff_fit_fns.push_back([] (double x) { return x*x;});
+    // coeff_fit_fns.push_back([] (double x) { return x*x;});
+    // coeff_fit_fns.push_back([] (double x) { return x*x*x;});
+    // coeff_fit_fns.push_back([] (double x) { return x*x*x*x;});
+    // coeff_fit_fns.push_back([] (double x) { return x*x*x*x*x;});
     vector< vector<double> > coeff_fitted_coeffs(ncoeffs);
     // scale times to [0, 10] to prevent overflow
     vector<double> scaled_times = times;
     for(int i = 0; i < scaled_times.size(); i++) {
-      scaled_times[i] = 10*scaled_times[i]/times.back();
+      scaled_times[i] = 10*(scaled_times[i] - times.front())/times.back();
     }
+
+    vector< vector<double> > coeff_timecourses(ncoeffs, vector<double>(times.size()));
     for(int i = 0; i < ncoeffs; i++) {
-      vector<double> coeff_timecourse(npts);
-      for(int j = 0; j < npts; j++) {
-	coeff_timecourse[j] = deg_fitted_coeffs[j][i];
+      for(int j = 0; j < times.size(); j++) {
+	coeff_timecourses[i][j] = deg_fitted_coeffs[j][i];
       }
-      coeff_fitted_coeffs[i] = fitCurves::fitFx(scaled_times, coeff_timecourse, coeff_fit_fns);
     }
-      
+
+    // for(int i = 0; i < ncoeffs; i++) {
+    //   vector<double> coeff_timecourse(npts);
+    //   for(int j = 0; j < npts; j++) {
+    // 	coeff_timecourse[j] = deg_fitted_coeffs[j][i];
+    //   }
+    //   coeff_fitted_coeffs[i] = fitCurves::fitFx_constrained(scaled_times, indices, coeff_timecourse, coeff_fit_fns, deg_fit_fns, proj_step, avg_integral);
+    // }
+
+    vector<double> new_coeffs = fitCurves::fitFx_constrained(scaled_times, indices, coeff_timecourses, coeff_fit_fns, deg_fit_fns, proj_step, avg_integral);
     // project data
-    vector<double> new_coeffs(ncoeffs);
-    double proj_time = 10*(times.back() + proj_step)/times.back();
-    for(int i = 0; i < ncoeffs; i++) {
-      // evaluate each coefficient at the new time
-      double eval = 0;
-      for(int j = 0; j < coeff_fit_fns.size(); j++) {
-	eval += (*coeff_fit_fns[j])(proj_time)*coeff_fitted_coeffs[i][j];
-      }
-      new_coeffs[i] = eval;
-    }
+    // vector<double> new_coeffs(ncoeffs);
+    // double proj_time = 10.0*(times.back() - times.front() + proj_step)/times.back();
+    // for(int i = 0; i < ncoeffs; i++) {
+    //   // evaluate each coefficient at the new time
+    //   double eval = 0;
+    //   for(int j = 0; j < coeff_fit_fns.size(); j++) {
+    // 	eval += (*coeff_fit_fns[j])(proj_time)*coeff_fitted_coeffs[i][j];
+    //   }
+    //   new_coeffs[i] = eval;
+    // }
 
     // reconstruct degree distribution
     vector<int> projected_degs(n);
@@ -704,8 +745,13 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
 	eval += (*deg_fit_fns[j])(indices[i])*new_coeffs[j];
       }
       projected_degs[i] = eval;
+      integrals.back() += eval;
     }
-    
+
+    // TESTING
+    cout << "new integral: " << integrals.back() << endl;
+    // END TESTING
+
     // rescale to approach approximately 'm' edges
     // allow maximum 0.1% disparity
 
@@ -767,6 +813,8 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     ofstream pre_proj_degs_out(dir + "pre_proj_degs" + run_id + ".csv", ios_base::app);
     ofstream post_proj_degs_out(dir + "post_proj_degs" + run_id + ".csv", ios_base::app);
     ofstream fitted_coeffs_out(dir + "fitted_coeffs" + run_id + ".csv", ios_base::app);
+    ofstream coeff_fitted_coeffs_out(dir + "double_fitting" + run_id + ".csv", ios_base::app);
+    ofstream integrals_out(dir + "integrals" + run_id + ".csv", ios_base::app);
     // truly abhorrent constructors
     saveData(times, times_out);
     // save_coeffs(vector< vector<double> >(1, std::vector<double>(deg_data.back().begin(), deg_data.back().end())), pre_proj_degs_out);
@@ -775,5 +823,14 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     // save_coeffs(vector< vector<double> >(1, deg_fitted_coeffs.back()), fitted_coeffs_out);
     save_coeffs(deg_fitted_coeffs, fitted_coeffs_out);
     // save_coeffs(vector< vector<double> >(1, new_coeffs), fitted_coeffs_out);
+
+    // TESTING
+    // also save new, fitted coeffs and corresponding time
+    save_coeffs(vector< vector<double > >(1, new_coeffs), fitted_coeffs_out);
+    saveData(vector<double>(1, times.back() + proj_step), times_out);
+    save_coeffs(coeff_fitted_coeffs, coeff_fitted_coeffs_out);
+    saveData(integrals, integrals_out);
+    // END TESTING
+
     return projected_degs;
 }
