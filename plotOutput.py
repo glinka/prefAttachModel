@@ -562,6 +562,31 @@ def plot_coeffs(times, coeffs_list, plot_name=""):
         fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(111)
         ax.scatter(times, coeffs[:,i], lw=0)
+        maxcoeff = np.amax(coeffs[:,i])
+        mincoeff = np.amin(coeffs[:,i])
+        ax.set_ylim((mincoeff - 0.1*(maxcoeff - mincoeff), maxcoeff + 0.1*(maxcoeff - mincoeff)))
+        plt.savefig("coeffs/" + plot_name + "coeff" + str(i) + ".png")
+
+def plot_coeffs_fitting(times, coeffs_list, fit, plot_name=""):
+    coeffs = np.average(np.array(coeffs_list), 0)
+    n = coeffs.shape[0]
+    ncoeffs = coeffs.shape[1]
+    nfitcoeffs = fit.shape[1]
+    if plot_name is not "":
+        plot_name = plot_name + "_"
+    for i in range(ncoeffs):
+        fig = plt.figure(facecolor='w')
+        ax = fig.add_subplot(111)
+        ax.scatter(times, coeffs[:,i], lw=0, c='b')
+        evals = np.zeros(n)
+        for j in range(nfitcoeffs-1, 0, -1):
+            evals = 10.0*((np.linspace(10000, 200000, n) - 10000)/80000)*(evals + fit[i,j])
+        evals = evals + np.ones(n)*fit[i,0]
+        ax.plot(np.linspace(10000, 200000, n), evals, color='g')
+        maxcoeff = np.amax(coeffs[:,i])
+        mincoeff = np.amin(coeffs[:,i])
+        ax.set_ylim((mincoeff - 0.1*(maxcoeff - mincoeff), maxcoeff + 0.1*(maxcoeff - mincoeff)))
+        ax.set_xlim((0,2*200000))
         plt.savefig("coeffs/" + plot_name + "coeff" + str(i) + ".png")
 
 def plot_vectors_tc(data, params, plot_name=""):
@@ -1941,7 +1966,10 @@ if __name__=="__main__":
             elif 'coeffs' in fileName:
                 coeffs, params = get_data(fileName, header_rows=1)
                 coeffs_list.append(coeffs)
+            # elif 'double' in fileName:
+            #     fit, params = get_data(fileName, header_rows=0)
         plot_coeffs(times, coeffs_list, args.plot_name)
+        # plot_coeffs_fitting(times, coeffs_list, fit, args.plot_name)
     elif args.comp_deg_cpi or args.comp_deg_cpi_3d or args.comp_deg_cpi_timeproj:
         times_cpi = None
         times_nocpi = None
