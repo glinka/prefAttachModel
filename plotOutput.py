@@ -1762,19 +1762,21 @@ def pa_dmaps_embedding(eigvals, eigvects, t=0):
     output_filename = "pa_embedding_"
     fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
-    ax.hold(False)
     n = eigvects.shape[1]
     for i in range(nvects):
         for j in range(i+1, nvects):
             xvals = np.power(eigvals_to_plot[i], t)*eigvects_to_plot[i,:]
             yvals = np.power(eigvals_to_plot[j], t)*eigvects_to_plot[j,:]
-            ax.scatter(xvals , yvals, c=np.arange(n), lw=0, alpha=0.7)
+            ax.scatter(xvals[:n/2] , yvals[:n/2], c=np.arange(n/2), lw=0, alpha=0.7, cmap='Reds')
+            ax.hold(True)
+            ax.scatter(xvals[-n/2:] , yvals[-n/2:], c=np.arange(n/2), lw=0, alpha=0.7, cmap='Blues')
             ax.set_xlim((np.min(xvals), np.max(xvals)))
             ax.set_ylim((np.min(yvals), np.max(yvals)))
             ax.set_xlabel('eigvect ' + str(i+1))
             ax.set_ylabel('eigvect ' + str(j+1))
             ax.set_title('pa dmaps embedding')
             plt.savefig("./figs/embeddings/dmaps/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + ".png")
+            ax.hold(False)
 
 def pa_pca_embedding(eigvals, eigvects, orig_data):
     # recall eigenvectors are stored in rows
