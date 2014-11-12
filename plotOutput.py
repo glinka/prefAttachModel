@@ -14,6 +14,12 @@ import matplotlib as mpl
 
 # style.use('ggplot')
 
+# global variables to the (hopefully temporary) rescue of aligning colornorms
+# PLEASE DELETE ASAP
+
+colornorm = None
+
+
 def thin_array(array, frac_to_keep=0.5, new_npts=None):
     #
     # !!! shape of array must be (x, y), cannot be (x,) !!!
@@ -622,7 +628,7 @@ def plot_vectors_tc(data, params, plot_name=""):
         plt.savefig("coeffs/" + plot_name + "coeff" + str(i) + ".png")
     #ax.legend(loc=6)
 
-def plot_degree_surface(degs, times, sort=True, title='', zlabel=None, ax=None, FONTSIZE=48, colornorm=None, zlim=None):
+def plot_degree_surface(degs, times, sort=True, title='', zlabel=None, ax=None, FONTSIZE=48, zlim=None, colornorm=None):
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.cm as cm
     import matplotlib.colors as colors
@@ -1156,7 +1162,9 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
 
     maxdeg = np.amax(thinned_sorted_degs)
     mindeg = np.min(thinned_sorted_degs)
-    colornorm = colors.Normalize(vmin=mindeg, vmax=maxdeg)
+    global colornorm
+    if colornorm is None:
+        colornorm = colors.Normalize(vmin=mindeg, vmax=maxdeg)
     colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
 
     for v in range(n):
@@ -1179,7 +1187,7 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     if show_colorbar:
         format_fn = lambda val, pos: "%.2f" % val
         cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colornorm, orientation='vertical', format=ticker.FuncFormatter(format_fn))
-        cb.set_ticks(np.linspace(mindeg, maxdeg, 5))
+        # cb.set_ticks(np.linspace(mindeg, maxdeg, 5))
         ax_cb.tick_params(axis='both', which='both', labelsize=LABELSIZE)
         ax_cb.text(-.2, 1.06, cb_label, fontsize=FONTSIZE-4, color=textcolor)
     if show:
@@ -1978,7 +1986,7 @@ if __name__=="__main__":
         cpi_params = None
         nocpi_params = None
         for fileName in args.inputFiles:
-            if 'withinit' in fileName or 'SUPA' in fileName:
+            if 'withinit' in fileName:
                 if 'times' in fileName:
                     times_cpi, cpi_params = get_data(fileName, header_rows=1)
                 elif 'degs' in fileName:
@@ -1988,8 +1996,14 @@ if __name__=="__main__":
                     times_nocpi, nocpi_params = get_data(fileName, header_rows=1)
                 elif 'degs' in fileName:
                     degs_nocpi, params = get_data(fileName, header_rows=1)
+            elif 'test' in fileName:
+                if 'times' in fileName:
+                    times_test, test_params = get_data(fileName, header_rows=1)
+                elif 'degs' in fileName:
+                    degs_test, params = get_data(fileName, header_rows=1)
         if args.comp_deg_cpi:
             compare_deg_cpi(degs_cpi, times_cpi, cpi_params, degs_nocpi, times_nocpi, nocpi_params)
+            compare_deg_cpi(degs_test, times_test, test_params, degs_nocpi, times_nocpi, nocpi_params)
         elif args.comp_deg_cpi_3d:
             compare_deg_cpi_3d(degs_cpi, times_cpi, cpi_params, degs_nocpi, times_nocpi, nocpi_params)
         elif args.comp_deg_cpi_timeproj:
