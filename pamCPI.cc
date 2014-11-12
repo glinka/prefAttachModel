@@ -30,6 +30,7 @@ string pamCPI::create_files(const string init_type, const bool new_init, const s
   files.push_back(unique_ptr<ofstream>(new ofstream(dir + "post_proj_degs" + run_id + ".csv")));
   files.push_back(unique_ptr<ofstream>(new ofstream(dir + "fitted_coeffs" + run_id + ".csv")));
   files.push_back(unique_ptr<ofstream>(new ofstream(dir + "integrals" + run_id + ".csv")));
+  files.push_back(unique_ptr<ofstream>(new ofstream(dir + "double_fitting" + run_id + ".csv")));
 
   for(vector< unique_ptr<ofstream> >::iterator f = files.begin(); f != files.end(); f++) {
     **f << "n=" << n << ",proj_step=" << projStep << ",off_manifold_wait=" << offManifoldWait << ",collection_interval=" << collectInterval << ",nms=" << nMicroSteps << endl;
@@ -235,6 +236,7 @@ void pamCPI::runCPI(const int nSteps, const string init_type, const string run_i
 	    }
 	  }
 	  new_degs = project_degs(degs_to_project, time, actual_proj_step, run_id, dir);
+	  cout << "actually projected " << 100*actual_proj_step/projStep << "% of proj_step" << endl;
 	}
 	MPI_Bcast(&new_degs.front(), n, MPI_INT, root, MPI_COMM_WORLD);
 	MPI_Bcast(&actual_proj_step, 1, MPI_INT, root, MPI_COMM_WORLD);
@@ -482,6 +484,7 @@ void pamCPI::project(vector<vector<vector<double> > > &data, vector<double> &tim
     fxs toFitCoeffs;
     toFitCoeffs.push_back(constOffset);
     toFitCoeffs.push_back([] (double x) { return x;});
+    toFitCoeffs.push_back([] (double x) { return x*x;});
     for(i = 0; i < n; i++) {
       line.push_back(50.0*i/n);
     }
@@ -630,24 +633,24 @@ decrease time vector to be the same during each projection, else values will bec
 }
 
 vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data, const std::vector<double>& times, int& proj_step, const string run_id, const string dir) {
-  // if proj_step is too small due to negative degree restarts, simply return the current degree distribution
-  // the choice of cutoff is arbitrary
-  if(proj_step < m) {
-    // as these are average degree sequences, need to ensure total degree count is conserved
-    vector<int> projected_degs = deg_data.back();
-    int degcount = 0;
-    for(int i = 0; i < n; i++) {
-      degcount += projected_degs[i];
-    }
-    int degree_discrepancy = std::abs(degcount - 2*m);
-    int adjustment = (int) (std::copysign(1, 2*m - degcount) + std::copysign(0.5, 2*m - degcount));
-    for(int i = 0; i < degree_discrepancy; i++) {
-      projected_degs[n - 1 - i%n] += adjustment;
-    }
-    cout << "failed to project at t= " << times.back() << endl;
-    proj_step = 0;
-    return projected_degs;
-  }
+  // // if proj_step is too small due to negative degree restarts, simply return the current degree distribution
+  // // the choice of cutoff is arbitrary
+  // if(proj_step < n*n) {
+  //   // as these are average degree sequences, need to ensure total degree count is conserved
+  //   vector<int> projected_degs = deg_data.back();
+  //   int degcount = 0;
+  //   for(int i = 0; i < n; i++) {
+  //     degcount += projected_degs[i];
+  //   }
+  //   int degree_discrepancy = std::abs(degcount - 2*m);
+  //   int adjustment = (int) (std::copysign(1, 2*m - degcount) + std::copysign(0.5, 2*m - degcount));
+  //   for(int i = 0; i < degree_discrepancy; i++) {
+  //     projected_degs[n - 1 - i%n] += adjustment;
+  //   }
+  //   cout << "failed to project at t= " << times.back() << endl;
+  //   proj_step = 0;
+  //   return projected_degs;
+  // }
 
   const int n = deg_data[0].size();
   const int npts = deg_data.size();
@@ -699,10 +702,11 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     coeff_fit_fns.push_back(const_offset);
     coeff_fit_fns.push_back([] (double x) { return x;});
     // coeff_fit_fns.push_back([] (double x) { return x*x;});
+    // coeff_fit_fns.push_back([] (double x) { return x*x;});
     // coeff_fit_fns.push_back([] (double x) { return x*x*x;});
     // coeff_fit_fns.push_back([] (double x) { return x*x*x*x;});
     // coeff_fit_fns.push_back([] (double x) { return x*x*x*x*x;});
-    vector< vector<double> > coeff_fitted_coeffs(ncoeffs);
+    // vector< vector<double> > coeff_fitted_coeffs(ncoeffs);
     // scale times to [0, 10] to prevent overflow
     vector<double> scaled_times = times;
     for(int i = 0; i < scaled_times.size(); i++) {
@@ -724,7 +728,8 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     //   coeff_fitted_coeffs[i] = fitCurves::fitFx_constrained(scaled_times, indices, coeff_timecourse, coeff_fit_fns, deg_fit_fns, proj_step, avg_integral);
     // }
 
-    vector<double> new_coeffs = fitCurves::fitFx_constrained(scaled_times, indices, coeff_timecourses, coeff_fit_fns, deg_fit_fns, proj_step, avg_integral);
+    double proj_time = 10.0*(times.back() - times.front() + proj_step)/times.back();
+    vector<double> new_coeffs = fitCurves::fitFx_constrained(scaled_times, indices, coeff_timecourses, coeff_fit_fns, deg_fit_fns, proj_time, avg_integral);
     // project data
     // vector<double> new_coeffs(ncoeffs);
     // double proj_time = 10.0*(times.back() - times.front() + proj_step)/times.back();
@@ -748,31 +753,27 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
       integrals.back() += eval;
     }
 
-    // TESTING
-    cout << "old integral: " << avg_integral << endl;
-    cout << "new integral: " << integrals.back() << endl;
-    // END TESTING
-
-    // rescale to approach approximately 'm' edges
-    // allow maximum 0.1% disparity
 
     int degcount = 0;
     for(int i = 0; i < n; i++) {
       degcount += projected_degs[i];
     }
-    double deg_scaling = 2.0*m/degcount;
-    int iters = 0, maxiters = 50;
-    while(std::abs(1 - deg_scaling) > 0.001 && iters < maxiters) {
-      for(int i = 0; i < n; i++) {
-	projected_degs[i] = deg_scaling*projected_degs[i];
-      }
-      degcount = 0;
-      for(int i = 0; i < n; i++) {
-    	degcount += projected_degs[i];
-      }
-      deg_scaling = 2.0*m/degcount;
-      iters++;
-    }
+
+    // // rescale to approach approximately 'm' edges
+    // // allow maximum 0.1% disparity
+    // double deg_scaling = 2.0*m/degcount;
+    // int iters = 0, maxiters = 50;
+    // while(std::abs(1 - deg_scaling) > 0.001 && iters < maxiters) {
+    //   for(int i = 0; i < n; i++) {
+    // 	projected_degs[i] = deg_scaling*projected_degs[i];
+    //   }
+    //   degcount = 0;
+    //   for(int i = 0; i < n; i++) {
+    // 	degcount += projected_degs[i];
+    //   }
+    //   deg_scaling = 2.0*m/degcount;
+    //   iters++;
+    // }
 
     // TESTING
     // if(iters == maxiters) {
@@ -785,7 +786,7 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     int degree_discrepancy = std::abs(degcount - 2*m);
     int adjustment = (int) (std::copysign(1, 2*m - degcount) + std::copysign(0.5, 2*m - degcount));
     for(int i = 0; i < degree_discrepancy; i++) {
-      projected_degs[n - 1 - i%n] += adjustment;
+      projected_degs[i%n] += adjustment;
     }
 
     // ensure all degrees are non-negative
@@ -793,12 +794,14 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     for(int i = 0; i < n; i++) {
       if(projected_degs[i] < 0) {
 
+	cout << "negative degree encountered at index " << i << ": " << projected_degs[i] << endl;
 	// TESTING
 	// projected_degs[i] = 0;
 	// TESTING
-	proj_step /= 2;
+	// proj_step /= 2;
 	// TESTING
-	// return project_degs(deg_data, times, proj_step, run_id, dir);
+	proj_step *= 0.9;
+	return project_degs(deg_data, times, proj_step, run_id, dir);
 	// END TESTING
       }
     }
@@ -816,7 +819,7 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     ofstream pre_proj_degs_out(dir + "pre_proj_degs" + run_id + ".csv", ios_base::app);
     ofstream post_proj_degs_out(dir + "post_proj_degs" + run_id + ".csv", ios_base::app);
     ofstream fitted_coeffs_out(dir + "fitted_coeffs" + run_id + ".csv", ios_base::app);
-    ofstream coeff_fitted_coeffs_out(dir + "double_fitting" + run_id + ".csv", ios_base::app);
+    // ofstream coeff_fitted_coeffs_out(dir + "double_fitting" + run_id + ".csv", ios_base::app);
     ofstream integrals_out(dir + "integrals" + run_id + ".csv", ios_base::app);
     // truly abhorrent constructors
     saveData(times, times_out);
@@ -831,7 +834,7 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
     // also save new, fitted coeffs and corresponding time
     save_coeffs(vector< vector<double > >(1, new_coeffs), fitted_coeffs_out);
     saveData(vector<double>(1, times.back() + proj_step), times_out);
-    save_coeffs(coeff_fitted_coeffs, coeff_fitted_coeffs_out);
+    // save_coeffs(coeff_fitted_coeffs, coeff_fitted_coeffs_out);
     saveData(integrals, integrals_out);
     // END TESTING
 

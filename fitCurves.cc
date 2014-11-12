@@ -41,7 +41,7 @@ vector<double> fitCurves::fitFx(const vector<double> &xData, const vector<double
 }
 
 vector<double> fitCurves::fitFx_constrained(const vector<double>& time_data, const vector<double> &index_data, const vector< vector<double> > &ydata, fxs to_fit_coeff_evo, fxs to_fit_degs, const double tproj, const double integral) {
-  // n coefficient data points
+  // n coefficient data points (number of time)
   // k variables (number of polynomial coefficients used to fit each coefficient's time evolution)
   // p sub-variables (number of polynomial coefficients in function used to fit degree distribution)
   const int n = time_data.size();
@@ -76,7 +76,7 @@ vector<double> fitCurves::fitFx_constrained(const vector<double>& time_data, con
   }
 
   // now that we have the pieces, combine into one monstrous matrix-vector equation
-  MatrixXd A(n*p, k*p);
+  MatrixXd A = MatrixXd::Zero(n*p, k*p);
   VectorXd t(k*p);
   for(int i = 0; i < p; i++) {
     A.block(i*n, i*k, n, k) = A_sub;
