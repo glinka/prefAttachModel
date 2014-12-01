@@ -1,6 +1,6 @@
 MODEL_SRCS=main.cc prefAttachModel.cc pamCPI.cc calcGraphProps.cc fitCurves.cc util_fns.cc util_fns.cc
 NG_SRCS=coarse_newton_main.cc newton_wrapper.cc newton.cc gmres.cc prefAttachModel.cc pamCPI.cc calcGraphProps.cc fitCurves.cc util_fns.cc 
-GE_SRCS=graph_embedding_main.cc util_fns.cc prefAttachModel.cc eigen_solvers.cc
+GE_SRCS=graph_embedding_main.cc util_fns.cc prefAttachModel.cc eigen_solvers.cc calcGraphProps.cc
 MODEL_OBJECTS=$(MODEL_SRCS:.cc=.o)
 NG_OBJECTS=$(NG_SRCS:.cc=.o)
 GE_OBJECTS=$(GE_SRCS:.cc=.o)

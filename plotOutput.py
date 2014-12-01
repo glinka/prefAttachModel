@@ -1041,7 +1041,7 @@ def plot_time_projection(degs, times, params, fig_title="", cmap='jet', ax_fig=N
         ax_cb = fig.add_subplot(gspec[:,5])
         show = True
     sorted_degs = np.sort(degs, axis=1)
-    n = params['n']
+    n = 500 # params['n']
     indices = np.linspace(1, n, n)
     nplotted_pts = 60
     if nplotted_pts > times.shape[0]:
@@ -1752,6 +1752,8 @@ def comp_newton(xs, deg_seqs, ax=None):
         ax = fig.add_subplot(111)
     n = xs.shape[1]
     ax.plot(np.arange(n), np.sort(xs[-1,:]), c='b', label='Newton solution')
+    # ax.plot(np.arange(n), np.sort(xs[-2,:]), c='b')
+    # ax.plot(np.arange(n), np.sort(xs[-3,:]), c='b')
     ax.plot(np.arange(n), np.sort(deg_seqs[-1,:]), c='g', label='Direct simulation')
     ax.set_xlabel('vertex', fontsize=24)
     ax.set_ylabel('degree', fontsize=24)
@@ -1759,32 +1761,139 @@ def comp_newton(xs, deg_seqs, ax=None):
     ax.legend(loc=2, fontsize=18)
     plt.show()
 
-def pa_dmaps_embedding(eigvals, eigvects, t=0):
+def super_comp_newton(xs, deg_seqs, resids):
+
+    import matplotlib.animation as manimation
+    FFMpegWriter = manimation.writers['ffmpeg']
+    writer = FFMpegWriter(fps=4)
+
+    fig = plt.figure()
+    ax_degs = fig.add_subplot(211)
+    ax_resid = fig.add_subplot(212)
+    n = xs.shape[1]
+    npts = xs.shape[0]
+    maxdeg = np.amax(deg_seqs)
+    mindeg = np.amin(deg_seqs)
+    deg_lims = (mindeg - 0.1*(maxdeg-mindeg), maxdeg + 0.1*(maxdeg-mindeg))
+    maxresid = np.amax(resids)
+    minresid = np.amin(resids)
+    resid_lims = (minresid - 0.1*(maxresid-minresid), maxresid + 0.1*(maxresid-minresid))
+    
+    # anim_fig = plt.figure()
+    with writer.saving(fig, "./figs/newton/newton_animation.avi", 100):
+        for i in range(npts):
+            ax_degs.hold(False)
+            ax_degs.plot(np.arange(n), np.sort(xs[i,:]), c='b',  label='newton iteration')
+            ax_degs.hold(True)
+            ax_degs.plot(np.arange(n), np.sort(deg_seqs[-1,:]), c='g', label='direct simulation')
+            ax_degs.set_ylim(deg_lims)
+            ax_degs.set_xlabel('vertex', fontsize=24)
+            ax_degs.set_ylabel('degree', fontsize=24)
+            ax_degs.tick_params(axis='both', which='both', labelsize=24)
+            ax_degs.legend(loc=2, fontsize=18)
+            ax_resid.hold(False)
+            ax_resid.plot(np.arange(1,i+1), resids[:i], zorder=1, c='b')
+            ax_resid.hold(True)
+            ax_resid.scatter(np.arange(1,i+1), resids[:i], lw=0, c='k', zorder=2)
+            ax_resid.set_xlim((1,npts))
+            ax_resid.set_ylim(resid_lims)
+            ax_resid.set_xlabel('iteration', fontsize=24)
+            ax_resid.set_ylabel(r'$\parallel F(x^{(k)}) \parallel_2$', fontsize=24)
+            ax_resid.tick_params(axis='both', which='both', labelsize=24)
+            fig.tight_layout()
+            # some bullshit for ffmpeg
+            if i/10 == 0:
+                index = str(0) + str(i)
+            else:
+                index = str(i)
+            # wow so good
+            if i > 0:
+                writer.grab_frame()
+            # plt.savefig('./figs/newton/super_comp' + index  + '.png')
+        ax_degs.hold(False)
+        ax_degs.plot(np.arange(n), np.sort(xs[i,:]), c='b', label='newton iteration')
+        ax_degs.hold(True)
+        ax_degs.plot(np.arange(n), np.sort(deg_seqs[-1,:]), c='g', label='direct simulation')
+        ax_degs.set_ylim(deg_lims)
+        ax_degs.set_xlabel('vertex', fontsize=24)
+        ax_degs.set_ylabel('degree', fontsize=24)
+        ax_degs.tick_params(axis='both', which='both', labelsize=24)
+        ax_degs.legend(loc=2, fontsize=18)
+        ax_degs.set_ylim(deg_lims)
+        ax_resid.plot(np.arange(1, npts+1), resids[:npts], zorder=1, c='b')
+        ax_resid.scatter(np.arange(1, npts+1), resids[:npts], lw=0, c='k', zorder=2)
+        ax_resid.set_xlim((1,npts))
+        ax_resid.set_ylim(resid_lims)
+        ax_resid.set_xlabel('iteration', fontsize=24)
+        ax_resid.set_ylabel(r'$\parallel F(x^{(k)}) \parallel_2$', fontsize=24)
+        ax_resid.tick_params(axis='both', which='both', labelsize=24)
+        fig.tight_layout()
+        for i in range(npts):
+            writer.grab_frame()
+            # plt.savefig('./figs/newton/super_comp' + str(npts+i) + '.png')
+
+def pa_dmaps_embedding(eigvals, eigvects, params, t=0, plot_2d=True, plot_3d=False):
+    from mpl_toolkits.mplot3d import Axes3D
+    ntypes = params['ntypes']
+    n = eigvects.shape[1]
+    n_pertype = n/ntypes
     eigvals = np.abs(eigvals)
     sorted_indices = np.argsort(eigvals)
     eigvals = eigvals[sorted_indices]
     eigvects = eigvects[sorted_indices, :]
     eigvects_to_plot = np.array([eigvects[-i,:] for i in range(2, eigvects.shape[0] + 1)])
     eigvals_to_plot = np.array([eigvals[-i] for i in range(2, eigvals.shape[0] + 1)])
-    nvects = 6 # eigvals.shape[0] - 1
+    nvects = 10 # eigvals.shape[0] - 1
     output_filename = "pa_embedding_"
-    fig = plt.figure(facecolor='w')
-    ax = fig.add_subplot(111)
-    n = eigvects.shape[1]
-    for i in range(nvects):
-        for j in range(i+1, nvects):
-            xvals = np.power(eigvals_to_plot[i], t)*eigvects_to_plot[i,:]
-            yvals = np.power(eigvals_to_plot[j], t)*eigvects_to_plot[j,:]
-            ax.scatter(xvals[:n/2] , yvals[:n/2], c=np.arange(n/2), lw=0, alpha=0.7, cmap='Reds')
-            ax.hold(True)
-            ax.scatter(xvals[-n/2:] , yvals[-n/2:], c=np.arange(n/2), lw=0, alpha=0.7, cmap='Blues')
-            ax.set_xlim((np.min(xvals), np.max(xvals)))
-            ax.set_ylim((np.min(yvals), np.max(yvals)))
-            ax.set_xlabel('eigvect ' + str(i+1))
-            ax.set_ylabel('eigvect ' + str(j+1))
-            ax.set_title('pa dmaps embedding')
-            plt.savefig("./figs/embeddings/dmaps/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + ".png")
-            ax.hold(False)
+    cmaps = ['autumn', 'jet', 'spectral', 'winter', 'summer', 'PrOr', 'RdBu', 'RdYlBu', 'RdYlGn']
+    if plot_2d is False:
+        print 'Not plotting 2d embeddings'
+    else:
+        print 'Plotting 2d embeddings'
+        # plot 2d embeddings
+        fig = plt.figure(facecolor='w')
+        ax = fig.add_subplot(111)
+        n = eigvects.shape[1]
+        for i in range(nvects):
+            for j in range(i+1, nvects):
+                xvals = np.power(eigvals_to_plot[i], t)*eigvects_to_plot[i,:]
+                yvals = np.power(eigvals_to_plot[j], t)*eigvects_to_plot[j,:]
+                for k in range(ntypes):
+                    ax.scatter(xvals[k*n_pertype:(k+1)*n_pertype], yvals[k*n_pertype:(k+1)*n_pertype], c=np.arange(n_pertype), lw=0, alpha=0.7, cmap=cmaps[k])
+                    ax.hold(True)
+                ax.set_xlim((np.min(xvals), np.max(xvals)))
+                ax.set_ylim((np.min(yvals), np.max(yvals)))
+                ax.set_xlabel('eigvect ' + str(i+1))
+                ax.set_ylabel('eigvect ' + str(j+1))
+                ax.set_title('pa dmaps embedding')
+                plt.savefig("./figs/embeddings/dmaps/2d/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + ".png")
+                ax.hold(False)
+    # plot 3d embeddings
+    if plot_3d is False:
+        print 'Not plotting 3d embeddings'
+    else:
+        print 'Plotting 3d embeddings'
+        for i in range(nvects):
+            for j in range(i+1, nvects):
+                for k in range(j+1, nvects):
+                    fig = plt.figure(facecolor='w')
+                    ax = fig.add_subplot(111, projection='3d')
+                    xvals = np.power(eigvals_to_plot[i], t)*eigvects_to_plot[i,:]
+                    yvals = np.power(eigvals_to_plot[j], t)*eigvects_to_plot[j,:]
+                    zvals = np.power(eigvals_to_plot[k], t)*eigvects_to_plot[k,:]
+                    ax.hold(False)
+                    # ax.scatter(xvals[:n/2], yvals[:n/2], zvals[:n/2], c=np.arange(n/2), lw=0, alpha=1, cmap='Reds')
+                    # ax.hold(True)
+                    # ax.scatter(xvals[-n/2:], yvals[-n/2:], zvals[-n/2:], c=np.arange(n/2), lw=0, alpha=1, cmap='jet')
+                    ax.scatter(xvals, yvals, zvals, c=np.arange(n), lw=0, alpha=1, cmap='jet')
+                    ax.set_xlim((np.min(xvals), np.max(xvals)))
+                    ax.set_ylim((np.min(yvals), np.max(yvals)))
+                    ax.set_zlim((np.min(zvals), np.max(zvals)))
+                    ax.set_xlabel('eigvect ' + str(i+1))
+                    ax.set_ylabel('eigvect ' + str(j+1))
+                    ax.set_zlabel('eigvect ' + str(k+1))
+                    plt.show(fig)
+                    # plt.savefig("./figs/embeddings/dmaps/3d/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + str(k+1) + ".png")
 
 def pa_pca_embedding(eigvals, eigvects, orig_data):
     # recall eigenvectors are stored in rows
@@ -2063,15 +2172,18 @@ if __name__=="__main__":
                 degs, g = get_data(f)
             if 'times' in f:
                 times, g = get_data(f)
-        ax = plot_time_projection(degs, times)
+            if 'resids' in f:
+                resids, g = get_data(f)
+        ax = plot_time_projection(degs, times, g)
         comp_newton(xs, degs, ax)
+        super_comp_newton(xs, degs, resids)
     elif args.dmaps_embeddings:
         for f in args.inputFiles:
             if 'eigvects' in f:
-                eigvects, g = get_data(f, header_rows=0)
+                eigvects,  params = get_data(f, header_rows=1)
             if 'eigvals' in f:
-                eigvals, g = get_data(f, header_rows=0)
-        pa_dmaps_embedding(eigvals, eigvects)
+                eigvals, params = get_data(f, header_rows=1)
+        pa_dmaps_embedding(eigvals, eigvects, params)
     elif args.pca_embeddings:
         for f in args.inputFiles:
             if 'eigvects' in f:

@@ -55,7 +55,7 @@ string create_dir(string dir_base) {
 int main(int argc, char *argv[]) {
   int n = 100;
   int m = 10000;
-  double kappa = 0.5;
+  double kappa = 1;
   long int nSteps = 10000000;
   long int savetofile_interval = 1000;
   bool project = false;
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
   int nruns = 1;
   string init_type = "erdos";
   string input_filename = "./VSPECIAL_DATA/xs.csv";
-  bool from_file = true;
+  bool from_file = false;
   int nthreads = 2;
   //parse command line args, could be moved to separate fn?
   for(int i = 1; i < argc; i++) {
@@ -193,18 +193,18 @@ int main(int argc, char *argv[]) {
     model.run_fromfile(nSteps, input_filename);
     MPI_Finalize();
     // end MPI
-  }    
+  } 
   else {
     prefAttachModel model(n, kappa);
     if(init_type == "erdos") {
-      model.init_er_graph(n*n);
+      model.init_er_graph(m);
     }
     else if(init_type == "complete") {
       model.init_complete_graph();
     }
 
     const int nintervals = 500;
-    const int interval = 5*std::pow(n, 3)/nintervals;
+    const int interval = nSteps/nintervals;
     ofstream degs_out("./pa_run_data/degs.out");
     ofstream times_out("./pa_run_data/times.out");
     vector< vector<int> > degs(nintervals);
