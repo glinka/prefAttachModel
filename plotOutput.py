@@ -17,7 +17,7 @@ import matplotlib as mpl
 # global variables to the (hopefully temporary) rescue of aligning colornorms
 # PLEASE DELETE ASAP
 
-colornorm = None
+# colornorm = None
 
 
 def thin_array(array, frac_to_keep=0.5, new_npts=None):
@@ -1161,14 +1161,13 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
         ax_cb = axes[1]
 
     maxdeg = np.amax(thinned_sorted_degs)
-    mindeg = np.min(thinned_sorted_degs)
-    global colornorm
-    if colornorm is None:
-        colornorm = colors.Normalize(vmin=mindeg, vmax=maxdeg)
+    mindeg = np.amin(thinned_sorted_degs)
+    # global colornorm
+    colornorm = colors.Normalize(vmin=mindeg, vmax=maxdeg)
     colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
 
     for v in range(n):
-        ax.scatter(thinned_times, v*ones_vect, color=colormap.to_rgba(thinned_sorted_degs[:, v]), s=80, lw=0, alpha=ALPHA)
+        ax.scatter(thinned_times, v*ones_vect, color=colormap.to_rgba(thinned_sorted_degs[:, v]), s=40, lw=0, alpha=ALPHA)
 
     ax.set_xlabel('step', fontsize=FONTSIZE)
     ax.set_ylabel('vertex', fontsize=FONTSIZE)
@@ -1670,7 +1669,7 @@ def compare_deg_cpi_timeproj(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_
 
 def compare_deg_cpi(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_times, nocpi_params):
     nocpi_ci = nocpi_params['collection_interval']
-    mutual_times, cpi_degs, nocpi_degs = align_degs(cpi_times, cpi_degs, nocpi_times, nocpi_degs, ci=nocpi_ci)
+    mutual_times, cpi_degs, nocpi_degs = align_degs(cpi_times, cpi_degs, nocpi_times, nocpi_degs)#, ci=nocpi_ci)
     cpi_degs = np.sort(cpi_degs)
     nocpi_degs = np.sort(nocpi_degs)
     # n3
@@ -1751,8 +1750,8 @@ def comp_newton(xs, deg_seqs, ax=None):
         fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(111)
     n = xs.shape[1]
-    ax.plot(np.arange(n), np.sort(xs[-1,:]), c='b', label='Newton solution')
-    ax.plot(np.arange(n), np.sort(deg_seqs[-1,:]), c='g', label='Direct simulation')
+    ax.plot(np.arange(n), np.sort(xs[-1,:]), c='b', label='newton solution')
+    ax.plot(np.arange(n), np.sort(deg_seqs[-1,:]), c='g', label='direct simulation')
     ax.set_xlabel('vertex', fontsize=24)
     ax.set_ylabel('degree', fontsize=24)
     ax.tick_params(axis='both', which='both', labelsize=24)
@@ -2005,7 +2004,7 @@ if __name__=="__main__":
                     degs_test, params = get_data(fileName, header_rows=1)
         if args.comp_deg_cpi:
             compare_deg_cpi(degs_cpi, times_cpi, cpi_params, degs_nocpi, times_nocpi, nocpi_params)
-            compare_deg_cpi(degs_test, times_test, test_params, degs_nocpi, times_nocpi, nocpi_params)
+            compare_deg_cpi(degs_nocpi, times_nocpi, nocpi_params, degs_test, times_test, test_params)
         elif args.comp_deg_cpi_3d:
             compare_deg_cpi_3d(degs_cpi, times_cpi, cpi_params, degs_nocpi, times_nocpi, nocpi_params)
         elif args.comp_deg_cpi_timeproj:
