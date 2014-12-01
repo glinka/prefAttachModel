@@ -791,20 +791,20 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
 
     // ensure all degrees are non-negative
     // if a negative value is found, re-try with half the projection step
-    for(int i = 0; i < n; i++) {
-      if(projected_degs[i] < 0) {
+    // for(int i = 0; i < n; i++) {
+    //   if(projected_degs[i] < 0) {
 
-	cout << "negative degree encountered at index " << i << ": " << projected_degs[i] << endl;
-	// TESTING
-	// projected_degs[i] = 0;
-	// TESTING
-	// proj_step /= 2;
-	// TESTING
-	proj_step *= 0.9;
-	return project_degs(deg_data, times, proj_step, run_id, dir);
-	// END TESTING
-      }
-    }
+    // 	cout << "negative degree encountered at index " << i << ": " << projected_degs[i] << endl;
+    // 	// TESTING
+    // 	// projected_degs[i] = 0;
+    // 	// TESTING
+    // 	// proj_step /= 2;
+    // 	// TESTING
+    // 	proj_step *= 0.9;
+    // 	return project_degs(deg_data, times, proj_step, run_id, dir);
+    // 	// END TESTING
+    //   }
+    // }
 
     // TESTING
     // degcount = 0;
@@ -832,8 +832,8 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
 
     // TESTING
     // also save new, fitted coeffs and corresponding time
-    save_coeffs(vector< vector<double > >(1, new_coeffs), fitted_coeffs_out);
-    saveData(vector<double>(1, times.back() + proj_step), times_out);
+    // save_coeffs(vector< vector<double > >(1, new_coeffs), fitted_coeffs_out);
+    // saveData(vector<double>(1, times.back() + proj_step), times_out);
     // save_coeffs(coeff_fitted_coeffs, coeff_fitted_coeffs_out);
     saveData(integrals, integrals_out);
     // END TESTING
