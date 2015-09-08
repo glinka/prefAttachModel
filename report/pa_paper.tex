@@ -1,0 +1,169 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx, subcaption, setspace, indentfirst, amsfonts, amsthm, empheq}
+\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+\usepackage[center]{titlesec}
+\graphicspath{ {./figs/paper/} }
+\pagestyle{plain}
+\renewcommand\thesection{\Roman{section}}
+\renewcommand\thesubsection{\alph{subsection}.}
+\newcommand\ignore[1]{}
+\setlength{\parskip}{0ex}
+\def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
+\let\endchangemargin=\endlist 
+
+\title{\vspace{-5mm}Equation-free analysis of a dynamically evolving multigraph}
+\author{Alexander Holiday,$^1$ Bal\'{a}zs R\'{a}th,$^2$ Ioannis G. Kevrekidis$^{1,3}$ \\ \\
+  $^1$\textit{Department of Chemical and Biological Engineering}, \\
+  \textit{Princeton University, Princeton, New Jersey 08544, USA} \\ \\
+  $^2$\textit{Department of Mathematics}, \\
+  \textit{The University of British Columbia, Vancouver, British Columbia V6T 1Z4}
+}
+\date{}
+
+\begin{document}
+\maketitle
+\begin{onehalfspace}
+
+\begin{abstract}
+In order to adapt traditional numerical analysis techniques to complex network systems, we apply the equation-free method to a dynamically evolving multigraph system. This approach is based on the coupling of short intervals of simulation with appropriately-defined lifting and restriction operators that map the full network description to suitable macroscopic variables, which enables both the acceleration of direct simulations through coarse-projective integration, and the identification of stationary states via Newton-GMRES. Additionally, we employ the dimensionality-reduction algorithsm principal componenet analysis (PCA) and diffusion maps (DMAPS) to validate our coarse-grained network description.
+\end{abstract}
+
+\pagebreak
+
+\section{Introduction}
+\label{sec:intro}
+
+
+Over the past decades, myriad systems have been formulated as complex evolving networks, from highway traffic \ref{transims or matsim} to brain connectivity \ref{neural_learning bassett(?)}. When modeling such systems, dynamics are typically specified at the level of individual nodes and edge interactions while explicit closed equations governing macroscopic properties are often unavailable \ref{votingmodel} \ref{ab_epidemiological} \ref{kuramoto???} \ref{transims or matsim}. Additionally, these interactions are often complicated functions dependent on multiple system parameters. This, coupled with the large network sizes inherent to many interesting problems makes numerical investigation computationally prohibitive. However, the lack of explicit equations governing macroscopic property evolution precludes the use of traditional numerical techniques such as optimization and fixed-point location that could offer valuable insight into the network's behavior, leaving little alternative but to work with the full network system. Faced with this dilemma, investigators must either restrict their attention to a smaller, heuristically-motivated parameter space \ref{Hodgkin huxley} or simplify the model, potentially removing important features \ref{simplified HH}. \par
+
+Equation-free modeling offers a solution to these obstacles\ignore{circumvents these obstacles}, allowing one to investigate the complex network at a macroscopic level while retaining full system details. Underlying this method is the assumption that, although we cannot analytically derive equations governing network properties, such equations do exist. Furthermore, these implicit equations are assumed to be functions of only a few dominating variables. Thus, the state of the complete network is, in fact, well described by these select variables. This may seem an onerous restriction, yet it is exactly the behavior witnessed across network types: despite the complexity of the full system, certain network properties evolve smoothly in time, while the evolution of other, secondary properties, is often correlated to that of a few primary variables. Once these variables are uncovered, we can combine short intervals of full system simulation with operators that map the full system description to and from their representative coarse variables to perform previously-unfeasible system-level analysis (see Section \ref{sec:ef} for further details).\par
+
+Here, we apply this framework to a dynamically evolving multigraph model. This offers a test of the methodology in the context of multigraphs, a previously unexplored case. We demonstrate the acceleration of network simulations through coarse-projective integration and the location of stationary states through a matrix-free Newton-GMRES method. In addition, principal component analysis and diffusion maps, two established dimensionality-reduction techniques, are shown to provide an algorithmic method of determining the underlying dimensionality of the system. \par
+
+We begin in Section \ref{sec:model} with a description of the model. Section \ref{sec:eq} provides further details of the equation-free method, and specifies how it was applied to our system. Section \ref{sec:dr} summarizes the operation of PCA and DMAPS, and presents related results.
+
+
+\section{Model description}
+\label{sec:m}
+
+We study the edge-conservative preferential attachment model, a detailed mathematical analysis of which can be found in (\ref{balazs}). The system evolves in discrete steps $t = 0,1,\ldots t_f$, and we denote the $n$-node graph at each point by $G_n(t)$. The initial state, $G_n(0)$, is an arbitrary distribution of $m$ edges among the $n$ vertices. No restrictions are placed on this initial distribution: multiple edges and loops are permitted. \ignore{an Erd\H{o}s-R\'{e}nyi random graph on $n$ vertices and $m$ edges. Here, however, $m$ may be larger than the total number of edges in a completely-connected $n$-vertex graph so we cannot assign a probability to each edges existence, instead placing $m$ edges at random in the graph}. The system is then advanced through the following procedure at each step:
+
+\begin{enumerate}
+\item Choose an edge $e_{ij} \in E(G)$ uniformly at random and flip a coin to label one of the ends as $v_{i}$
+\item Choose a vertex $v_{k}$ using linear preferential attachment: $P(v_{k} = v_{l}) = \frac{d_{l} + \kappa}{\sum\limits_{i=1}^{n} d_{i} + n \kappa}$
+\item Replace $e_{ij}$ with $e_{ik}$
+\end{enumerate}
+
+\noindent where $d_i$ is the degree of vertex $v_i$ and $\kappa \in (0, \infty)$ is a model parameter affecting the influence degrees have on the probability distribution. That is, taking $\lim\limits{\kappa \rightarrow 0}$, we recover ``pure'' preferential attachment, and probability scales directly with degree, while $\lim\limits_{\kappa \rightarrow \infty} P(v_k = v_l) = \frac{1}{n} \; \forall \; l$, and individual degrees have no effect. \par
+
+Evolving the system in this manner, the degree sequence approaches a stationary distribution over $O(n^3)$ steps. As explained in \ref{balazs}, this distribution is dependent only on $\rho = \frac{2*m}{n}$ and $\kappa$. Fig. (\ref{fig:dse}) illustrates the evolution of the degree sequence of two networks with different initial configurations but equivalent values of $\rho$ and $\kappa$; thus, we observe they approach an identical stationary state.
+
+\begin{figure}[h!]
+  \label{fig:dse}
+\end{figure}
+
+\section{Equation-free modeling}
+\label{sec:ef}
+
+\subsection{Coarse-graining}
+
+The first task in the implementation of the equation-free framework is to uncover those few, select variables that are assumed to suffice in describing the behavior of the full, detailed network. This set of variables should be of lower dimensionality than the full system, and should evolve smoothly. Based on the profiles depicted in Fig. (\ref{fig:dse}), the graph's degree sequence, or equivalently degree distribution, is a good candidate. It progresses smoothly, and captures much information about the underlying network, while providing significant savings in dimensionality from an $O(n^2)$ adjacency matrix to a length-$n$ vector of degrees. \par
+
+However, it is crucial to test whether the evolution of other properties of the graph can be correlated to degree sequence. If not, our current description is incomplete and there exist other  important coarse variables that must be accounted for in our macroscopic description of the system. To assess this, we constructed graphs with identical degree sequences but varying betweenness-centrality disributions and clustering coefficients, and observed the evolution of these properties under the dynamics prescribed in Section \ref{sec:m}. Fig. (\ref{fig:sv}) shows that, within a short time, both variables quickly reach similar distributions despite the varied initial conditions. This suggests that the degree sequence is indeed an adaquate coarse variable for the system. \par
+
+
+
+Next we describe the other two key elements to equation-free modeling which map to and from our microscopic and macroscopic descriptions: restring and lifting operators.
+
+\subsection{Restriction}
+
+The restriction operator translates the full network into its equivalent coarse variables. Here, this involves a mapping multigraph to its degree sequences, a simple calculation. However, we can continue to reduce the dimensionality of our coarse system by keeping not the length-$n$ degree sequence, but a polynomial fitting of it. To do so, we first sort the sequence to achieve a smooth function, then fit the result to some function. Here, a sixth-degree polynomial was observed to closely approximate the sequence throughout time; thus, our coarse description consisted of the seven coefficients specifying a particular sorted degree sequence, as shown in Fig. (\ref{fig:fit}). Restriction therefore maps multigraphs to length-seven coeficient vectors. This procedure is represented by the blue arrows of Fig. (\ref{fig:lift_restrict}).
+
+\subsection{Lifting}
+
+The lifting operator performs the inverse role of restriction: translating coarse variables into full networks. Specifically in the context of our model, we map vectors of coefficients to full networks in a two-stage process. First, the coefficient vector is used to recreate a sorted degree sequence by evaluating the full polynomial at integer values and rounding to the nearest degree, as depicted in Fig. (\ref{fig:lift1}). If the sum of the resulting degree sequence is odd, a single degree is added to the largest value to ensure the sequence is graphical. Second, this degree sequence is used as the input to a Havel-Hakimi algorithm, creating a graph from the degrees \ref{ref:HH}. While the canonical Havel-Hakimi method produces simple graphs, it is not difficult to extend it to multigraphs by allowing the algorithm to wrap around the sequence, producing multiple edges and self-loops. This procedure is represented by the red arrows of Fig. (\ref{fig:lift_restrict}).
+
+\subsection{Coarse-projective integration (CPI)}
+\label{sec:cpi}
+
+The pieces described above are combined to accelerate simulations through coarse-projective integration. Denoting the lifting operator by $\mathbf{L} \; : \; c \rightarrow G$ where $c \in \mathbb{R}^7$ is the vector of polynomial coefficients, and the restriction operator as $\mathbf{R} \; : G \rightarrow c$, the method progresses as follows:
+
+\begin{enumerate}
+\item Advance the full system for $t_h$ steps
+\label{cpi:heal}
+\item Continue for $t_c$ steps, restricting the network at even intervals and saving the resulting coarse variables
+\item Using the coarse variables collected over the previous $t_h$ steps, project each forward $t_p$ steps with a forward-Euler method
+\label{cpi:proj}
+\item With the new, projected coarse variables, lift to a full network
+\label{cpi:init}
+\item Repeat from Step (\ref{cpi:heal}) until desired number of steps have been reached
+\end{enumerate}
+
+A representative evolution of one of the polynomial coefficients and its projected value is shown in Fig. (\ref{fig:coef_evo}). Note that Step (\ref{cpi:heal}) is necessary to allow the system to approach its slow manifold. After initializing a new network in Step (\ref{cpi:init}), certain variables will be far from their expected values in a normal system. This is analgous to Fig. (\ref{fig:sv}). After a short interval of ``healing'', they are drawn to the expected trajectory, after which we begin sampling. The computational gains arise from the projective step, (\ref{cpi:proj}). Here, we advance the system $t_p$ steps at the cost of one evaluation of forward euler, instead of $t_p$ direct evaluations. \\
+
+Results of the application of this general framework with the specific lifting and restriction operators previously outlined are shown in Fig. (\ref{fig:cpi_results}). We see good agreement between the CPI-accelerated and normal systems, while reducing the number of detailed steps by one third. It is important to mention that this method was applied not to a single system instantiation, but to a large ensemble. This ensured that when properties were averaged over the ensemble they evolved smoothly despite the stochastic nature of the system, as shown previously in Fig. (\ref{fig:coeff}).
+
+\section{Newton-GMRES}
+
+Aside from the computational savings of model simulations offered by CPI, the equation free framework also permits the calculation of system steady states through matrix-free Newton-GMRES algorithms. Referring back to the CPI procedure outlined in Sec. (\ref{sec:cpi}), we can define an operator $\Phi$ projecting coarse variables at $t$ to their values at $t + \delta t$: $c(t+\delta t) =\Phi(c(t))$. A system fixed point could then be located by employing Newton's method to solve the equation
+
+\begin{align}
+\label{eq:f}
+F(c) = \Phi(c) - c = 0
+\end{align}
+
+However, this requires the repeated solution of $DF(c^{(k)}) \delta c^{(k+1)} = -F(c^{(j)})$, in which the system Jacobian, $DF$ is unavailable to us. Thankfully, we may circumvent this requirement by estimating the matrix-vector products $DF x$ via directional derivatives of the form
+
+\begin{align}
+  DF(c) \approx \frac{\| F(c + \delta c) + F(c) \|}{\|\delta c \|}
+\end{align}
+
+which in turn is evaluated through calls to $F$ as defined in Eq. (\ref{eq:f})
+
+This is precisely the approach of the Newton-GMRES method, in which the solution to a linear system is searched for in expanding Krylov subspaces \ref{ref:newton_gmres}. Applying this algorithm in conjunction with the $\Phi$ operator defined in Sec. (\ref{sec:cpi}) allowed us to locate the stationary distribution without simply running the full system for long times, as would otherwise be required. Results are shown in Fig. (\ref{fig:newton_gmres}).
+
+\section{Algorithmic coarse-graining}
+
+Crucial to the above analysis was the identification of suitable coarse, system variables: it is the starting point of any equation free method. However, the location of such a low-dimensional description is highly non-trivial. Currently, as in this paper, they are discovered through careful investigation of direct simulations, or are based on previous analytical results. Therefore, any process which would algorithmically guide this search would be of great benefit. We present two such methods below: principal component analysis (PCA) and diffusion maps (DMAPS). First, we review the important topic of defining distances between networks, a prerequisite for any dimensionality-reduction technique.
+
+\subsection{Network distances}
+
+In the application of machine learning techniques to a dataset, it is necessary to define a distance (or similarity) between each data point. When these points are a set of vectors in $\mathbb{R}^n$, one has a number of metrics to choose from, the Euclidean distance being a common first option. Unfortunately, when individual points are not vectors but networks, the definition of a computationally feasible metric becomes far more challenging. Examples such as maximal common subgraph, defined in (\ref{ref:mcs}) do define metrics on the space of graphs, but are $NP-hard$. \\
+
+The strategy used in the following methods, detailed in (\ref{ref:karthik}), is to embed each graph based on statistics of random walks along its edges and vertices. This maps each network to a vector in $\mathbb{R}^n$, and the Euclidean distance is subsequently used to calculate the similarity of two graphs. Full details are given in (\ref{ref:karthik}).
+
+\subsection{PCA}
+
+PCA is used to linearly project data into subspaces that capture the directions along with the data varies most. It has found wide application, but suffers from its restriction to linear embeddings. Indeed, many datasets will not lie along some hyperplane embedded in $\mathbb{R}^n$, but rather will form a nonlinear manifold throughout the space. Thus it is not unexpected that such a method might work poorly when applied to our nonlinear system. Results shown in Fig. (\ref{fig:pca}) show that, while worse than the embedding uncovered by DMAPS in the next section, PCA still offers a reasonable dimensionality reduction.
+
+\subsection{DMAPS}
+
+Unlike PCA, DMAPS uncovers underlying nonlinear manifolds hidden in data. This is achieved by solving for the discrete equivalent of the eigenfunctions and eigenvalues of the Laplacian operator over the manifold, which amounts to calculating leading eigenvector, eigenvalue pairs of a symmetric Markov matrix $W$. See (\ref{ref:dmaps}) for details. Results from embeddings on different timescales are shown in Figs. (\ref{fig:n2}) and (\ref{fig:n3}). We see that on the short, $n^2$ timescale, the differences in initial conditions create a two-dimensional embeddings, while at long times, both systems evolve to the same steady state over a one-dimensional curve, as would be expected given the one-dimensional parameterization possible in time. \\
+
+We see that both PCA and DMAPS, when combined with a suitable embedding of each graph, uncover useful information pertaining to the underyling dimensionality of the problem.
+
+
+\section{Conclusion}
+
+The equation free framework was succesfully applied to the edge-conservative preferential attachment model, accelerating simulations through CPI, and locating stationary states through coarse Newton-GMRES. Additionally the underlying low-dimensional embedding was detected via PCA and DMAPS. \\
+
+An open area of investigation is the interpretation of the output from the PCA and DMAPS techniques. As a linear map, PCA retains a clear relationship between its input and output, but, as we saw, it is less effective when data is highly nonlinear. DMAPS may perform better the task of dimensionality reduction, but it is unclear what the embedding coordinates relate to in the data. This remains an area for improvement.
+
+
+
+
+
+
+%% This poses several problems to the investigator. First, the interactions themselves may be complicated functions that are expensive to compute and dependent on several network parameters. This, coupled with the large network sizes inherent to many interesting problems makes numerical investigation computationally prohibitive. 
+
+%% For instance, the simple model proposed in \ref{votingmodel} describing the adoption of opinions in a population is defined such that at each simulation step, a random individual is chosen and acted upon.  This precludes the use of traditional numerical techniques such as optimization and fixed-point location that could offer valuable insight into the network's behavior. 
+%% We expand 
+
+
+
+\end{onehalfspace}
+
+\bibliographystyle{abbrv}
+\bibliography{$HOME/Documents/bibTex/library}
+
+\end{document}

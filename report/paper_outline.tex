@@ -1,0 +1,82 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx, subcaption, setspace, indentfirst, amsfonts, amsthm, empheq}
+\usepackage[top=1in, bottom=1in, left=0.5in, right=0.5in]{geometry}
+\usepackage[center]{titlesec}
+\graphicspath{ {./figs/paper/} }
+\pagestyle{plain}
+\renewcommand\thesection{\Roman{section}}
+\renewcommand\thesubsection{\alph{subsection}.}
+\newcommand\ignore[1]{}
+\setlength{\parskip}{0ex}
+\def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
+\let\endchangemargin=\endlist 
+
+\title{\vspace{-2cm}Equation-free analysis of a dynamically evolving multigraph}
+\author{Alexander Holiday,$^1$ Bal\'{a}zs R\'{a}th,$^2$ Ioannis G. Kevrekidis$^{1,3}$ \\ \\
+  $^1$\textit{Department of Chemical and Biological Engineering}, \\
+  \textit{Princeton University, Princeton, New Jersey 08544, USA} \\ \\
+  $^2$\textit{Department of Mathematics}, \\
+  \textit{The University of British Columbia, Vancouver, British Columbia V6T 1Z4}
+}
+\date{}
+
+\begin{document}
+\maketitle
+\begin{singlespace}
+\vspace{-5mm}
+  \begin{enumerate}
+  \item Introduction
+    \begin{enumerate}
+    \item Examples of multigraphs
+    \item Difficulty of analysis
+    \item Benefits of equation-free methods
+    \end{enumerate}
+  \item Model Description
+    \begin{enumerate}
+    \item Step-by-step dynamics
+    \item Timescales of degree distribution evolution
+    \end{enumerate}
+  \item EF Modeling
+    \begin{enumerate}
+    \item Coarse-graining via degree distribution
+    \end{enumerate}
+    \begin{enumerate}
+    \item Restriction
+      \begin{enumerate}
+      \item Multigraph $\rightarrow$ sorted degree distribution (direct evaluation)
+      \item Sorted degree distribution $\rightarrow$ fitted polynomial coefficients (constrained least-squares)
+      \end{enumerate}
+    \end{enumerate}
+    \begin{enumerate}
+    \item Lifting
+      \begin{enumerate}
+      \item Fitted polynomial coefficients $\rightarrow$ sorted degree distribution  (evaluation of polynomial)
+      \item Sorted degree distribution $\rightarrow$  multigraph (modified Havel-Hakimi)
+      \end{enumerate}
+    \item Coarse-projective integration
+    \end{enumerate}
+  \item Newton-GMRES
+  \item \textbf{Algorithmic coarse-graining}
+    \begin{enumerate}
+      \item \textbf{PCA}
+        \begin{enumerate}
+          \item \textbf{Algorithm overview}
+          \item \textbf{Application to degree distribution}
+        \end{enumerate}
+      \item \textbf{DMAPS}
+        \begin{enumerate}
+          \item Algorithm overview
+          \item Graph distances
+          \item \textbf{Application to different timescales}
+        \end{enumerate}
+    \end{enumerate}
+  \end{enumerate}
+
+Unresolved questions for Bal\'{a}zs: Is there any property of the evolving multigraph that, in general, changes on the shorter $n^2$ timescale?
+
+\end{singlespace}
+
+%% \bibliographystyle{abbrv}
+%% \bibliography{$HOME/Documents/bibTex/library}
+
+\end{document}

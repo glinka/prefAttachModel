@@ -74,14 +74,20 @@ double prefAttachModel::genURN() {
     return (*mt)()/(rnNormalization);
 }
 
-void prefAttachModel::init(std::string init_type) {
+void prefAttachModel::init(const std::string init_type) {
   if(init_type == "complete") {
+    // for consistency's sake
+    m = (n*n + n)/2;
     init_complete_graph();
   }
   else if(init_type == "erdos") {
+    // for consistency's sake
+    m = (n*n + n)/2;
     initGraph();
   }
   else if(init_type == "lopsided") {
+    // for consistency's sake
+    m = (n*n + n)/2;
     init_lopsided_graph();
   }
   else {
@@ -140,6 +146,7 @@ void prefAttachModel::init_er_graph(const int m) {
   
 
 void prefAttachModel::init_lopsided_graph() {
+  m = (n*n + n)/2;
   vector<int> new_degs(n, 0);
   int degcount = 0;
   while(degcount < 2*m) {

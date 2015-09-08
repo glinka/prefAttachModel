@@ -1,4 +1,4 @@
-namespace utils {
+namespace custom_utils {
 
 
   template <typename T>
@@ -6,8 +6,11 @@ namespace utils {
     if(!header.empty()) {
       output_file << header << std::endl;
     }
-    for(typename std::vector< std::vector<T> >::const_iterator v = A.begin(); v != A.end(); v++) {
-      save_vector(*v, output_file, "", delim);
+    
+    if(!A.empty()) {
+      for(typename std::vector< std::vector<T> >::const_iterator v = A.begin(); v != A.end(); v++) {
+	save_vector(*v, output_file, "", delim);
+      }
     }
   }
 
@@ -17,11 +20,13 @@ namespace utils {
       output_file << header << std::endl;
     }
 
-    for(typename std::vector<T>::const_iterator val = v.begin(); val != v.end()-1; val++) {
-      output_file << *val << delim;
-    }
-    // always ends with newline
-    output_file << v.back() << std::endl;
-  }  
+    if(!v.empty()) {
+      for(typename std::vector<T>::const_iterator val = v.begin(); val != v.end()-1; val++) {
+	output_file << *val << delim;
+      }
+      // always ends with newline
+      output_file << v.back() << std::endl;
+    }  
+  }
 
 }

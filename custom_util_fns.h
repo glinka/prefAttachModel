@@ -1,11 +1,11 @@
-#ifndef UTIL_FNS_H_
-#define UTIL_FNS_H_
+#ifndef CUSTOM_UTIL_FNS_H_
+#define CUSTOM_UTIL_FNS_H_
 
 #include <vector>
 #include <string>
 #include <fstream>
 
-namespace utils {
+namespace custom_utils {
 
   double average(const std::vector<double>& v);
   double get_median(const std::vector<double>& v);
@@ -21,6 +21,6 @@ namespace utils {
 
 } 
 
-#include "util_fns.tpp"
+#include "custom_util_fns.tpp"
 
 #endif

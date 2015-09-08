@@ -1,9 +1,9 @@
-
 from multiprocessing import Pool
 import getGraphProps as gGP
 import matplotlib.ticker as ticker
 import numpy as np
 import os
+import util_fns as uf
 
 #import matplotlib
 #matplotlib.use('Agg')
@@ -1042,7 +1042,7 @@ def plot_time_projection(degs, times, params, fig_title="", cmap='jet', ax_fig=N
         ax_cb = fig.add_subplot(gspec[:,5])
         show = True
     sorted_degs = np.sort(degs, axis=1)
-    n = 500 # params['n']
+    n = degs.shape[1]
     indices = np.linspace(1, n, n)
     nplotted_pts = 60
     if nplotted_pts > times.shape[0]:
@@ -1673,6 +1673,10 @@ def compare_deg_cpi(cpi_degs, cpi_times, cpi_params, nocpi_degs, nocpi_times, no
     mutual_times, cpi_degs, nocpi_degs = align_degs(cpi_times, cpi_degs, nocpi_times, nocpi_degs)#, ci=nocpi_ci)
     cpi_degs = np.sort(cpi_degs)
     nocpi_degs = np.sort(nocpi_degs)
+
+    # implement Mark Brynildsen's suggestion
+    plot_total_error(cpi_degs, nocpi_degs, mutual_times)
+
     # n3
     plot_degree_projection((cpi_degs - nocpi_degs)/nocpi_degs, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error') #, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error') 
     # n2
@@ -1738,12 +1742,18 @@ def newton_deg_evo(deg_seqs):
 def newton_resid_evo(resids):
     fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111)
-    ax.plot(np.arange(resids.shape[0]), resids, zorder=1)
-    ax.scatter(np.arange(resids.shape[0]), resids, lw=0, c='k', zorder=2)
-    ax.set_xlim((0,resids.shape[0]-1))
-    ax.set_xlabel('iteration', fontsize=24)
-    ax.set_ylabel(r'$\parallel F(x^{(k)}) \parallel_2$', fontsize=24)
-    ax.tick_params(axis='both', which='both', labelsize=24)
+    k = 11
+    ax.plot(np.arange(k), resids[:k], zorder=1)
+    ax.scatter(np.arange(k), resids[:k], lw=0, c='k', zorder=2)
+    ax.set_xlim((0,k-1))
+    # ax.plot(np.arange(resids.shape[0]), resids, zorder=1)
+    # ax.scatter(np.arange(resids.shape[0]), resids, lw=0, c='k', zorder=2)
+    # ax.set_xlim((0,resids.shape[0]-1))
+    fs = 48
+    ax.tick_params(axis='both', which='both', labelsize=fs)
+    ax.set_xlabel('iteration', fontsize=fs)
+    ax.set_ylabel(r'$\parallel F(x^{(k)}) \parallel_2$', fontsize=fs)
+    ax.tick_params(axis='both', which='both', labelsize=fs)
     plt.show()
 
 def comp_newton(xs, deg_seqs, ax=None):
@@ -1830,7 +1840,7 @@ def super_comp_newton(xs, deg_seqs, resids):
             writer.grab_frame()
             # plt.savefig('./figs/newton/super_comp' + str(npts+i) + '.png')
 
-def pa_dmaps_embedding(eigvals, eigvects, params, t=0, plot_2d=True, plot_3d=False):
+def pa_dmaps_embedding(eigvals, eigvects, params, t=1, plot_2d=True, plot_3d=False):
     from mpl_toolkits.mplot3d import Axes3D
     ntypes = params['ntypes']
     n = eigvects.shape[1]
@@ -1841,9 +1851,10 @@ def pa_dmaps_embedding(eigvals, eigvects, params, t=0, plot_2d=True, plot_3d=Fal
     eigvects = eigvects[sorted_indices, :]
     eigvects_to_plot = np.array([eigvects[-i,:] for i in range(2, eigvects.shape[0] + 1)])
     eigvals_to_plot = np.array([eigvals[-i] for i in range(2, eigvals.shape[0] + 1)])
-    nvects = 10 # eigvals.shape[0] - 1
+    nvects = eigvals.shape[0] - 1
     output_filename = "pa_embedding_"
     cmaps = ['autumn', 'jet', 'spectral', 'winter', 'summer', 'PrOr', 'RdBu', 'RdYlBu', 'RdYlGn']
+    cs = ['b', 'r', 'g', 'y', 'c', 'm', 'k', 'b']
     if plot_2d is False:
         print 'Not plotting 2d embeddings'
     else:
@@ -1857,13 +1868,19 @@ def pa_dmaps_embedding(eigvals, eigvects, params, t=0, plot_2d=True, plot_3d=Fal
                 xvals = np.power(eigvals_to_plot[i], t)*eigvects_to_plot[i,:]
                 yvals = np.power(eigvals_to_plot[j], t)*eigvects_to_plot[j,:]
                 for k in range(ntypes):
-                    ax.scatter(xvals[k*n_pertype:(k+1)*n_pertype], yvals[k*n_pertype:(k+1)*n_pertype], c=np.arange(n_pertype), lw=0, alpha=0.7, cmap=cmaps[k])
+                    ax.scatter(xvals[k*n_pertype:(k+1)*n_pertype], yvals[k*n_pertype:(k+1)*n_pertype], c=cs[k], lw=0, alpha=0.3, s=np.arange(n_pertype)*np.arange(n_pertype)*100/(n_pertype*n_pertype), label='trajectory ' + str(k+1))
+                    ax.scatter(xvals[(k+1)*n_pertype-1], yvals[(k+1)*n_pertype-1], lw=1, c=cs[k], s=100, alpha=1)
+                    # ax.scatter(xvals[k*n_pertype:(k+1)*n_pertype], yvals[k*n_pertype:(k+1)*n_pertype], c=np.arange(n_pertype), lw=0, alpha=0.7, s=np.arange(n_pertype)*np.arange(n_pertype)*100/(n_pertype*n_pertype), cmap=cmaps[k])
+                    # ax.scatter(xvals[(k+1)*n_pertype-1], yvals[(k+1)*n_pertype-1], c=0.0, s=100, alpha=0.7, cmap=cmaps[k])
                     ax.hold(True)
                 ax.set_xlim((np.min(xvals), np.max(xvals)))
                 ax.set_ylim((np.min(yvals), np.max(yvals)))
-                ax.set_xlabel('eigvect ' + str(i+1))
-                ax.set_ylabel('eigvect ' + str(j+1))
-                ax.set_title('pa dmaps embedding')
+                ax.set_xlabel('$\\Phi_ ' + str(i+1) + '$')
+                ax.set_ylabel('$\\Phi_ ' + str(j+1) + '$')
+                ax.legend(fontsize=28)
+                ax.xaxis.get_major_formatter().set_powerlimits((0, 2))
+                ax.yaxis.get_major_formatter().set_powerlimits((0, 2))
+                plt.tight_layout()
                 plt.savefig("./figs/embeddings/dmaps/2d/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + ".png")
                 ax.hold(False)
     # plot 3d embeddings
@@ -1879,17 +1896,26 @@ def pa_dmaps_embedding(eigvals, eigvects, params, t=0, plot_2d=True, plot_3d=Fal
                     xvals = np.power(eigvals_to_plot[i], t)*eigvects_to_plot[i,:]
                     yvals = np.power(eigvals_to_plot[j], t)*eigvects_to_plot[j,:]
                     zvals = np.power(eigvals_to_plot[k], t)*eigvects_to_plot[k,:]
-                    ax.hold(False)
+
+                    for p in range(ntypes):
+                        ax.scatter(xvals[p*n_pertype:(p+1)*n_pertype], yvals[p*n_pertype:(p+1)*n_pertype], zvals[p*n_pertype:(p+1)*n_pertype], c=cs[p], lw=0, alpha=0.3, s=np.arange(n_pertype)*np.arange(n_pertype)*100/(n_pertype*n_pertype))
+                        ax.scatter(xvals[(p+1)*n_pertype-1], yvals[(p+1)*n_pertype-1], zvals[(p+1)*n_pertype-1], lw=1, c=cs[p], s=100, alpha=1)
+
+                    # ax.hold(False)
                     # ax.scatter(xvals[:n/2], yvals[:n/2], zvals[:n/2], c=np.arange(n/2), lw=0, alpha=1, cmap='Reds')
                     # ax.hold(True)
                     # ax.scatter(xvals[-n/2:], yvals[-n/2:], zvals[-n/2:], c=np.arange(n/2), lw=0, alpha=1, cmap='jet')
-                    ax.scatter(xvals, yvals, zvals, c=np.arange(n), lw=0, alpha=1, cmap='jet')
+                    # ax.scatter(xvals, yvals, zvals, c=np.arange(n), lw=0, alpha=1, cmap='jet')
                     ax.set_xlim((np.min(xvals), np.max(xvals)))
                     ax.set_ylim((np.min(yvals), np.max(yvals)))
                     ax.set_zlim((np.min(zvals), np.max(zvals)))
-                    ax.set_xlabel('eigvect ' + str(i+1))
-                    ax.set_ylabel('eigvect ' + str(j+1))
-                    ax.set_zlabel('eigvect ' + str(k+1))
+                    ax.set_xlabel('$\\Phi_ ' + str(i+1) + '$')
+                    ax.set_ylabel('$\\Phi_ ' + str(j+1) + '$')
+                    ax.set_zlabel('$\\Phi_ ' + str(k+1) + '$')
+                    ax.xaxis.get_major_formatter().set_powerlimits((0, 2))
+                    ax.yaxis.get_major_formatter().set_powerlimits((0, 2))
+                    ax.zaxis.get_major_formatter().set_powerlimits((0, 2))
+                    plt.tight_layout()
                     plt.show(fig)
                     # plt.savefig("./figs/embeddings/dmaps/3d/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + str(k+1) + ".png")
 
@@ -1916,6 +1942,25 @@ def pa_pca_embedding(eigvals, eigvects, orig_data):
             ax.set_ylabel('basis vector ' + str(j+1))
             ax.set_title('pa pca embedding')
             plt.savefig("./figs/embeddings/pca/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + ".png")
+
+def plot_total_error(cpi_degs, nocpi_degs, times):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(times, np.sum(np.abs(cpi_degs - nocpi_degs), axis=1))
+    fs = 48
+    ax.set_xlabel('step', fontsize=fs)
+    ax.set_ylabel('error in degree estimation', fontsize=fs)
+    plt.show()
+
+def comp_final_degs(degs, times, params):
+    ntypes = params['ntypes']
+    npts = degs.shape[0]
+    n = degs.shape[1]
+    fig = plt.figure(facecolor='w')
+    ax = fig.add_subplot(111)
+    for i in range(ntypes):
+        ax.plot(np.arange(n), degs[npts*(i+1)/ntypes - 1,:])
+    plt.show()
             
 if __name__=="__main__":
     import argparse
@@ -1966,6 +2011,7 @@ if __name__=="__main__":
     parser.add_argument('--pca-embeddings', action='store_true', default=False)
     parser.add_argument('--super-fig', action='store_true', default=False)
     parser.add_argument('--diffinit-comp', action='store_true', default=False)
+    parser.add_argument('--comp-final-degs', action='store_true', default=False)
     args = parser.parse_args()
     # this whole file is a huge piece of
     # the atrocities below won't be noticed
@@ -1984,6 +2030,13 @@ if __name__=="__main__":
         paramsFull, dataFull = genData(fullFile)
         paramsCPI, dataCPI = genData(cpiFile)
         compareProjection(dataFull, paramsFull, dataCPI, paramsCPI)
+    elif args.comp_final_degs:
+        for fileName in args.inputFiles:
+            if 'deg' in fileName:
+                degs, params = uf.get_data(fileName, header_rows=1)
+            elif 'time' in fileName:
+                times, params = uf.get_data(fileName, header_rows=1)
+        comp_final_degs(degs, times, params)
     elif args.plot_degree_surface or args.ds_time_proj_diff or args.ds_time_proj or args.ds_vertex_proj_analytical or args.ds_vertex_proj or args.ds_degree_proj:
         time_data = []
         deg_data = []
@@ -2018,7 +2071,7 @@ if __name__=="__main__":
             # n3
             plot_time_projection(deg_data[0], time_data, params, r'$n^3$')
             # n2
-            n = params['n']
+            n = deg_data[0].shape[0]
             if 'proj_step' in params.keys() and 'nms' in params.keys():
                 time_limit = 5*(params['proj_step'] + params['nms'])
             else:
@@ -2150,9 +2203,9 @@ if __name__=="__main__":
     elif args.newton:
         for f in args.inputFiles:
             if 'xs' in f:
-                xs, g = get_data(f)
+                xs, g = get_data(f, header_rows=0)
             elif 'resid' in f:
-                resids, g = get_data(f)
+                resids, g = get_data(f, header_rows=0)
         newton_deg_evo(xs)
         newton_resid_evo(resids)
     elif args.newton_comp:

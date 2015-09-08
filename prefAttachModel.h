@@ -46,7 +46,7 @@ class prefAttachModel {
     void save_coeffs(const std::vector< std::vector< double > > &data, std::ofstream &fileHandle);
     void save_coeffs(const std::vector< std::vector<int> > &data, std::ofstream &fileHandle);
  public:
-    void init(std::string init_type);
+    void init(const std::string init_type);
     void initGraph();
     void init_complete_graph();
     void init_er_graph(const int m);

@@ -1,9 +1,9 @@
 #include <algorithm>
 #include <cmath>
 #include <sstream>
-#include "util_fns.h"
+#include "custom_util_fns.h"
 
-namespace utils {
+namespace custom_utils {
 
   double average(const std::vector<double>& v) {
     double average = 0;

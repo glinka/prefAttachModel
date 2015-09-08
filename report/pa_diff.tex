@@ -1,0 +1,31 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx, subcaption}
+\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+\graphicspath{ {./figs/} }
+\pagestyle{plain}
+\def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
+\let\endchangemargin=\endlist 
+\setlength\parindent{0cm}
+\begin{document}
+\title{\vspace{-5mm}Differences between canonical preferential attachment model and Bal\'{a}zs'}
+\maketitle
+
+The canonical preferential attachment model, described in the attached paper and called the ``Bar\'{a}basi-Albert model'', describes a method of \textbf{constructing} a network that will have a power-law degree distribution. The method is simple:
+
+\begin{enumerate}
+\item Begin with a complete graph on $m_0$ vertices
+\item Add an additional $m$ vertices which will be connected to $k \leq m_0$ of the existing vertices with probability $P_i = \frac{d_i}{\sum\limits_j d_j}$ where $d_i$ is the degree of $v_i$
+\end{enumerate}
+
+Bal\'{a}zs' model, fully called the ``edge-conservative preferential attachment model'' describes, of course, a method of \textbf{evolving} a network. At each step, the probability that an edge is added to vertex $i$ is given by $P_i = \frac{d_i + \kappa}{\sum\limits_i d_i + n \kappa}$. \\ \\ \\
+
+{\huge Thus when they hear ``preferential attachment'', people may think of a network \textbf{construction} algorithm, and may be familiar with $P_i = \frac{d_i}{\sum\limits_j d_j}$ instead of $P_i = \frac{d_i + \kappa}{\sum\limits_j d_j + n \kappa}$.}
+
+%% \begin{changemargin}{0.0cm}{0.0cm}
+%% \centering
+
+%% \include{balazs_briefing_figs}
+
+%% \end{changemargin}
+
+\end{document}

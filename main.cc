@@ -7,8 +7,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <mpi.h>
+#include <util_fns.h>
 #include "pamCPI.h"
-#include "util_fns.h"
+#include "custom_util_fns.h"
 #include "calcGraphProps.h"
 
 using namespace std;
@@ -215,8 +216,8 @@ int main(int argc, char *argv[]) {
       times[i] = (i+1)*interval;
     }
 
-    utils::save_matrix(degs, degs_out);
-    utils::save_vector(times, times_out);
+    util_fns::save_matrix(degs, degs_out);
+    util_fns::save_vector(times, times_out);
   }
   return 0;
 }

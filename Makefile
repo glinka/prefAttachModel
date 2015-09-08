@@ -1,12 +1,20 @@
-MODEL_SRCS=main.cc prefAttachModel.cc pamCPI.cc calcGraphProps.cc fitCurves.cc util_fns.cc util_fns.cc
-NG_SRCS=coarse_newton_main.cc newton_wrapper.cc newton.cc gmres.cc prefAttachModel.cc pamCPI.cc calcGraphProps.cc fitCurves.cc util_fns.cc 
-GE_SRCS=graph_embedding_main.cc util_fns.cc prefAttachModel.cc eigen_solvers.cc calcGraphProps.cc
+MODEL_SRCS=main.cc prefAttachModel.cc pamCPI.cc calcGraphProps.cc fitCurves.cc custom_util_fns.cc
+NG_SRCS=coarse_newton_main.cc newton_wrapper.cc newton.cc gmres.cc prefAttachModel.cc pamCPI.cc calcGraphProps.cc fitCurves.cc custom_util_fns.cc 
+GE_SRCS=graph_embedding_main.cc custom_util_fns.cc prefAttachModel.cc eigen_solvers.cc calcGraphProps.cc
+RHO_KAPPA_SRCS=kappa_rho_embedding_main.cc custom_util_fns.cc prefAttachModel.cc calcGraphProps.cc
 MODEL_OBJECTS=$(MODEL_SRCS:.cc=.o)
 NG_OBJECTS=$(NG_SRCS:.cc=.o)
 GE_OBJECTS=$(GE_SRCS:.cc=.o)
+RHO_KAPPA_OBJECTS=$(RHO_KAPPA_SRCS:.cc=.o)
 
 # CXX = g++
-CXXFLAGS = -I ~/build/Eigen -debug full -std=c++0x -mkl -gxx-name=/usr/bin/g++ -O3 -traceback #-openmp # #/home/oakridge/holiday/build/bin/g++
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# may need to 'module purge intel/openmpi'
+# then 'module load intel/openmpi'
+# to place intel's 'mpic++' in its
+# proper location in PATH
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+CXXFLAGS = -I~/build/Eigen -I/home/oakridge/holiday/workspace/dmaps -I/home/oakridge/holiday/workspace/newton_gmres -I/home/oakridge/holiday/workspace/util_fns -debug full -std=c++0x -mkl -gxx-name=/usr/bin/g++ -traceback -lutil_fns -leigensolvers -openmp -O3 #/home/oakridge/holiday/build/bin/g++
 
 # CXX = g++
 # CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x #-O3
@@ -14,7 +22,7 @@ CXXFLAGS = -I ~/build/Eigen -debug full -std=c++0x -mkl -gxx-name=/usr/bin/g++ -
 CXX = mpic++
 # CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x #-O3
 
-all: graph_embedding pref_attach coarse_ng 
+all: graph_embedding pref_attach coarse_ng rho_kappa_embedding
 
 %.o: %.c
 	$(CXX) -c $<  $(CXXFLAGS)
@@ -26,6 +34,9 @@ coarse_ng: $(NG_OBJECTS)
 	$(CXX) -o $@ $^  $(CXXFLAGS)
 
 graph_embedding: $(GE_OBJECTS)
+	$(CXX) -o $@ $^  $(CXXFLAGS)
+
+rho_kappa_embedding: $(RHO_KAPPA_OBJECTS)
 	$(CXX) -o $@ $^  $(CXXFLAGS)
 
 depend: .depend

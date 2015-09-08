@@ -21,44 +21,73 @@ int main(int argc, char** argv) {
   // const int m = graph_size*(graph_size + 1)/2;
   // prefAttachModel model(graph_size, m, kappa);
 
-  const int ngraphs_per_type = std::atoi(argv[1]);
-  const int run_interval = std::atoi(argv[3]);
+  const int nintervals = std::atoi(argv[1]);
+  const int run_interval = std::atoi(argv[2]);
   // run_interval calculated based on 5*n^3 total steps
   // const int run_interval = 6*std::pow(graph_size, 3)/ngraphs_per_type;
   // const int run_interval = 6*std::pow(graph_size, 2)/ngraphs_per_type;
 
   std::vector<std::string> init_types;
-  init_types.push_back("erdos");
-  init_types.push_back("erdos");
-  init_types.push_back("erdos");
-  init_types.push_back("erdos");
-  init_types.push_back("erdos");
+  // init_types.push_back("erdos");
+  // init_types.push_back("erdos");
+  // init_types.push_back("erdos");
+  // init_types.push_back("erdos");
   // init_types.push_back("complete");
+  // init_types.push_back("complete");
+  // init_types.push_back("complete");
+  // init_types.push_back("complete");
+
+  // // workable parameters:
+  // // compile with
+  // init_types.push_back("erdos");
+  // init_types.push_back("complete");
+  // // run with
+  // ./graph_embedding 400 400 5
+  // init_types.push_back("lopsided");
+  // // better parameters:
+  // // compile with
+  init_types.push_back("erdos");
+  init_types.push_back("complete");
+  // // run with
+  // ./graph_embedding 2000 40 5
+  // // also good parameters:
+  // // compile with
+  // init_types.push_back("erdos");
+  // init_types.push_back("erdos");
+  // init_types.push_back("erdos");
+  // init_types.push_back("erdos");
+  // // run with
+  // ./graph_embedding 100 10 5
+
   // init_types.push_back("lopsided");
   const int ntypes = init_types.size();
-  const int ngraphs = ngraphs_per_type*ntypes;
-  std::vector<adj_mat> pa_graphs(ntypes*ngraphs);
-  // std::vector< std::vector<int> > pa_degs(ntypes*ngraphs);
-  // std::vector<int> pa_times(ntypes*ngraphs);
+  const int npts = nintervals*ntypes;
+  std::vector<adj_mat> pa_graphs(npts);
+  std::vector< std::vector<int> > pa_degs(npts);
+  std::vector<int> pa_times(npts);
   for(int i = 0; i < ntypes; i++) {
     // initialize with some fraction of nChoose2 edges
-    int m = (1.0*(i+1)/ntypes)*graph_size*(graph_size + 1)/2;
+    // int m = (1.0*(i+1)/ntypes)*graph_size*(graph_size + 1)/2;
+    // initialize with 50% of nChoose2 edges
+    int m = 0.5*graph_size*(graph_size + 1)/2;
     prefAttachModel model(graph_size, m, kappa);
     model.init(init_types[i]);
-    for(int j = 0; j < ngraphs_per_type; j++) {
-      pa_graphs[i*ngraphs_per_type+j] = model.run_nsteps(run_interval);
-      // pa_degs[i*ngraphs_per_type+j] = calcGraphProps::get_sorted_degrees(pa_graphs[i*ngraphs_per_type+j]);
-      // pa_times[i*ngraphs_per_type+j] = (j+1)*run_interval;
+    for(int j = 0; j < nintervals; j++) {
+      pa_graphs[i*nintervals+j] = model.run_nsteps(run_interval);
+      pa_degs[i*nintervals+j] = calcGraphProps::get_sorted_degrees(pa_graphs[i*nintervals+j]);
+      pa_times[i*nintervals+j] = (j+1)*run_interval;
     }
   }
 
   const std::string init_type = "many";
-  // // save degree sequences
-  // std::ofstream output_ds("./embedding_data/" + init_type + "_degs.csv");
-  // std::ofstream output_times("./embedding_data/" + init_type + "_times.csv");
-  // utils::save_matrix(pa_degs, output_ds);
-  // utils::save_vector(pa_times, output_times);
-  // output_ds.close();
+  // save degree sequences and times
+  std::ofstream output_ds("./embedding_data/" + init_type + "_degs.csv");
+  std::ofstream output_times("./embedding_data/" + init_type + "_times.csv");
+  output_ds << "ntypes=" << ntypes << std::endl;
+  output_times << "ntypes=" << ntypes << std::endl;
+  utils::save_matrix(pa_degs, output_ds);
+  utils::save_vector(pa_times, output_times);
+  output_ds.close();
 
   // make evenly spaced number of spectral params (maybe should be logarithmically evenly spaced?)
   const int n_spec_params = 100;
@@ -67,11 +96,11 @@ int main(int argc, char** argv) {
   const double spec_param_min = 0.0001;
   const double dspec_param = (spec_param_max - spec_param_min)/(n_spec_params - 1);
 
-  std::vector< std::vector<double> > graph_embeddings(ngraphs);
+  std::vector< std::vector<double> > graph_embeddings(npts);
   for(int i = 0; i < n_spec_params; i++) {
     spectral_params[i] = spec_param_min + i*dspec_param;
   }
-  for(int i = 0; i < ngraphs; i++) {
+  for(int i = 0; i < npts; i++) {
     graph_embeddings[i] = spectral_embedding(pa_graphs[i], spectral_params);
   }
   std::cout << "--> Graphs generated and embedded" << std::endl;
@@ -81,7 +110,7 @@ int main(int argc, char** argv) {
   output_ges.close();
 
   // DMAPS it
-  const int k = std::atoi(argv[2]);
+  const int k = std::atoi(argv[3]);
   std::vector<double> eigvals(k);
   std::vector< std::vector<double> > eigvects(k);
   std::vector< std::vector<double> > W(k);
@@ -106,32 +135,33 @@ int main(int argc, char** argv) {
   output_eigvects.close();
 
   // DMAPS is hard, PCA it
-  Eigen::MatrixXd X(ngraphs, n_spec_params);
-  for(int i = 0; i < ngraphs; i++) {
-    for(int j = 0; j < n_spec_params; j++) {
-      X(i,j) = graph_embeddings[i][j];
-    }
-  }
-  Eigen::MatrixXd V;
-  Eigen::VectorXd S;
-  const int pca_success = eigen_solver::pca(X, V, S, k);
-  if(pca_success != 1) {
-    std::cout << "pca encountered an error" << std::endl;
-    return 0;
-  }
-  std::cout << "--> PCA completed" << std::endl;
-  std::cout << "--> PCA output saved in: ./embedding_data" << std::endl;
+  // jk, pca is hard
+  // Eigen::MatrixXd X(npts, n_spec_params);
+  // for(int i = 0; i < npts; i++) {
+  //   for(int j = 0; j < n_spec_params; j++) {
+  //     X(i,j) = graph_embeddings[i][j];
+  //   }
+  // }
+  // Eigen::MatrixXd V;
+  // Eigen::VectorXd S;
+  // const int pca_success = eigen_solver::pca(X, V, S, k);
+  // if(pca_success != 1) {
+  //   std::cout << "pca encountered an error" << std::endl;
+  //   return 0;
+  // }
+  // std::cout << "--> PCA completed" << std::endl;
+  // std::cout << "--> PCA output saved in: ./embedding_data" << std::endl;
 
-  output_eigvals.open("./embedding_data/pca_" + init_type + "_embedding_eigvals.csv");
-  output_eigvects.open("./embedding_data/pca_" + init_type + "_embedding_eigvects.csv");
+  // output_eigvals.open("./embedding_data/pca_" + init_type + "_embedding_eigvals.csv");
+  // output_eigvects.open("./embedding_data/pca_" + init_type + "_embedding_eigvects.csv");
 
-  utils::save_vector(std::vector<double>(S.data(), S.data() + k), output_eigvals);
-  for(int i = 0; i < k; i++) {
-    eigvects[i] = std::vector<double>(V.data() + i*n_spec_params, V.data() + (i+1)*n_spec_params);
-  }
-  utils::save_matrix(eigvects, output_eigvects);
-  output_eigvals.close();
-  output_eigvects.close();
+  // utils::save_vector(std::vector<double>(S.data(), S.data() + k), output_eigvals);
+  // for(int i = 0; i < k; i++) {
+  //   eigvects[i] = std::vector<double>(V.data() + i*n_spec_params, V.data() + (i+1)*n_spec_params);
+  // }
+  // utils::save_matrix(eigvects, output_eigvects);
+  // output_eigvals.close();
+  // output_eigvects.close();
 
   std::cout << "<---------------------------------------->" << std::endl;
   
