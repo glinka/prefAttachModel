@@ -6,6 +6,7 @@
 #include <util_fns.h>
 #include <dmaps.h>
 #include <kernel_function.h>
+#include <igraph.h>
 #include "custom_util_fns.h"
 #include "embeddings.h"
 #include "prefAttachModel.h"
@@ -94,22 +95,47 @@ int main(int argc, char** argv) {
   util_fns::save_matrix(pa_degs, output_ds);
   util_fns::save_vector(pa_times, output_times);
   output_ds.close();
+  std::cout << "--> Graphs generated" << std::endl;
 
-  make evenly spaced number of spectral params (maybe should be logarithmically evenly spaced?)
-  const int n_spec_params = 100;
-  std::vector<double> spectral_params(n_spec_params);
-  const double spec_param_max = 0.01;
-  const double spec_param_min = 0.0001;
-  const double dspec_param = (spec_param_max - spec_param_min)/(n_spec_params - 1);
+  // translate to igraph-useable format, count subraphs up to 4 vertices
+  const int nmotifs = 9; // should be 9 diff simple motifs of <=4 vertices
+  const int nthreads = 4;
+  std::vector< std::vector<double> > graph_embeddings(npts, std::vector<double>(nmotifs));
+  #pragma omp parallel for num_threads(nthreads) schedule(dynamic)
+  for(int k = 0; k < npts; k++) {
+    double edges[2*graph_size*graph_size];
+    int count = 0;
+    for(int i = 0; i < graph_size; i++) {
+      for(int j = i+1; j < graph_size; j++) {
+	if(pa_graphs[k][i][j] >= 1) {
+	  edges[count] = i;
+	  edges[count + 1] = j;
+	  count += 2;
+	}
+      }
+    }
 
-  std::vector< std::vector<double> > graph_embeddings(npts);
-  for(int i = 0; i < n_spec_params; i++) {
-    spectral_params[i] = spec_param_min + i*dspec_param;
+    igraph_vector_t igraph_edges;
+    igraph_vector_init_copy(&igraph_edges, edges, count);
+
+    igraph_t igraph;
+    igraph_empty(&igraph, graph_size, false);
+    igraph_add_edges(&igraph, &igraph_edges, 0);
+
+    igraph_vector_t cut_probs; // wtf is this
+    igraph_vector_init(&cut_probs, 9); // wtf is this
+    igraph_vector_fill(&cut_probs, 0); // wtf, fill it w/ zeros
+    igraph_vector_t motif_counts;
+    igraph_vector_init(&motif_counts, 0);
+    igraph_motifs_randesu(&igraph, &motif_counts, 4, &cut_probs);
+    // get back to the nicer vector
+    for(int i = 0; i < nmotifs; i++) {
+      graph_embeddings[k][i] = (int) VECTOR(motif_counts)[i];
+    }
+    std::cout << "--> Finished embedding " << k << " of " << npts << " graphs..." << std::endl;
   }
-  for(int i = 0; i < npts; i++) {
-    graph_embeddings[i] = spectral_embedding(pa_graphs[i], spectral_params);
-  }
-  std::cout << "--> Graphs generated and embedded" << std::endl;
+  
+  std::cout << "--> Graphs embedded" << std::endl;
   std::cout << "--> Graph embeddings saved in: ./embedding_data" << std::endl;
   std::ofstream output_ges("./embedding_data/" + init_type + "_graph_embeddings.csv");
   util_fns::save_matrix(graph_embeddings, output_ges);
