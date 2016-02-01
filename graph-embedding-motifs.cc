@@ -18,147 +18,155 @@ int main(int argc, char** argv) {
 
   std::cout << "<---------------------------------------->" << std::endl;
 
-  const int graph_size = 100;
-  const int kappa = 1;
-  // const int m = graph_size*(graph_size + 1)/2;
-  // prefAttachModel model(graph_size, m, kappa);
-
-  const int nintervals = std::atoi(argv[1]);
-  const int run_interval = std::atoi(argv[2]);
-  // run_interval calculated based on 5*n^3 total steps
-  // const int run_interval = 6*std::pow(graph_size, 3)/ngraphs_per_type;
-  // const int run_interval = 6*std::pow(graph_size, 2)/ngraphs_per_type;
-
-  std::vector<std::string> init_types;
-  // init_types.push_back("erdos");
-  // init_types.push_back("erdos");
-  // init_types.push_back("erdos");
-  // init_types.push_back("erdos");
-  // init_types.push_back("complete");
-  // init_types.push_back("complete");
-  // init_types.push_back("complete");
-  // init_types.push_back("complete");
-
-  // // new best 01/2016 with graph_size = 200, kappa = 1
-  init_types.push_back("erdos");
-  init_types.push_back("lopsided");
-  // run with ./graph_embedding 800 10000 5 0.5 (last number can range in (0.1, 1)
-  
-  // // workable parameters:
-  // // compile with
-  // init_types.push_back("erdos");
-  // init_types.push_back("complete");
-  // // run with
-  // ./graph_embedding 400 400 5
-  // init_types.push_back("lopsided");
-  // // better parameters:
-  // // compile with
-  /* init_types.push_back("erdos"); */
-  /* init_types.push_back("complete"); */
-  // // run with
-  // ./graph_embedding 2000 40 5
-  // // also good parameters:
-  // // compile with
-  // init_types.push_back("erdos");
-  // init_types.push_back("erdos");
-  // init_types.push_back("erdos");
-  // init_types.push_back("erdos");
-  // // run with
-  // ./graph_embedding 100 10 5
-
-  // init_types.push_back("lopsided");
-  const int ntypes = init_types.size();
-  const int npts = nintervals*ntypes;
-  std::vector<adj_mat> pa_graphs(npts);
-  std::vector< std::vector<int> > pa_degs(npts);
-  std::vector<int> pa_times(npts);
-  for(int i = 0; i < ntypes; i++) {
-    // initialize with some fraction of nChoose2 edges
-    // int m = (1.0*(i+1)/ntypes)*graph_size*(graph_size + 1)/2;
-    // initialize with 50% of nChoose2 edges
-    int m = 0.5*graph_size*(graph_size + 1)/2;
-    prefAttachModel model(graph_size, m, kappa);
-    model.init(init_types[i]);
-    for(int j = 0; j < nintervals; j++) {
-      pa_graphs[i*nintervals+j] = model.run_nsteps(run_interval);
-      pa_degs[i*nintervals+j] = calcGraphProps::get_sorted_degrees(pa_graphs[i*nintervals+j]);
-      pa_times[i*nintervals+j] = (j+1)*run_interval;
-    }
-  }
-
-  const std::string init_type = "many";
-  // save degree sequences and times
-  std::ofstream output_ds("./embedding_data/" + init_type + "_degs.csv");
-  std::ofstream output_times("./embedding_data/" + init_type + "_times.csv");
-  output_ds << "ntypes=" << ntypes << std::endl;
-  output_times << "ntypes=" << ntypes << std::endl;
-  util_fns::save_matrix(pa_degs, output_ds);
-  util_fns::save_vector(pa_times, output_times);
-  output_ds.close();
-  std::cout << "--> Graphs generated" << std::endl;
-  
   const int nmotifs = 8; // should be 8 diff simple motifs of 3 or 4 vertices,
-  std::vector< std::vector<double> > graph_embeddings(npts, std::vector<double>(nmotifs));
-  const double scaling = 100;
-  const int nmotifs_disconnected = 11; // should be 8 diff simple motifs of 3 or 4 vertices,
+  std::vector< std::vector<double> > graph_embeddings;
+  const std::string init_type = "many";
+  
 
+  // if the last argument is 0 (=True) then generate new data
+  // otherwise load whatever is saved in ./embedding_data
+  if(std::atoi(argv[5]) == 0) {
 
-  // using igraph
-  #pragma omp parallel for schedule(dynamic)
-  for(int k = 0; k < npts; k++) {
-    double edges[2*graph_size*graph_size];
-    int count = 0;
-    for(int i = 0; i < graph_size; i++) {
-      for(int j = i+1; j < graph_size; j++) {
-  	if(pa_graphs[k][i][j] >= 1) {
-  	  edges[count] = i;
-  	  edges[count + 1] = j;
-  	  count += 2;
-  	}
+    const int graph_size = 100;
+    const int kappa = 1;
+    // const int m = graph_size*(graph_size + 1)/2;
+    // prefAttachModel model(graph_size, m, kappa);
+
+    const int nintervals = std::atoi(argv[1]);
+    const int run_interval = std::atoi(argv[2]);
+    // run_interval calculated based on 5*n^3 total steps
+    // const int run_interval = 6*std::pow(graph_size, 3)/ngraphs_per_type;
+    // const int run_interval = 6*std::pow(graph_size, 2)/ngraphs_per_type;
+
+    std::vector<std::string> init_types;
+    // init_types.push_back("erdos");
+    // init_types.push_back("erdos");
+    // init_types.push_back("erdos");
+    // init_types.push_back("erdos");
+    // init_types.push_back("complete");
+    // init_types.push_back("complete");
+    // init_types.push_back("complete");
+    // init_types.push_back("complete");
+
+    // // new best 01/2016 with graph_size = 200, kappa = 1
+    init_types.push_back("erdos");
+    init_types.push_back("lopsided");
+    // run with ./graph_embedding 800 10000 5 0.5 (last number can range in (0.1, 1)
+  
+    // // workable parameters:
+    // // compile with
+    // init_types.push_back("erdos");
+    // init_types.push_back("complete");
+    // // run with
+    // ./graph_embedding 400 400 5
+    // init_types.push_back("lopsided");
+    // // better parameters:
+    // // compile with
+    /* init_types.push_back("erdos"); */
+    /* init_types.push_back("complete"); */
+    // // run with
+    // ./graph_embedding 2000 40 5
+    // // also good parameters:
+    // // compile with
+    // init_types.push_back("erdos");
+    // init_types.push_back("erdos");
+    // init_types.push_back("erdos");
+    // init_types.push_back("erdos");
+    // // run with
+    // ./graph_embedding 100 10 5
+
+    // init_types.push_back("lopsided");
+    const int ntypes = init_types.size();
+    const int npts = nintervals*ntypes;
+    std::vector<adj_mat> pa_graphs(npts);
+    std::vector< std::vector<int> > pa_degs(npts);
+    std::vector<int> pa_times(npts);
+    for(int i = 0; i < ntypes; i++) {
+      // initialize with some fraction of nChoose2 edges
+      // int m = (1.0*(i+1)/ntypes)*graph_size*(graph_size + 1)/2;
+      // initialize with 50% of nChoose2 edges
+      int m = 0.5*graph_size*(graph_size + 1)/2;
+      prefAttachModel model(graph_size, m, kappa);
+      model.init(init_types[i]);
+      for(int j = 0; j < nintervals; j++) {
+	pa_graphs[i*nintervals+j] = model.run_nsteps(run_interval);
+	pa_degs[i*nintervals+j] = calcGraphProps::get_sorted_degrees(pa_graphs[i*nintervals+j]);
+	pa_times[i*nintervals+j] = (j+1)*run_interval;
       }
     }
 
-    igraph_vector_t igraph_edges;
-    igraph_vector_init_copy(&igraph_edges, edges, count);
+    // save degree sequences and times
+    std::ofstream output_ds("./embedding_data/" + init_type + "_degs.csv");
+    std::ofstream output_times("./embedding_data/" + init_type + "_times.csv");
+    output_ds << "ntypes=" << ntypes << std::endl;
+    output_times << "ntypes=" << ntypes << std::endl;
+    util_fns::save_matrix(pa_degs, output_ds);
+    util_fns::save_vector(pa_times, output_times);
+    output_ds.close();
+    std::cout << "--> Graphs generated" << std::endl;
+  
+    const double scaling = 100;
+    const int nmotifs_disconnected = 11; // should be 8 diff simple motifs of 3 or 4 vertices,
 
-    igraph_t igraph_graph;
-    igraph_empty(&igraph_graph, graph_size, IGRAPH_UNDIRECTED);
-    igraph_add_edges(&igraph_graph, &igraph_edges, 0);
 
-    igraph_vector_t cut_probs; // wtf is this
-    igraph_vector_init(&cut_probs, nmotifs_disconnected); // wtf is this
-    igraph_vector_fill(&cut_probs, 0); // wtf, fill it w/ zeros
-    for(int i = 3; i < 5; i++) {
-      igraph_vector_t motif_counts;
-      igraph_vector_init(&motif_counts, 0);
-      igraph_motifs_randesu(&igraph_graph, &motif_counts, i, &cut_probs);
-      // only keep non-nan values which are as follows
-      // three vertex: [nan nan # #]
-      // four vertex: [nan nan nan nan # nan # # # # #]
-      if(i == 3) {
-  	graph_embeddings[k][0] = VECTOR(motif_counts)[2]/scaling;
-  	graph_embeddings[k][1] = VECTOR(motif_counts)[3]/scaling;
+    // using igraph
+    graph_embeddings = std::vector< std::vector<double> >(npts, std::vector<double>(nmotifs));
+#pragma omp parallel for schedule(dynamic)
+    for(int k = 0; k < npts; k++) {
+      double edges[2*graph_size*graph_size];
+      int count = 0;
+      for(int i = 0; i < graph_size; i++) {
+	for(int j = i+1; j < graph_size; j++) {
+	  if(pa_graphs[k][i][j] >= 1) {
+	    edges[count] = i;
+	    edges[count + 1] = j;
+	    count += 2;
+	  }
+	}
       }
-      else {
-  	graph_embeddings[k][2] = VECTOR(motif_counts)[4]/scaling;
-  	graph_embeddings[k][3] = VECTOR(motif_counts)[6]/scaling;
-  	graph_embeddings[k][4] = VECTOR(motif_counts)[7]/scaling;
-  	graph_embeddings[k][5] = VECTOR(motif_counts)[8]/scaling;
-  	graph_embeddings[k][6] = VECTOR(motif_counts)[9]/scaling;
-  	graph_embeddings[k][7] = VECTOR(motif_counts)[10]/scaling;
+
+      igraph_vector_t igraph_edges;
+      igraph_vector_init_copy(&igraph_edges, edges, count);
+
+      igraph_t igraph_graph;
+      igraph_empty(&igraph_graph, graph_size, IGRAPH_UNDIRECTED);
+      igraph_add_edges(&igraph_graph, &igraph_edges, 0);
+
+      igraph_vector_t cut_probs; // wtf is this
+      igraph_vector_init(&cut_probs, nmotifs_disconnected); // wtf is this
+      igraph_vector_fill(&cut_probs, 0); // wtf, fill it w/ zeros
+      for(int i = 3; i < 5; i++) {
+	igraph_vector_t motif_counts;
+	igraph_vector_init(&motif_counts, 0);
+	igraph_motifs_randesu(&igraph_graph, &motif_counts, i, &cut_probs);
+	// only keep non-nan values which are as follows
+	// three vertex: [nan nan # #]
+	// four vertex: [nan nan nan nan # nan # # # # #]
+	if(i == 3) {
+	  graph_embeddings[k][0] = VECTOR(motif_counts)[2]/scaling;
+	  graph_embeddings[k][1] = VECTOR(motif_counts)[3]/scaling;
+	}
+	else {
+	  graph_embeddings[k][2] = VECTOR(motif_counts)[4]/scaling;
+	  graph_embeddings[k][3] = VECTOR(motif_counts)[6]/scaling;
+	  graph_embeddings[k][4] = VECTOR(motif_counts)[7]/scaling;
+	  graph_embeddings[k][5] = VECTOR(motif_counts)[8]/scaling;
+	  graph_embeddings[k][6] = VECTOR(motif_counts)[9]/scaling;
+	  graph_embeddings[k][7] = VECTOR(motif_counts)[10]/scaling;
+	}
       }
     }
+
+    std::cout << "--> Graphs embedded using igraph" << std::endl;
+    std::cout << "--> Graph embeddings saved in: ./embedding_data" << std::endl;
+    std::ofstream output_ges("./embedding_data/" + init_type + "_graph_embeddings.csv");
+    util_fns::save_matrix(graph_embeddings, output_ges);
+    output_ges.close();
   }
-
-  std::cout << "--> Graphs embedded using igraph" << std::endl;
-  std::cout << "--> Graph embeddings saved in: ./embedding_data" << std::endl;
-  std::ofstream output_ges("./embedding_data/" + init_type + "_graph_embeddings.csv");
-  util_fns::save_matrix(graph_embeddings, output_ges);
-  output_ges.close();
-
-
-  /* graph_embeddings = util_fns::read_data("./embedding_data/many_graph_embeddings.csv"); */
-  /* std::cout << "--> Graphs loaded from ./embedding_data/many_graph_embeddings.csv" << std::endl; */
+  else {
+    graph_embeddings = util_fns::read_data("./embedding_data/many_graph_embeddings.csv");
+    std::cout << "--> Pre-existing graphs loaded from ./embedding_data/many_graph_embeddings.csv" << std::endl;
+  }
 
   // DMAPS it
   const int k = std::atoi(argv[3]);
@@ -180,8 +188,6 @@ int main(int argc, char** argv) {
   std::ofstream output_eigvals("./embedding_data/dmaps_" + init_type + "_embedding_eigvals.csv");
   std::ofstream output_eigvects("./embedding_data/dmaps_" + init_type + "_embedding_eigvects.csv");
 
-  output_eigvals << "ntypes=" << ntypes << std::endl;
-  output_eigvects << "ntypes=" << ntypes << std::endl;
   util_fns::save_vector(eigvals, output_eigvals);
   util_fns::save_matrix(eigvects, output_eigvects);
   output_eigvals.close();

@@ -44,7 +44,7 @@ rho_kappa_embedding: $(RHO_KAPPA_OBJECTS)
 	$(CXX) -o $@ $^  $(CXXFLAGS)
 
 graph-embedding-motifs: $(GEMOTIFS_OBJECTS)
-	$(CXX) -Wl,-rpath ./igraph/lib $^  $(CXXFLAGS) -o $@
+	$(CXX) -Wl,-rpath ./igraph/lib -Wl,-rpath ~/local/lib $^  $(CXXFLAGS) -o $@
 
 depend: .depend
 
