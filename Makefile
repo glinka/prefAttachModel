@@ -16,8 +16,9 @@ RHO_KAPPA_OBJECTS=$(RHO_KAPPA_SRCS:.cc=.o)
 # to place intel's 'mpic++' in its
 # proper location in PATH
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CXXFLAGS = -I~/build/Eigen -I/home/oakridge/holiday/workspace/dmaps -I/home/oakridge/holiday/workspace/newton_gmres -I/home/oakridge/holiday/workspace/util_fns -I./igraph/include/igraph -I./Snap-2.4/snap-core -I./Snap-2.4/snap-adv -I./Snap-2.4/glib-core -I./Snap-2.4/snap-exp -L./igraph/lib -debug full -std=c++0x -mkl -gxx-name=/usr/bin/g++ -traceback -lutil_fns -leigensolvers -ligraph -openmp # -O3 #/home/oakridge/holiday/build/bin/g++ -v
+# CXXFLAGS = -I~/build/Eigen -I/home/oakridge/holiday/workspace/dmaps -I/home/oakridge/holiday/workspace/newton_gmres -I/home/oakridge/holiday/workspace/util_fns -I./igraph/include/igraph -I./Snap-2.4/snap-core -I./Snap-2.4/snap-adv -I./Snap-2.4/glib-core -I./Snap-2.4/snap-exp -L./igraph/lib -debug full -std=c++0x -mkl -gxx-name=/usr/bin/g++ -traceback -lutil_fns -leigensolvers -ligraph -openmp # -O3 #/home/oakridge/holiday/build/bin/g++ -v # FOR INTEL
 
+CXXFLAGS = -I/home/alexander/local/eigen -I/home/alexander/workspace/dmaps -I/home/alexander/workspace/newton_gmres -I/home/alexander/workspace/util_fns -I./igraph/include/igraph -I./Snap-2.4/snap-core -I./Snap-2.4/snap-adv -I./Snap-2.4/glib-core -I./Snap-2.4/snap-exp -L./igraph/lib -L/home/alexander/local/lib -std=c++0x -lutil_fns -leigensolvers -ligraph -fopenmp # FOR GCC
 
 # CXX = g++
 # CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x #-O3

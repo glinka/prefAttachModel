@@ -1,3 +1,4 @@
+#include <ctime>
 #include <cstdlib>
 #include <cmath>
 #include <vector>
@@ -6,7 +7,7 @@
 #include <util_fns.h>
 #include <dmaps.h>
 #include <kernel_function.h>
-// #include <igraph.h>
+#include <igraph.h>
 #include "custom_util_fns.h"
 #include "embeddings.h"
 #include "prefAttachModel.h"
@@ -101,14 +102,20 @@ int main(int argc, char** argv) {
   std::cout << "--> Graphs generated" << std::endl;
 
   // try using snap
+  
 
-  std::vector< std::vector<double> > graph_embeddings(npts, std::vector<double>(500));
-  const int nthreads = 1;
+  const int nmotifs = 8; // should be 8 diff simple motifs of 3 or 4 vertices,
+  std::vector< std::vector<double> > graph_embeddings(npts, std::vector<double>(nmotifs));
+  const int nthreads = 2;
   /* #pragma omp parallel for num_threads(nthreads) schedule(dynamic) */
+
+  std::clock_t start;
+  start = std::clock();
+
   for(int k = 0; k < npts; k++) {
     PNGraph G = TNGraph::New(); // sould use PUNGraph = TUNGraph but the alg is only for directed graphs :(
     for(int i = 0; i < graph_size; i++) {
-  G->AddNode(i);
+      G->AddNode(i);
     }
     for(int i = 0; i < graph_size; i++) {
       for(int j = i+1; j < graph_size; j++) {
@@ -119,79 +126,110 @@ int main(int argc, char** argv) {
       }
     }
 
-    PNGraph OG = G; G = TNGraph::New();
-    TGraphEnumUtils::GetNormalizedGraph(OG, G);
+    /* PNGraph OG = G; G = TNGraph::New(); */
+    /* TGraphEnumUtils::GetNormalizedGraph(OG, G); */
+
     for(int i = 3; i < 5; i++) {
       TD34GraphCounter GraphCounter(i);
       TSubGraphEnum<TD34GraphCounter> GraphEnum;
       GraphEnum.GetSubGraphs(G, i, GraphCounter);
-      std::cout << i << " with diff subgraphs: " << GraphCounter.Len() << std::endl;
       for(int j = 0; j < GraphCounter.Len(); j++) {
-	graph_embeddings[k][j] = static_cast<double>(GraphCounter.GetCnt(GraphCounter.GetId(i)));
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// only 8 values end up being nonzero (out of 212), so save only those in graph_embeddings
+	// these values are at indices (if all were stacked into 212):
+	// 6 12 89 119 136 197 199 211
+	// but we end up subtracting 13 from the last 6 because they are presented as separate vectors so really use
+	// 6 12 [89 119 136 197 199 211]-13
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	if(i == 3) {
+	  graph_embeddings[k][0] = static_cast<double>(GraphCounter.GetCnt(GraphCounter.GetId(6)));
+	  graph_embeddings[k][1] = static_cast<double>(GraphCounter.GetCnt(GraphCounter.GetId(12)));
+	}
+	else {
+	  graph_embeddings[k][2] = static_cast<double>(GraphCounter.GetCnt(GraphCounter.GetId(76)));
+	  graph_embeddings[k][3] = static_cast<double>(GraphCounter.GetCnt(GraphCounter.GetId(106)));
+	  graph_embeddings[k][4] = static_cast<double>(GraphCounter.GetCnt(GraphCounter.GetId(123)));
+	  graph_embeddings[k][5] = static_cast<double>(GraphCounter.GetCnt(GraphCounter.GetId(184)));
+	  graph_embeddings[k][6] = static_cast<double>(GraphCounter.GetCnt(GraphCounter.GetId(186)));
+	  graph_embeddings[k][7] = static_cast<double>(GraphCounter.GetCnt(GraphCounter.GetId(198)));
+	}
       }
-    }     
+    }
     std::cout << "--> Finished embedding " << k << " of " << npts << " graphs..." << std::endl;
   }
-  
 
-  // try using igraph
-  /* const double scaling = 10000; */
-  /* // translate to igraph-useable format, count subraphs up to 4 vertices */
-  /* const int nmotifs = 11; // should be 8 diff simple motifs of 3 or 4 vertices,  */
-  /* const int nthreads = 1; */
-  /* std::vector< std::vector<double> > graph_embeddings(npts, std::vector<double>(8)); */
-  /* #pragma omp parallel for num_threads(nthreads) schedule(dynamic) */
-  /* for(int k = 0; k < npts; k++) { */
-  /*   double edges[2*graph_size*graph_size]; */
-  /*   int count = 0; */
-  /*   for(int i = 0; i < graph_size; i++) { */
-  /*     for(int j = i+1; j < graph_size; j++) { */
-  /* 	if(pa_graphs[k][i][j] >= 1) { */
-  /* 	  edges[count] = i; */
-  /* 	  edges[count + 1] = j; */
-  /* 	  count += 2; */
-  /* 	} */
-  /*     } */
-  /*   } */
+  std::cout << "--> SNAP took: " << (std::clock() - start)/(double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
-  /*   igraph_vector_t igraph_edges; */
-  /*   igraph_vector_init_copy(&igraph_edges, edges, count); */
-
-  /*   igraph_t igraph_graph; */
-  /*   igraph_empty(&igraph_graph, graph_size, IGRAPH_UNDIRECTED); */
-  /*   igraph_add_edges(&igraph_graph, &igraph_edges, 0); */
-
-  /*   igraph_vector_t cut_probs; // wtf is this */
-  /*   igraph_vector_init(&cut_probs, nmotifs); // wtf is this */
-  /*   igraph_vector_fill(&cut_probs, 0); // wtf, fill it w/ zeros */
-  /*   for(int i = 3; i < 5; i++) { */
-  /*     igraph_vector_t motif_counts; */
-  /*     igraph_vector_init(&motif_counts, 0); */
-  /*     igraph_motifs_randesu(&igraph_graph, &motif_counts, i, &cut_probs); */
-  /*     // only keep non-nan values which are as follows */
-  /*     // three vertex: [nan nan # #] */
-  /*     // four vertex: [nan nan nan nan # nan # # # # #] */
-  /*     if(i == 3) { */
-  /* 	graph_embeddings[k][0] = VECTOR(motif_counts)[2]/scaling; */
-  /* 	graph_embeddings[k][1] = VECTOR(motif_counts)[3]/scaling; */
-  /*     } */
-  /*     else { */
-  /* 	graph_embeddings[k][2] = VECTOR(motif_counts)[4]/scaling; */
-  /* 	graph_embeddings[k][3] = VECTOR(motif_counts)[6]/scaling; */
-  /* 	graph_embeddings[k][4] = VECTOR(motif_counts)[7]/scaling; */
-  /* 	graph_embeddings[k][5] = VECTOR(motif_counts)[8]/scaling; */
-  /* 	graph_embeddings[k][6] = VECTOR(motif_counts)[9]/scaling; */
-  /* 	graph_embeddings[k][7] = VECTOR(motif_counts)[10]/scaling; */
-  /*     } */
-  /*   } */
-  /*   std::cout << "--> Finished embedding " << k << " of " << npts << " graphs..." << std::endl; */
-  /* } */
-  
-  std::cout << "--> Graphs embedded" << std::endl;
+  std::cout << "--> Graphs embedded using SNAP" << std::endl;
   std::cout << "--> Graph embeddings saved in: ./embedding_data" << std::endl;
   std::ofstream output_ges("./embedding_data/" + init_type + "_graph_embeddings.csv");
   util_fns::save_matrix(graph_embeddings, output_ges);
   output_ges.close();
+  
+
+  // try using igraph
+  const double scaling = 1;
+  const int nmotifs_disconnected = 11; // should be 8 diff simple motifs of 3 or 4 vertices,
+  // translate to igraph-useable format, count subraphs up to 4 vertices
+  std::vector< std::vector<double> > graph_embeddings_igraph(npts, std::vector<double>(nmotifs));
+  /* #pragma omp parallel for num_threads(nthreads) schedule(dynamic) */
+
+  start = std::clock();
+
+  for(int k = 0; k < npts; k++) {
+    double edges[2*graph_size*graph_size];
+    int count = 0;
+    for(int i = 0; i < graph_size; i++) {
+      for(int j = i+1; j < graph_size; j++) {
+  	if(pa_graphs[k][i][j] >= 1) {
+  	  edges[count] = i;
+  	  edges[count + 1] = j;
+  	  count += 2;
+  	}
+      }
+    }
+
+    igraph_vector_t igraph_edges;
+    igraph_vector_init_copy(&igraph_edges, edges, count);
+
+    igraph_t igraph_graph;
+    igraph_empty(&igraph_graph, graph_size, IGRAPH_UNDIRECTED);
+    igraph_add_edges(&igraph_graph, &igraph_edges, 0);
+
+    igraph_vector_t cut_probs; // wtf is this
+    igraph_vector_init(&cut_probs, nmotifs_disconnected); // wtf is this
+    igraph_vector_fill(&cut_probs, 0); // wtf, fill it w/ zeros
+    for(int i = 3; i < 5; i++) {
+      igraph_vector_t motif_counts;
+      igraph_vector_init(&motif_counts, 0);
+      igraph_motifs_randesu(&igraph_graph, &motif_counts, i, &cut_probs);
+      // only keep non-nan values which are as follows
+      // three vertex: [nan nan # #]
+      // four vertex: [nan nan nan nan # nan # # # # #]
+      if(i == 3) {
+  	graph_embeddings_igraph[k][0] = VECTOR(motif_counts)[2]/scaling;
+  	graph_embeddings_igraph[k][1] = VECTOR(motif_counts)[3]/scaling;
+      }
+      else {
+  	graph_embeddings_igraph[k][2] = VECTOR(motif_counts)[4]/scaling;
+  	graph_embeddings_igraph[k][3] = VECTOR(motif_counts)[6]/scaling;
+  	graph_embeddings_igraph[k][4] = VECTOR(motif_counts)[7]/scaling;
+  	graph_embeddings_igraph[k][5] = VECTOR(motif_counts)[8]/scaling;
+  	graph_embeddings_igraph[k][6] = VECTOR(motif_counts)[9]/scaling;
+  	graph_embeddings_igraph[k][7] = VECTOR(motif_counts)[10]/scaling;
+      }
+    }
+    std::cout << "--> Finished embedding " << k << " of " << npts << " graphs..." << std::endl;
+  }
+
+  std::cout << "--> igraph took: " << (std::clock() - start)/(double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+
+  std::cout << "--> Graphs embedded using igraph" << std::endl;
+  std::cout << "--> Graph embeddings saved in: ./embedding_data" << std::endl;
+  std::ofstream output_ges_igraph("./embedding_data/" + init_type + "_graph_embeddings_igraph.csv");
+  util_fns::save_matrix(graph_embeddings_igraph, output_ges_igraph);
+  output_ges_igraph.close();
+
 
   /* graph_embeddings = util_fns::read_data("./embedding_data/many_graph_embeddings.csv"); */
   /* std::cout << "--> Graphs loaded from ./embedding_data/many_graph_embeddings.csv" << std::endl; */
