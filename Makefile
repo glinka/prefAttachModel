@@ -1,7 +1,7 @@
 MODEL_SRCS=main.cc prefAttachModel.cc pamCPI.cc calcGraphProps.cc fitCurves.cc custom_util_fns.cc
 NG_SRCS=coarse_newton_main.cc newton_wrapper.cc newton.cc gmres.cc prefAttachModel.cc pamCPI.cc calcGraphProps.cc fitCurves.cc custom_util_fns.cc 
 GE_SRCS=graph_embedding_main.cc custom_util_fns.cc prefAttachModel.cc eigen_solvers.cc calcGraphProps.cc
-GEMOTIFS_SRCS=graph-embedding-motifs.cc custom_util_fns.cc prefAttachModel.cc eigen_solvers.cc calcGraphProps.cc
+GEMOTIFS_SRCS=graph-embedding-motifs.cc custom_util_fns.cc prefAttachModel.cc eigen_solvers.cc calcGraphProps.cc Snap-2.4/snap-adv/subgraphenum.cc Snap-2.4/snap-adv/graphcounter.cc
 RHO_KAPPA_SRCS=kappa_rho_embedding_main.cc custom_util_fns.cc prefAttachModel.cc calcGraphProps.cc
 MODEL_OBJECTS=$(MODEL_SRCS:.cc=.o)
 NG_OBJECTS=$(NG_SRCS:.cc=.o)
@@ -16,7 +16,7 @@ RHO_KAPPA_OBJECTS=$(RHO_KAPPA_SRCS:.cc=.o)
 # to place intel's 'mpic++' in its
 # proper location in PATH
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CXXFLAGS = -I~/build/Eigen -I/home/oakridge/holiday/workspace/dmaps -I/home/oakridge/holiday/workspace/newton_gmres -I/home/oakridge/holiday/workspace/util_fns -I./igraph/include/igraph -L./igraph/lib -debug full -std=c++0x -mkl -gxx-name=/usr/bin/g++ -traceback -lutil_fns -leigensolvers -ligraph -openmp -O3 #/home/oakridge/holiday/build/bin/g++
+CXXFLAGS = -I~/build/Eigen -I/home/oakridge/holiday/workspace/dmaps -I/home/oakridge/holiday/workspace/newton_gmres -I/home/oakridge/holiday/workspace/util_fns -I./igraph/include/igraph -I./Snap-2.4/snap-core -I./Snap-2.4/snap-adv -I./Snap-2.4/glib-core -I./Snap-2.4/snap-exp -L./igraph/lib -debug full -std=c++0x -mkl -gxx-name=/usr/bin/g++ -traceback -lutil_fns -leigensolvers -ligraph -openmp # -O3 #/home/oakridge/holiday/build/bin/g++ -v
 
 
 # CXX = g++
@@ -43,11 +43,12 @@ rho_kappa_embedding: $(RHO_KAPPA_OBJECTS)
 	$(CXX) -o $@ $^  $(CXXFLAGS)
 
 graph-embedding-motifs: $(GEMOTIFS_OBJECTS)
-	$(CXX) -Wl,-rpath ./igraph/lib -I./igraph/include/igraph -L./igraph/lib -o $@ $^  $(CXXFLAGS) -ligraph
+	$(CXX) -Wl,-rpath ./igraph/lib ./Snap-2.4/snap-core/Snap.o $^  $(CXXFLAGS) -o $@  -lrt
+	# $(CXX) -I./igraph/include/igraph -L./igraph/lib -o $@ $^  $(CXXFLAGS) -ligraph
 
 depend: .depend
 
-.depend: $(MODEL_SRCS) $(NG_SRCS) $(GE_SRCS)
+.depend: $(MODEL_SRCS) $(NG_SRCS) $(GE_SRCS) $(GEMOTIFS_SRCS)
 	rm -f ./.depend
 	$(CXX) -MM -MT $^ $(CXXFLAGS) > ./.depend
 

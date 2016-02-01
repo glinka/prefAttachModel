@@ -6,11 +6,14 @@
 #include <util_fns.h>
 #include <dmaps.h>
 #include <kernel_function.h>
-#include <igraph.h>
+// #include <igraph.h>
 #include "custom_util_fns.h"
 #include "embeddings.h"
 #include "prefAttachModel.h"
 #include "calcGraphProps.h"
+#include <Snap.h>
+#include <subgraphenum.h>
+#include <graphcounter.h>
 
 int main(int argc, char** argv) {
 
@@ -18,7 +21,7 @@ int main(int argc, char** argv) {
 
   std::cout << "<---------------------------------------->" << std::endl;
 
-  const int graph_size = 200;
+  const int graph_size = 100;
   const int kappa = 1;
   // const int m = graph_size*(graph_size + 1)/2;
   // prefAttachModel model(graph_size, m, kappa);
@@ -39,7 +42,7 @@ int main(int argc, char** argv) {
   // init_types.push_back("complete");
   // init_types.push_back("complete");
 
-  // // new best 01/2016
+  // // new best 01/2016 with graph_size = 200, kappa = 1
   init_types.push_back("erdos");
   init_types.push_back("lopsided");
   // run with ./graph_embedding 800 10000 5 0.5 (last number can range in (0.1, 1)
@@ -97,43 +100,92 @@ int main(int argc, char** argv) {
   output_ds.close();
   std::cout << "--> Graphs generated" << std::endl;
 
-  // translate to igraph-useable format, count subraphs up to 4 vertices
-  const int nmotifs = 9; // should be 9 diff simple motifs of <=4 vertices
-  const int nthreads = 4;
-  std::vector< std::vector<double> > graph_embeddings(npts, std::vector<double>(nmotifs));
-  #pragma omp parallel for num_threads(nthreads) schedule(dynamic)
+  // try using snap
+
+  std::vector< std::vector<double> > graph_embeddings(npts, std::vector<double>(500));
+  const int nthreads = 1;
+  /* #pragma omp parallel for num_threads(nthreads) schedule(dynamic) */
   for(int k = 0; k < npts; k++) {
-    double edges[2*graph_size*graph_size];
-    int count = 0;
+    PNGraph G = TNGraph::New(); // sould use PUNGraph = TUNGraph but the alg is only for directed graphs :(
+    for(int i = 0; i < graph_size; i++) {
+  G->AddNode(i);
+    }
     for(int i = 0; i < graph_size; i++) {
       for(int j = i+1; j < graph_size; j++) {
-	if(pa_graphs[k][i][j] >= 1) {
-	  edges[count] = i;
-	  edges[count + 1] = j;
-	  count += 2;
+	if(pa_graphs[k][i][j] > 0) {
+	  G->AddEdge(i, j);
+	  G->AddEdge(j, i);
 	}
       }
     }
 
-    igraph_vector_t igraph_edges;
-    igraph_vector_init_copy(&igraph_edges, edges, count);
-
-    igraph_t igraph;
-    igraph_empty(&igraph, graph_size, false);
-    igraph_add_edges(&igraph, &igraph_edges, 0);
-
-    igraph_vector_t cut_probs; // wtf is this
-    igraph_vector_init(&cut_probs, 9); // wtf is this
-    igraph_vector_fill(&cut_probs, 0); // wtf, fill it w/ zeros
-    igraph_vector_t motif_counts;
-    igraph_vector_init(&motif_counts, 0);
-    igraph_motifs_randesu(&igraph, &motif_counts, 4, &cut_probs);
-    // get back to the nicer vector
-    for(int i = 0; i < nmotifs; i++) {
-      graph_embeddings[k][i] = (int) VECTOR(motif_counts)[i];
-    }
+    PNGraph OG = G; G = TNGraph::New();
+    TGraphEnumUtils::GetNormalizedGraph(OG, G);
+    for(int i = 3; i < 5; i++) {
+      TD34GraphCounter GraphCounter(i);
+      TSubGraphEnum<TD34GraphCounter> GraphEnum;
+      GraphEnum.GetSubGraphs(G, i, GraphCounter);
+      std::cout << i << " with diff subgraphs: " << GraphCounter.Len() << std::endl;
+      for(int j = 0; j < GraphCounter.Len(); j++) {
+	graph_embeddings[k][j] = static_cast<double>(GraphCounter.GetCnt(GraphCounter.GetId(i)));
+      }
+    }     
     std::cout << "--> Finished embedding " << k << " of " << npts << " graphs..." << std::endl;
   }
+  
+
+  // try using igraph
+  /* const double scaling = 10000; */
+  /* // translate to igraph-useable format, count subraphs up to 4 vertices */
+  /* const int nmotifs = 11; // should be 8 diff simple motifs of 3 or 4 vertices,  */
+  /* const int nthreads = 1; */
+  /* std::vector< std::vector<double> > graph_embeddings(npts, std::vector<double>(8)); */
+  /* #pragma omp parallel for num_threads(nthreads) schedule(dynamic) */
+  /* for(int k = 0; k < npts; k++) { */
+  /*   double edges[2*graph_size*graph_size]; */
+  /*   int count = 0; */
+  /*   for(int i = 0; i < graph_size; i++) { */
+  /*     for(int j = i+1; j < graph_size; j++) { */
+  /* 	if(pa_graphs[k][i][j] >= 1) { */
+  /* 	  edges[count] = i; */
+  /* 	  edges[count + 1] = j; */
+  /* 	  count += 2; */
+  /* 	} */
+  /*     } */
+  /*   } */
+
+  /*   igraph_vector_t igraph_edges; */
+  /*   igraph_vector_init_copy(&igraph_edges, edges, count); */
+
+  /*   igraph_t igraph_graph; */
+  /*   igraph_empty(&igraph_graph, graph_size, IGRAPH_UNDIRECTED); */
+  /*   igraph_add_edges(&igraph_graph, &igraph_edges, 0); */
+
+  /*   igraph_vector_t cut_probs; // wtf is this */
+  /*   igraph_vector_init(&cut_probs, nmotifs); // wtf is this */
+  /*   igraph_vector_fill(&cut_probs, 0); // wtf, fill it w/ zeros */
+  /*   for(int i = 3; i < 5; i++) { */
+  /*     igraph_vector_t motif_counts; */
+  /*     igraph_vector_init(&motif_counts, 0); */
+  /*     igraph_motifs_randesu(&igraph_graph, &motif_counts, i, &cut_probs); */
+  /*     // only keep non-nan values which are as follows */
+  /*     // three vertex: [nan nan # #] */
+  /*     // four vertex: [nan nan nan nan # nan # # # # #] */
+  /*     if(i == 3) { */
+  /* 	graph_embeddings[k][0] = VECTOR(motif_counts)[2]/scaling; */
+  /* 	graph_embeddings[k][1] = VECTOR(motif_counts)[3]/scaling; */
+  /*     } */
+  /*     else { */
+  /* 	graph_embeddings[k][2] = VECTOR(motif_counts)[4]/scaling; */
+  /* 	graph_embeddings[k][3] = VECTOR(motif_counts)[6]/scaling; */
+  /* 	graph_embeddings[k][4] = VECTOR(motif_counts)[7]/scaling; */
+  /* 	graph_embeddings[k][5] = VECTOR(motif_counts)[8]/scaling; */
+  /* 	graph_embeddings[k][6] = VECTOR(motif_counts)[9]/scaling; */
+  /* 	graph_embeddings[k][7] = VECTOR(motif_counts)[10]/scaling; */
+  /*     } */
+  /*   } */
+  /*   std::cout << "--> Finished embedding " << k << " of " << npts << " graphs..." << std::endl; */
+  /* } */
   
   std::cout << "--> Graphs embedded" << std::endl;
   std::cout << "--> Graph embeddings saved in: ./embedding_data" << std::endl;
