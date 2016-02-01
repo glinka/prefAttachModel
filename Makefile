@@ -18,7 +18,7 @@ RHO_KAPPA_OBJECTS=$(RHO_KAPPA_SRCS:.cc=.o)
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # CXXFLAGS = -I~/build/Eigen -I/home/oakridge/holiday/workspace/dmaps -I/home/oakridge/holiday/workspace/newton_gmres -I/home/oakridge/holiday/workspace/util_fns -I./igraph/include/igraph -I./Snap-2.4/snap-core -I./Snap-2.4/snap-adv -I./Snap-2.4/glib-core -I./Snap-2.4/snap-exp -L./igraph/lib -debug full -std=c++0x -mkl -gxx-name=/usr/bin/g++ -traceback -lutil_fns -leigensolvers -ligraph -openmp # -O3 #/home/oakridge/holiday/build/bin/g++ -v # FOR INTEL
 
-CXXFLAGS = -I/home/alexander/local/eigen -I/home/alexander/workspace/dmaps -I/home/alexander/workspace/newton_gmres -I/home/alexander/workspace/util_fns -I./igraph/include/igraph -L./igraph/lib -L/home/alexander/local/lib -std=c++0x -lutil_fns -leigensolvers -ligraph -fopenmp # FOR GCC
+CXXFLAGS = -I/home/alexander/local/eigen -I/home/alexander/workspace/dmaps -I/home/alexander/workspace/newton_gmres -I/home/alexander/workspace/util_fns -I./igraph/include/igraph -L./igraph/lib -L/home/alexander/local/lib -std=c++0x -lutil_fns -leigensolvers -ligraph -fopenmp -O3 # -g -O0 # FOR GCC
 
 # CXX = g++
 # CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x #-O3
@@ -26,7 +26,7 @@ CXXFLAGS = -I/home/alexander/local/eigen -I/home/alexander/workspace/dmaps -I/ho
 CXX = mpic++
 # CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x #-O3
 
-all: graph-embedding-motifs # graph_embedding # pref_attach coarse_ng rho_kappa_embedding
+all: rho_kappa_embedding # graph-embedding-motifs # graph_embedding # pref_attach coarse_ng rho_kappa_embedding
 
 %.o: %.c
 	$(CXX) -c $<  $(CXXFLAGS)
@@ -41,7 +41,7 @@ graph_embedding: $(GE_OBJECTS)
 	$(CXX) -o $@ $^  $(CXXFLAGS)
 
 rho_kappa_embedding: $(RHO_KAPPA_OBJECTS)
-	$(CXX) -o $@ $^  $(CXXFLAGS)
+	$(CXX) -Wl,-rpath ./igraph/lib -Wl,-rpath ~/local/lib $^  $(CXXFLAGS) -o $@
 
 graph-embedding-motifs: $(GEMOTIFS_OBJECTS)
 	$(CXX) -Wl,-rpath ./igraph/lib -Wl,-rpath ~/local/lib $^  $(CXXFLAGS) -o $@

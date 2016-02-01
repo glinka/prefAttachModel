@@ -82,7 +82,7 @@ void prefAttachModel::init(const std::string init_type) {
   }
   else if(init_type == "erdos") {
     // for consistency's sake
-    m = (n*n + n)/2;
+    /* m = (n*n + n)/2; */
     initGraph();
   }
   else if(init_type == "lopsided") {

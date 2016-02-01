@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
       // initialize with some fraction of nChoose2 edges
       // int m = (1.0*(i+1)/ntypes)*graph_size*(graph_size + 1)/2;
       // initialize with 50% of nChoose2 edges
-      int m = 0.5*graph_size*(graph_size + 1)/2;
+      int m = graph_size*(graph_size + 1)/2;
       prefAttachModel model(graph_size, m, kappa);
       model.init(init_types[i]);
       for(int j = 0; j < nintervals; j++) {
