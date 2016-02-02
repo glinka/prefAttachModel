@@ -215,19 +215,37 @@ Unlike PCA, DMAPS uncovers underlying nonlinear manifolds hidden in data. This i
 
 We see that both PCA and DMAPS, when combined with a suitable embedding of each graph, uncover useful information pertaining to the underlying dimensionality of the problem.
 
-\begin{figure}[ht!]
-  % TODO
+
+\begin{figure}[h!]
+  \vspace{-5mm}
   \centering
-  \includegraphics[width=0.9\textwidth]{multigraph-dmaps-3d}
-  \caption{Figure showing embedding of two trajectories on different timescales. Initially they are separate, but eventually they're embedded in the same region as they evolve to the same coarse stationary state. \label{fig:dmaps-results}}
+  \begin{subfigure}{0.75\textwidth}
+    \centering
+    \includegraphics[width=0.9\textwidth]{dmaps-3d-convergence}
+    \subcaption{Figure showing embedding of two trajectories on
+      different timescales. Initially they are separate, but
+      eventually they're embedded in the same region as they evolve to
+      the same coarse stationary state. Initial and final states are
+      circled, and point size grows as more steps are
+      taken in each trajectory. \label{fig:dmaps-results-regular}}
+  \end{subfigure} \\ %%
+  \begin{subfigure}{0.75\textwidth}
+    \centering
+    \includegraphics[height=3in]{dmaps-3d-convergence-zoom}
+    \subcaption{An enlarged view of the final points in the previous
+      plot, revealing the approach to a similar final
+      state. \label{fig:dmaps-results-zoom}}
+  \end{subfigure}%
+  \caption{One dimensional embedding of different trajectories with DMAPS. \label{fig:dmaps-results}}
 \end{figure}
 
 \begin{figure}[ht!]
   % TODO
   \centering
-  \includegraphics[width=0.75\textwidth]{placeholder}
-  \caption{Embedding of steady states in $\rho$ / $\kappa$ plane, showing that DMAPS uncovered the coarse variables known from Bal\'{a}zs' paper}
-  \label{fig:label}
+  \includegraphics[width=0.75\textwidth]{dmaps-2d-rho-kappa}
+  \caption{Embedding of steady states in $\rho$ / $\kappa$ plane,
+    showing that DMAPS uncovered the coarse variables known from
+    Bal\'{a}zs' paper \label{fig:dmaps-rk}}
 \end{figure}
 
 
