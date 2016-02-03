@@ -97,7 +97,80 @@ void prefAttachModel::init(const std::string init_type) {
   }
 }
 
+vector<int> prefAttachModel::init_triangle_graph() {
+  if(n%3 != 0) {
+    cout << "n should be divisible by three when working with triangles" << endl;
+    cout << "please cancel and restart" << endl;
+  }
+  for(int i = 0; i < n; i++) {
+    degs[i] = 0;
+    for(int j = 0; j < n; j++) {
+      A[i][j] = 0;
+    }
+  }
+  int i = 0;
+  while(i+3 < m) {
+    A[i%n][(i+1)%n]++;
+    A[(i+1)%n][i%n]++;
 
+    A[i%n][(i+2)%n]++;
+    A[(i+2)%n][i%n]++;
+
+    A[(i+1)%n][(i+2)%n]++;
+    A[(i+2)%n][(i+1)%n]++;
+
+    degs[i%n] += 2;
+    degs[(i+1)%n] += 2;
+    degs[(i+2)%n] += 2;
+
+    i += 3;
+  }
+  while(i < m) {
+    A[i%n][(i+1)%n]++;
+    A[(i+1)%n][i%n]++;
+
+    degs[i%n]++;
+    degs[(i+1)%n]++;
+
+    i++;
+  }
+  return vector<int>(degs, degs+n);
+}
+
+bool reverse_comp(const double i, const double j) {
+  return (i > j);
+}
+
+
+void prefAttachModel::init_rando_graph(vector<int> new_degs) {
+
+  sort(new_degs.begin(), new_degs.end(), reverse_comp);
+
+  for(int i = 0; i < n; i++) {
+    degs[i] = new_degs[i];
+    for(int j = 0; j < n; j++) {
+      A[i][j] = 0;
+    }
+  }
+  for(int i = 0; i < n-1; i++) {
+    A[i][i] += new_degs[i] - new_degs[i]%2;
+    A[i][i+1] += new_degs[i]%2;
+    A[i+1][i] += new_degs[i]%2;
+    new_degs[i] = 0;
+    new_degs[i+1] -= new_degs[i]%2;
+  }
+  A[n-1][n-1] += new_degs.back();
+  
+}
+
+int prefAttachModel::count_degs() {
+  int sum = 0;
+  for(int i = 0; i < n; i++) {
+    sum += degs[i];
+  }
+  return sum;
+}
+    
 void prefAttachModel::init_complete_graph() {
   // init a complete graph with loops
   m = (n*n + n)/2;
