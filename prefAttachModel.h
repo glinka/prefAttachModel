@@ -26,7 +26,6 @@ class prefAttachModel {
     std::mt19937 *mt;
     double genURN();
     void initGraph(int **newA);
-    void init_graph_loosehh(std::vector<int> degs);
     void init_lopsided_graph();
     void step();
     graphData *step(bool saveFlag);
@@ -46,12 +45,17 @@ class prefAttachModel {
     void save_coeffs(const std::vector< std::vector< double > > &data, std::ofstream &fileHandle);
     void save_coeffs(const std::vector< std::vector<int> > &data, std::ofstream &fileHandle);
  public:
+    std::vector<int> init_triangle_graph();
+    int count_triangles();
+    int count_degs();
+    void init_rando_graph(std::vector<int> new_degs);
+    void init_graph_loosehh(std::vector<int> degs);
     void init(const std::string init_type);
     void initGraph();
     void init_complete_graph();
     void init_er_graph(const int m);
     void run(long int nSteps, long int dataInterval, std::string init_type);
-    std::vector< std::vector<int> > run_nsteps(const int nsteps);
+    std::vector<int> run_nsteps(const int nsteps);
     std::ofstream* createFile(const std::string base, const std::string dir, std::vector<double> &addtnlData, std::vector<std::string> &addtnlDataLabels);
     prefAttachModel(int n, int m, double kappa);
     prefAttachModel(const int n, const double kappa);

@@ -1,3 +1,4 @@
+#include <vector>
 #include <ctime>
 #include <iostream>
 #include <stdlib.h>
@@ -8,9 +9,9 @@
 #include <unistd.h>
 #include <mpi.h>
 #include <util_fns.h>
-#include "pamCPI.h"
 #include "custom_util_fns.h"
 #include "calcGraphProps.h"
+#include "prefAttachModel.h"
 
 using namespace std;
 const int ASCII_CHAR_OFFSET = 48;
@@ -69,9 +70,7 @@ int main(int argc, char *argv[]) {
   int nMicroSteps = 20000;
   int nruns = 1;
   string init_type = "erdos";
-  string input_filename = "./VSPECIAL_DATA/xs.csv";
   bool from_file = false;
-  int nthreads = 2;
   //parse command line args, could be moved to separate fn?
   for(int i = 1; i < argc; i++) {
     if(argv[i][0] == '-') {
@@ -127,10 +126,6 @@ int main(int argc, char *argv[]) {
       else if(currentLabel == "-withoutinit" || currentLabel == "-noinit") {
 	new_init = false;
       }
-      else if(currentLabel == "-input_filename") {
-	input_filename.assign(currentArg);
-	from_file = true;
-      }
       else {
 	cout << currentLabel << " not recognized as input argument" << endl;
       }
@@ -142,83 +137,56 @@ int main(int argc, char *argv[]) {
       // }
     }
   }
-  if(project) {
-    if(!new_init) {
-      // projStep should be zero, as no
-      // projection is taking place, but
-      // if "projStep < m" project_degrees()
-      // will not run, and thus no data will be saved
-      projStep = 2*m;
-      offManifoldWait = 0;
-    }
-    // string dir = create_dir("./cpi_data");
-    // cout << "--> saving files into " << dir << endl;
-    // #pragma omp parallel for num_threads(nthreads) schedule(dynamic)
-    //     for(i = 0; i < nruns; i++) {
-    // }
+  prefAttachModel model(n, m, kappa);
+  vector<int> tri_init_deg_seq = model.init_triangle_graph();
+  
+  const int nintervals = 500;
+  const int interval = nSteps/nintervals;
 
-    // start MPI //
-    int mpierr = MPI_Init(NULL, NULL);
-    if(mpierr != MPI_SUCCESS) {
-      cout << "Error initializing MPI, terminating" << endl;
-      MPI_Abort(MPI_COMM_WORLD, mpierr);
-    }
-    int i;
-    MPI_Comm_rank(MPI_COMM_WORLD, &i);
-    double start_time;
-    if(i == 0) {
-      // time from root process
-      start_time = time(NULL);
-    }
+  vector<int> tri_tris(nintervals+1);
+  tri_tris[0] = model.count_triangles();
 
-    pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps, savetofile_interval);
-    model.runCPI(nSteps, init_type, itos(i), new_init);
-
-    if(i == 0) {
-      double end_time = time(NULL);
-      double elapsed_time = difftime(end_time, start_time);
-      cout << "Wall time: " << elapsed_time << " s" << endl;
-    }
-
-    MPI_Finalize();
-    // end MPI
-
+  for(int i = 0; i < nintervals; i++) {
+    model.run_nsteps(interval);
+    tri_tris[i+1] = model.count_triangles();
   }
-  else if(from_file) {
-    // start MPI
-    int mpierr = MPI_Init(NULL, NULL);
-    if(mpierr != MPI_SUCCESS) {
-      cout << "Error initializing MPI, terminating" << endl;
-      MPI_Abort(MPI_COMM_WORLD, mpierr);
-    }
-    pamCPI model(n, m, kappa, projStep, collectInterval, offManifoldWait, nMicroSteps, savetofile_interval);
-    model.run_fromfile(nSteps, input_filename);
-    MPI_Finalize();
-    // end MPI
-  } 
-  else {
-    prefAttachModel model(n, kappa);
-    if(init_type == "erdos") {
-      model.init_er_graph(m);
-    }
-    else if(init_type == "complete") {
-      model.init_complete_graph();
-    }
 
-    const int nintervals = 500;
-    const int interval = nSteps/nintervals;
-    ofstream degs_out("./pa_run_data/degs.out");
-    ofstream times_out("./pa_run_data/times.out");
-    vector< vector<int> > degs(nintervals);
-    vector<int> times(nintervals);
+  ofstream tri_tris_out("./paper-data/other-runs/tri_tris.csv");
+  util_fns::save_vector(tri_tris, tri_tris_out);
 
-    for(int i = 0; i < nintervals; i++) {
-      degs[i] = calcGraphProps::get_sorted_degrees(model.run_nsteps(interval));
-      times[i] = (i+1)*interval;
-    }
+  // now restart with rando
+  model.init_rando_graph(tri_init_deg_seq);
 
-    util_fns::save_matrix(degs, degs_out);
-    util_fns::save_vector(times, times_out);
+  vector<int> rando_tris(nintervals+1);
+  rando_tris[0] = model.count_triangles();
+  
+  for(int i = 0; i < nintervals; i++) {
+    model.run_nsteps(interval);
+    rando_tris[i+1] = model.count_triangles();
   }
+
+  ofstream rando_tris_out("./paper-data/other-runs/rando_tris.csv");
+  util_fns::save_vector(rando_tris, rando_tris_out);
+
+
+  // now restart with loosehh
+  model.init_graph_loosehh(tri_init_deg_seq);
+
+  vector<int> hh_tris(nintervals+1);
+  hh_tris[0] = model.count_triangles();
+  vector<int> times(nintervals+1);
+  times[0] = 0;
+  
+  for(int i = 0; i < nintervals; i++) {
+    model.run_nsteps(interval);
+    hh_tris[i+1] = model.count_triangles();
+    times[i+1] = (i+1)*interval;
+  }
+
+  ofstream hh_tris_out("./paper-data/other-runs/hh_tris.csv");
+  util_fns::save_vector(hh_tris, hh_tris_out);
+  ofstream times_out("./paper-data/other-runs/tris_times.csv");
+  util_fns::save_vector(times, times_out);
+
   return 0;
 }

@@ -3,11 +3,13 @@ NG_SRCS=coarse_newton_main.cc newton_wrapper.cc newton.cc gmres.cc prefAttachMod
 GE_SRCS=graph_embedding_main.cc custom_util_fns.cc prefAttachModel.cc eigen_solvers.cc calcGraphProps.cc
 GEMOTIFS_SRCS=graph-embedding-motifs.cc custom_util_fns.cc prefAttachModel.cc eigen_solvers.cc calcGraphProps.cc
 RHO_KAPPA_SRCS=kappa_rho_embedding_main.cc custom_util_fns.cc prefAttachModel.cc calcGraphProps.cc
+TRI_SRCS=transients-main.cc prefAttachModel.cc calcGraphProps.cc fitCurves.cc custom_util_fns.cc
 MODEL_OBJECTS=$(MODEL_SRCS:.cc=.o)
 NG_OBJECTS=$(NG_SRCS:.cc=.o)
 GE_OBJECTS=$(GE_SRCS:.cc=.o)
 GEMOTIFS_OBJECTS=$(GEMOTIFS_SRCS:.cc=.o)
 RHO_KAPPA_OBJECTS=$(RHO_KAPPA_SRCS:.cc=.o)
+TRI_OBJECTS=$(TRI_SRCS:.cc=.o)
 
 # CXX = g++
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -18,7 +20,7 @@ RHO_KAPPA_OBJECTS=$(RHO_KAPPA_SRCS:.cc=.o)
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # CXXFLAGS = -I~/build/Eigen -I/home/oakridge/holiday/workspace/dmaps -I/home/oakridge/holiday/workspace/newton_gmres -I/home/oakridge/holiday/workspace/util_fns -I./igraph/include/igraph -I./Snap-2.4/snap-core -I./Snap-2.4/snap-adv -I./Snap-2.4/glib-core -I./Snap-2.4/snap-exp -L./igraph/lib -debug full -std=c++0x -mkl -gxx-name=/usr/bin/g++ -traceback -lutil_fns -leigensolvers -ligraph -openmp # -O3 #/home/oakridge/holiday/build/bin/g++ -v # FOR INTEL
 
-CXXFLAGS = -I/home/alexander/local/eigen -I/home/alexander/workspace/dmaps -I/home/alexander/workspace/newton_gmres -I/home/alexander/workspace/util_fns -I./igraph/include/igraph -L./igraph/lib -L/home/alexander/local/lib -std=c++0x -lutil_fns -leigensolvers -ligraph -fopenmp -O3 # -g -O0 # FOR GCC
+CXXFLAGS = -I/home/alexander/local/eigen -I/home/alexander/workspace/dmaps -I/home/alexander/workspace/newton_gmres -I/home/alexander/workspace/util_fns -I./igraph/include/igraph -L./igraph/lib -L/home/alexander/local/lib -std=c++0x -lutil_fns -leigensolvers -ligraph -fopenmp -O3 # -g -O0 FOR GCC
 
 # CXX = g++
 # CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x #-O3
@@ -26,7 +28,7 @@ CXXFLAGS = -I/home/alexander/local/eigen -I/home/alexander/workspace/dmaps -I/ho
 CXX = mpic++
 # CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x #-O3
 
-all: rho_kappa_embedding # graph-embedding-motifs # graph_embedding # pref_attach coarse_ng rho_kappa_embedding
+all: transients-main # pref_attach # graph-embedding-motifs # graph_embedding # pref_attach coarse_ng rho_kappa_embedding
 
 %.o: %.c
 	$(CXX) -c $<  $(CXXFLAGS)
@@ -45,6 +47,9 @@ rho_kappa_embedding: $(RHO_KAPPA_OBJECTS)
 
 graph-embedding-motifs: $(GEMOTIFS_OBJECTS)
 	$(CXX) -Wl,-rpath ./igraph/lib -Wl,-rpath ~/local/lib $^  $(CXXFLAGS) -o $@
+
+transients-main: $(TRI_OBJECTS)
+	$(CXX) -o $@ $^  $(CXXFLAGS)
 
 depend: .depend
 

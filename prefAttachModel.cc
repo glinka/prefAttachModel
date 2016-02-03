@@ -5,7 +5,9 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include <cmath>
 #include "prefAttachModel.h"
+#include "calcGraphProps.h"
 
 using namespace std;
 
@@ -167,6 +169,9 @@ void prefAttachModel::initGraph() {
   }
   for(i = 0; i < n; i++) {
       degs[i] = 0;
+      for(j = 0; j < n; j++) {
+	A[i][j] = 0;
+      }
   }
   int newEdge;
   //assign m edges uniformly
@@ -433,22 +438,24 @@ void prefAttachModel::run(long int nSteps, long int dataInterval, string init_ty
 // template void prefAttachModel::saveData<double>(vector < double > &data, ofstream &fileHandle);
 
 
+int prefAttachModel::count_triangles() {
+  int ntris = 0;
+  for(int i = 0; i < n; i++) {
+    for(int j = i+1; j < n; j++) {
+      for(int k = j+1; k < n; k++) {
+	ntris += pow(min(A[i][j], min(A[i][k], A[j][k])), 3);
+      }
+    }
+  }
+  return ntris;
+}
 
-
-std::vector< std::vector<int> > prefAttachModel::run_nsteps(const int nsteps) {
+vector<int> prefAttachModel::run_nsteps(const int nsteps) {
   for(int i = 0; i < nsteps; i++) {
     step();
   }
-  std::vector< std::vector<int> > adj_mat_out(n, std::vector<int>(n));
-  for(int i = 0; i < n; i++) {
-    for(int j = 0; j < n; j++) {
-      adj_mat_out[i][j] = A[i][j];
-    }
-  }
-  return adj_mat_out;
+  return vector<int>(degs, degs+n);
 }
-
-
 
 
 
@@ -661,10 +668,6 @@ double prefAttachModel::compute_selfloop_density() {
   return ((double) selfloop_count)/n;
 }
 
-bool reverse_comp(const double i, const double j) {
-  return (i > j);
-}
-
 void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
   // sort in decreasing order
   sort(new_degs.begin(), new_degs.end(), reverse_comp);
@@ -722,12 +725,16 @@ void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
     }
   }
   
-  // TESTING
-  for(int i = 0; i < n; i++) {
-    if(new_degs[i] != 0) {
-      // cout << "hh was unsuccessful with deg " << new_degs[i] << " at " << i << endl;
-    }
-  }
-  // cout << "deg disparity: " << degcount - 2*m << endl;
-  m = degcount/2;
+  /* vector<int> sdegs = calcGraphProps::get_sorted_degrees(A, n); */
+  /* ofstream loose_out("./paper-data/other-runs/loosehh.csv", ios_base::app); */
+  /* save_coeffs(vector< vector<int> >(1, sdegs), loose_out); */
+  /* // TESTING */
+  /* for(int i = 0; i < n; i++) { */
+  /*   if(new_degs[i] != 0) { */
+  /*     // cout << "hh was unsuccessful with deg " << new_degs[i] << " at " << i << endl; */
+  /*   } */
+  /* } */
+  /* // cout << "deg disparity: " << degcount - 2*m << endl; */
+  /* m = degcount/2; */
+  /* cout << m << endl; */
 }

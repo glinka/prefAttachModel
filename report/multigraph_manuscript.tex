@@ -83,8 +83,12 @@ Evolving the system in this manner, the degree sequence approaches a stationary 
 \begin{figure}[ht!]
   % TODO
   \centering
-  \includegraphics[width=0.5\textwidth]{placeholder}
-  \caption{Figure showing evolution of some property (probably triangle distribution) over time, starting from two different initial conditions. Here we're illustrating that unimportant, higher-order variables quickly fall onto the same point on the slow manifold despite different starting at different values. \label{fig:sv}}
+  \includegraphics[width=0.5\textwidth]{triangle-slaving}
+  \caption{Figure showing evolution of triangle counts over time,
+    starting from three different initial networks that shared the
+    same degree sequence. Thus higher-order variables that may be
+    initialized off the slow manifold are quickly drawn to it
+    ($O(n^2)$ steps). \label{fig:sv}}
 \end{figure}
 
 \section{Equation-free modeling}
@@ -207,7 +211,27 @@ The strategy used in the following methods, detailed in \cite{rajendran_analysis
 
 % TODO (referenced fig below)
 
-PCA is used to linearly project data into subspaces that capture the directions along with the data varies most \cite{jolliffe_principal_2014}. It has found wide application, but suffers from its restriction to linear embeddings. Indeed, many datasets will not lie along some hyperplane embedded in $\mathbb{R}^n$, but rather will form a nonlinear manifold throughout the space. Thus it is not unexpected that such a method might work poorly when applied to our nonlinear system. Results shown in Fig. (\ref{fig:pca}) show that, while worse than the embedding uncovered by DMAPS in the next section, PCA still offers a reasonable dimensionality reduction.
+PCA is used to linearly project data into subspaces that capture the
+directions along with the data varies most
+\cite{jolliffe_principal_2014}. It has found wide application, but
+suffers from its restriction to linear embeddings. Indeed, many
+datasets will not lie along some hyperplane embedded in
+$\mathbb{R}^n$, but rather will form a nonlinear manifold throughout
+the space. Thus it is not unexpected that such a method might work
+poorly when applied to our nonlinear system. Results shown in
+Fig. (\ref{fig:pca}) show that, while worse than the embedding
+uncovered by DMAPS in the next section, PCA still offers a reasonable
+dimensionality reduction.
+
+\begin{figure}[ht!]
+  % TODO
+  \centering
+  \includegraphics[width=0.75\textwidth]{pca-2d-rho-kappa}
+  \caption{Embedding of steady states in $\rho$ / $\kappa$ plane,
+    showing that PCA can uncover the two-dimensional structure of the
+    dataset. \label{fig:pca}}
+\end{figure}
+
 
 \subsection{DMAPS}
 

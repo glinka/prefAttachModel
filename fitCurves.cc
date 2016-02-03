@@ -1,5 +1,6 @@
 #include <Eigen/Dense>
 #include <Eigen/LU>
+#include <Eigen/SVD>
 #include <iostream>
 #include "calcGraphProps.h"
 #include "fitCurves.h"
@@ -23,8 +24,12 @@ vector<double> fitCurves::fitFx(const vector<double> &xData, const vector<double
 	}
 	yDataCpy(i) = yData[i];
     }
-    MatrixXd coeffs(nFns, 1);
-    coeffs = (((((fxsEval.transpose())*fxsEval).lu()).inverse())*(fxsEval.transpose()))*yDataCpy;
+
+    Eigen::JacobiSVD<MatrixXd> svd(fxsEval, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    MatrixXd coeffs = svd.solve(yDataCpy);
+
+    /* MatrixXd coeffs(nFns, 1); */
+    /* coeffs = (((((fxsEval.transpose())*fxsEval).lu()).inverse())*(fxsEval.transpose()))*yDataCpy; */
     return vector<double>(coeffs.data(), coeffs.data() + nFns);
     /**    
 	used when returning fnlx, but need coeffs to project so return vector<double>
