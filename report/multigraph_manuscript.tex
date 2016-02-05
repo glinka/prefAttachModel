@@ -1,40 +1,53 @@
-\documentclass[12pt]{article}
+\documentclass[epjST, final]{svjour}
 \usepackage{graphicx, subcaption, setspace, indentfirst, amsfonts, amsthm, empheq}
-\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
-\usepackage[center]{titlesec}
+% \usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+% \usepackage[center]{titlesec}
 \graphicspath{ {./figs/paper/} }
-\pagestyle{plain}
-\renewcommand\thesection{\Roman{section}}
-\renewcommand\thesubsection{\alph{subsection}.}
+% \pagestyle{plain}
+% \renewcommand\thesection{\Roman{section}}
+% \renewcommand\thesubsection{\alph{subsection}.}
 \newcommand\ignore[1]{}
-\setlength{\parskip}{0ex}
-\def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
-\let\endchangemargin=\endlist 
+% \setlength{\parskip}{0ex}
+% \def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
+% \let\endchangemargin=\endlist 
 
-\title{\vspace{-5mm}Equation-free analysis of a dynamically evolving multigraph}
-\author{Alexander Holiday,$^1$ Bal\'{a}zs R\'{a}th,$^2$ Ioannis G. Kevrekidis$^{1,3}$ \\ \\
-  $^1$\textit{Department of Chemical and Biological Engineering}, \\
-  \textit{Princeton University, Princeton, New Jersey 08544, USA} \\ \\
-  $^2$\textit{Department of Mathematics}, \\
-  \textit{The University of British Columbia, Vancouver, British Columbia V6T 1Z4}
-}
-\date{}
+\title{Equation-free analysis of a dynamically evolving multigraph}
+\author{Alexander Holiday \inst{1} \and Bal\'{a}zs R\'{a}th \inst{2}
+  \and Ioannis G. Kevrekidis \inst{1.3}} \institute{Department of
+  Chemical and Biological Engineering, Princeton University,
+  Princeton, New Jersey 08544, USA \and Institute of Mathematics,
+  Budapest University of Technology, 1 Egry J\'{o}zsef u., Budapest
+  1111, Hungary \and PACM, Princeton University, Princeton, New Jersey
+  08544, USA}
+% $^1$\textit{Department of Chemical and Biological Engineering},
+% \textit{Princeton University, Princeton, New Jersey 08544, USA} \\ \\
+% $^2$\textit{Department of Mathematics}, \\
+% \textit{The University of British Columbia, Vancouver, British
+%   Columbia V6T 1Z4} } \date{}
+
+\abstract{In order to adapt traditional techniques from numerical
+  analysis to complex network systems, we apply the equation-free
+  framework to a dynamically evolving multigraph system. This
+  approach is based on the coupling of short intervals of simulation
+  with appropriately-defined lifting and restriction operators that
+  map the full network description to suitable macroscopic
+  variables, enabling both the acceleration of direct simulations
+  through coarse-projective integration, and the identification of
+  stationary states via a Newton-GMRES method. Additionally, we
+  employ the dimensionality-reduction algorithms principal component
+  analysis (PCA) and diffusion maps (DMAPS) to uncover hidden
+  structure in the model.}
 
 \begin{document}
 \maketitle
 \begin{onehalfspace}
-
-\begin{abstract}
-In order to adapt traditional techniques from numerical analysis to complex network systems, we apply the equation-free framework to a dynamically evolving multigraph system. This approach is based on the coupling of short intervals of simulation with appropriately-defined lifting and restriction operators that map the full network description to suitable macroscopic variables, enabling both the acceleration of direct simulations through coarse-projective integration, and the identification of stationary states via a Newton-GMRES method. Additionally, we employ the dimensionality-reduction algorithms principal component analysis (PCA) and diffusion maps (DMAPS) to uncover hidden structure in the model.
-\end{abstract}
 
 \pagebreak
 
 \section{Introduction}
 \label{sec:intro}
 
-
-Over the past decades, myriad systems have been formulated as complex evolving networks, from highway traffic \cite{joubert_large-scale_2010} to brain connectivity \cite{hermundstad_learning_2011}. When modeling such systems, dynamics are typically defined at a very fine scale, specifying individual node and edge interactions; explicit closed equations governing macroscopic properties are often unavailable \cite{durrett_graph_2012, joubert_large-scale_2010, roche_agent-based_2011, swaminathan_modeling_1998}. These interactions are often complicated functions dependent on multiple system parameters, which, when coupled with the large network sizes inherent in many interesting problems, makes numerical investigation computationally prohibitive. However, the lack of explicit equations governing macroscopic property evolution precludes the use of traditional numerical techniques such as optimization and fixed-point finding that could offer valuable insight into the network's behavior, leaving little alternative but to work with the full network system. Faced with this dilemma, investigators must either restrict their attention to a smaller, heuristically-motivated parameter space \cite{hodgkin_quantitative_1952} or simplify the model, potentially removing important features \cite{brown_variability_1999}. \par
+Over the past decades, myriad systems have been formulated as complex evolving networks, from highway traffic \cite{joubert_large-scale_2010} to brain connectivity \cite{hermundstad_learning_2011}. When modeling such systems, dynamics are typically defined at a very fine scale, specifying individual node and edge interactions; explicit closed equations governing macroscopic properties are often unavailable \cite{durrett_graph_2012,joubert_large-scale_2010,roche_agent-based_2011,swaminathan_modeling_1998}. These interactions are often complicated functions dependent on multiple system parameters, which, when coupled with the large network sizes inherent in many interesting problems, makes numerical investigation computationally prohibitive. However, the lack of explicit equations governing macroscopic property evolution precludes the use of traditional numerical techniques such as optimization and fixed-point finding that could offer valuable insight into the network's behavior, leaving little alternative but to work with the full network system. Faced with this dilemma, investigators must either restrict their attention to a smaller, heuristically-motivated parameter space \cite{hodgkin_quantitative_1952} or simplify the model, potentially removing important features \cite{brown_variability_1999}. \par
 
 Equation-free modeling offers a solution to these obstacles\ignore{circumvents these obstacles}, allowing one to investigate the complex network at a macroscopic level while retaining full system details. Underlying this method is the assumption that, although we cannot analytically derive equations governing network evolution, such equations do exist. Furthermore, these implicit equations are assumed to be functions of only a few dominating variables. Thus, the state of the complete network is in fact, by this assumption, well described by these select variables. This may seem an onerous restriction, yet it is exactly the behavior witnessed across network types: despite the complexity of the full system, certain network properties evolve smoothly in time, while the evolution of other, secondary properties, is often correlated to that of a few primary variables. Once these significant variables are uncovered, we can combine short intervals of full system simulation with operators that map the full system description to and from their representative coarse variables to perform previously-unfeasible system-level analysis (see Section \ref{sec:ef} for further details). \par
 
@@ -59,7 +72,7 @@ Evolving the system in this manner, the degree sequence approaches a stationary 
 
 \begin{figure}[ht!]
   \centering
-  \includegraphics[width=0.9\textwidth]{step-illustration}
+  \includegraphics[width=0.9\textwidth]{graph-evo}
   \caption{Illustration of the steps enumerated above that evolve the graph from $t$ to $t+1$ \label{fig:step-illustration}}
 \end{figure}
 
@@ -83,7 +96,7 @@ Evolving the system in this manner, the degree sequence approaches a stationary 
 \begin{figure}[ht!]
   % TODO
   \centering
-  \includegraphics[width=0.5\textwidth]{triangle-slaving}
+  \includegraphics[width=0.8\textwidth]{triangle-slaving}
   \caption{Figure showing evolution of triangle counts over time,
     starting from three different initial networks that shared the
     same degree sequence. Thus higher-order variables that may be
@@ -100,7 +113,9 @@ The first task in the implementation of the equation-free framework is to uncove
 
 However, it is crucial to test whether the evolution of other properties of the graph can be correlated to degree sequence. If not, our current description is incomplete and there exist other  important coarse variables that must be accounted for in our macroscopic system description. To assess this, we constructed graphs with identical degree sequences but varying betweenness-centrality distributions and clustering coefficients, and observed the evolution of these properties under the dynamics prescribed in Section \ref{sec:m}. Fig. (\ref{fig:sv}) shows that, within a short time, both variables quickly reach similar distributions despite the varied initial conditions. This suggests that the degree sequence is indeed an adequate coarse variable for the system. \par
 
-Next we describe the other two key elements to equation-free modeling which map to and from our microscopic and macroscopic descriptions: restriction and lifting operators.
+Next we describe the other two key elements to equation-free modeling
+which map to and from our microscopic and macroscopic descriptions:
+restriction and lifting operators.
 
 \begin{figure}[ht!]
   \centering
@@ -115,7 +130,7 @@ The restriction operator translates the full network into its equivalent coarse 
 
 \subsection{Lifting}
 
-The lifting operator performs the inverse role of restriction: translating coarse variables into full networks. Specifically in the context of our model, we map vectors of polynomial coefficients to full networks in a two-stage process. First, the coefficient vector is used to recreate a sorted degree sequence by evaluating the full polynomial at integer values and rounding to the nearest degree, as depicted in Fig. (\ref{fig:cpi-diagram}). If the sum of the resulting degree sequence is odd, a single degree is added to the largest value to ensure the sequence is graphical. Second, this degree sequence is used as input to a Havel-Hakimi algorithm, creating a graph whose degree sequence matches that of the input \cite{havel_remark_1955, hakimi_realizability_1962}. While the canonical Havel-Hakimi method produces simple graphs, it is not difficult to extend it to multigraphs by allowing the algorithm to wrap around the sequence, producing multiple edges and self-loops. The lifting procedure is represented by the red arrows of Fig. (\ref{fig:cpi-diagram}).
+The lifting operator performs the inverse role of restriction: translating coarse variables into full networks. Specifically in the context of our model, we map vectors of polynomial coefficients to full networks in a two-stage process. First, the coefficient vector is used to recreate a sorted degree sequence by evaluating the full polynomial at integer values and rounding to the nearest degree, as depicted in Fig. (\ref{fig:cpi-diagram}). If the sum of the resulting degree sequence is odd, a single degree is added to the largest value to ensure the sequence is graphical. Second, this degree sequence is used as input to a Havel-Hakimi algorithm, creating a graph whose degree sequence matches that of the input \cite{havel_remark_1955,hakimi_realizability_1962}. While the canonical Havel-Hakimi method produces simple graphs, it is not difficult to extend it to multigraphs by allowing the algorithm to wrap around the sequence, producing multiple edges and self-loops. The lifting procedure is represented by the red arrows of Fig. (\ref{fig:cpi-diagram}).
 
 \subsection{Coarse-projective integration (CPI)}
 \label{sec:cpi}
@@ -137,24 +152,17 @@ A representative evolution of one of the polynomial coefficients and its project
 
 Results of the application of this general framework with the specific lifting and restriction operators previously outlined are shown in Fig. (\ref{fig:cpi-results}). We see good agreement between the CPI-accelerated and normal systems, while reducing the number of detailed steps by one third. It is important to mention that this method was applied not to a single system instantiation, but to a large ensemble. This ensured that when properties such as the fitted polynomial coefficients were averaged over the ensemble they evolved smoothly despite the stochastic nature of the system, as shown previously in Fig. (\ref{fig:coeff-evo}).
 
-\begin{figure}[ht!]
-  % TODO
-  \centering
-  \includegraphics[width=0.5\textwidth]{placeholder}
-  \caption{Evolution of a single polynomial coefficient over time, both with and without CPI to show agreement. \label{fig:coeff-evo}}
-\end{figure}
-
 \begin{figure}[h!]
   \vspace{-5mm}
   \centering
   \begin{subfigure}{0.75\textwidth}
     \centering
-    \includegraphics[height=3in]{cpi-error}
+    \includegraphics[height=3in]{cpi-3d-comp}
     \subcaption{Percent error for each vertex in a CPI-accelerated simulation compared to an ensemble of plain simulations. \label{fig:cpi-error}}
   \end{subfigure} \\ %
   \begin{subfigure}{0.75\textwidth}
     \centering
-    \includegraphics[height=3in]{self-error}
+    \includegraphics[height=3in]{cpi-error-comp}
     \subcaption{Percent error when comparing two ensembles of plain runs, showing the discrepancies arising simply from the stochastic nature of the system. \label{fig:self-error}}
   \end{subfigure}%
   \caption{Figure showing small errors in CPI routine. \label{fig:cpi-results}}
@@ -203,7 +211,7 @@ Crucial to the above analysis was the identification of suitable coarse, system 
 
 \subsection{Network distances}
 
-When applying machine learning techniques to a dataset, it is necessary to define a distance (or similarity) between each data point. If these points are a set of vectors in $\mathbb{R}^n$ one has a number of metrics to choose from, the Euclidean distance being a common first option. Unfortunately, when individual points are not vectors but networks, the definition of a computationally feasible metric becomes far more challenging. Examples such as the maximal common subgraph and edit distances, defined in \cite{bunke_graph_1998} and \cite{gao_survey_2010} do define metrics on the space of graphs, but their computation is $NP-hard$. \\
+When applying machine learning techniques to a dataset, it is necessary to define a distance (or similarity) between each data point. If these points are a set of vectors in $\mathbb{R}^n$ one has a number of metrics to choose from, the Euclidean distance being a common first option. Unfortunately, when individual points are not vectors but networks, the definition of a computationally feasible metric becomes far more challenging. Examples such as the maximal common subgraph and edit distances, defined in \cite{bunke_graph_1998} and \cite{gao_survey_2010} do define metrics on the space of graphs, but their computation is $NP\textnormal{-}hard$. \\
 
 The strategy used in the following methods, detailed in \cite{rajendran_analysis_2013}, is to embed each graph based on statistics of random walks along its edges and vertices. This maps each network to a vector in $\mathbb{R}^n$, and the Euclidean distance is subsequently used to calculate the similarity of two graphs. Full details are given in (\cite{rajendran_analysis_2013}).
 
@@ -223,19 +231,29 @@ Fig. (\ref{fig:pca}) show that, while worse than the embedding
 uncovered by DMAPS in the next section, PCA still offers a reasonable
 dimensionality reduction.
 
-\begin{figure}[ht!]
-  % TODO
+\begin{figure}[h!]
+  \vspace{-5mm}
   \centering
-  \includegraphics[width=0.75\textwidth]{pca-2d-rho-kappa}
+  \begin{subfigure}{0.75\textwidth}
+    \centering
+    \includegraphics[height=3in]{pca-2d-rho}
+    \subcaption{Coloring the two-dimensional PCA embedding with
+      $\rho$. \label{fig:pca-rho}}
+  \end{subfigure} \\ %%
+  \begin{subfigure}{0.75\textwidth}
+    \centering
+    \includegraphics[height=3in]{pca-2d-kappa}
+    \subcaption{Coloring the two-dimensional PCA embedding with
+      $\kappa$. \label{fig:pca-kappa}}
+  \end{subfigure}%
   \caption{Embedding of steady states in $\rho$ / $\kappa$ plane,
     showing that PCA can uncover the two-dimensional structure of the
     dataset. \label{fig:pca}}
 \end{figure}
 
-
 \subsection{DMAPS}
 
-Unlike PCA, DMAPS uncovers underlying nonlinear manifolds hidden in data. This is achieved by solving for the discrete equivalent of the eigenfunctions and eigenvalues of the Laplacian operator over the manifold, which amounts to calculating leading eigenvector/eigenvalue pairs of a symmetric Markov matrix $W$. See \cite{coifman_diffusion_2006, nadler_diffusion_2006} for details. Results from embeddings on different timescales are shown in Fig. (\ref{fig:dmaps-results}). We see that on the short, $n^2$ timescale, the differences in initial conditions lead to well-separated embeddings in three-dimensions represented by the small spheres in Fig. (\ref{fig:dmaps-results}), while at long times, we see that both systems evolve to the same steady state over a shared one-dimensional curve, as would be expected given the one-dimensional parameterization possible in time. \\
+Unlike PCA, DMAPS uncovers underlying nonlinear manifolds hidden in data. This is achieved by solving for the discrete equivalent of the eigenfunctions and eigenvalues of the Laplacian operator over the manifold, which amounts to calculating leading eigenvector/eigenvalue pairs of a symmetric Markov matrix $W$. See \cite{coifman_diffusion_2006,nadler_diffusion_2006} for details. Results from embeddings on different timescales are shown in Fig. (\ref{fig:dmaps-results}). We see that on the short, $n^2$ timescale, the differences in initial conditions lead to well-separated embeddings in three-dimensions represented by the small spheres in Fig. (\ref{fig:dmaps-results}), while at long times, we see that both systems evolve to the same steady state over a shared one-dimensional curve, as would be expected given the one-dimensional parameterization possible in time. \\
 
 We see that both PCA and DMAPS, when combined with a suitable embedding of each graph, uncover useful information pertaining to the underlying dimensionality of the problem.
 
@@ -263,12 +281,24 @@ We see that both PCA and DMAPS, when combined with a suitable embedding of each 
   \caption{One dimensional embedding of different trajectories with DMAPS. \label{fig:dmaps-results}}
 \end{figure}
 
-\begin{figure}[ht!]
-  % TODO
+\begin{figure}[h!]
+  \vspace{-5mm}
   \centering
-  \includegraphics[width=0.75\textwidth]{dmaps-2d-rho-kappa}
+  \begin{subfigure}{0.75\textwidth}
+    \centering
+    \includegraphics[height=3in]{dmaps-2d-rho}
+    \subcaption{Coloring the two-dimensional DMAPS embedding with
+      $\rho$. \label{fig:dmaps-rho}}
+  \end{subfigure} \\ %%
+  \begin{subfigure}{0.75\textwidth}
+    \centering
+    \includegraphics[height=3in]{dmaps-2d-kappa}
+    \subcaption{Coloring the two-dimensional DMAPS embedding with
+      $\kappa$. \label{fig:dmaps-kappa}}
+  \end{subfigure}%
   \caption{Embedding of steady states in $\rho$ / $\kappa$ plane,
-    showing that DMAPS uncovered the coarse variables known from
+    showing that DMAPS uncovered the variables governing the
+    stationary state, known from
     Bal\'{a}zs' paper \label{fig:dmaps-rk}}
 \end{figure}
 

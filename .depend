@@ -1,5 +1,0 @@
-main.cc: prefAttachModel.cc prefAttachModel.h
-main.cc: pamCPI.cc pamCPI.h prefAttachModel.h calcGraphProps.h \
- fitCurves.h
-main.cc: fitCurves.cc calcGraphProps.h fitCurves.h
-main.cc: calcGraphProps.cc calcGraphProps.h

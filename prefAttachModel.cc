@@ -756,6 +756,7 @@ void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
     degs[0]++;
     degcount++;
   }
+  m = degcount/2;
   
   // zero everything
   for(int i = 0; i < n; i++) {
@@ -808,6 +809,5 @@ void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
   /*   } */
   /* } */
   /* // cout << "deg disparity: " << degcount - 2*m << endl; */
-  /* m = degcount/2; */
   /* cout << m << endl; */
 }

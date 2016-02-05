@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
     vector<int> times(nintervals);
 
     for(int i = 0; i < nintervals; i++) {
-      degs[i] = calcGraphProps::get_sorted_degrees(model.run_nsteps(interval));
+      /* degs[i] = calcGraphProps::get_sorted_degrees(model.run_nsteps(interval)); */
       times[i] = (i+1)*interval;
     }
 
