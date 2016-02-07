@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <ctime>
 #include <iostream>
 #include <stdlib.h>
@@ -9,8 +10,8 @@
 #include <mpi.h>
 #include <util_fns.h>
 #include "pamCPI.h"
+#include "prefAttachModel.h"
 #include "custom_util_fns.h"
-#include "calcGraphProps.h"
 
 using namespace std;
 const int ASCII_CHAR_OFFSET = 48;
@@ -56,7 +57,7 @@ string create_dir(string dir_base) {
 // mpirun -n 100  ./pref_attach -n 100 -m 10000 -s 2000000 -project -offManifoldWait 10000 -nMicroSteps 60000 -save_interval 10000 -collectionInterval 1000 -kappa 1 -projStep 20000 // could do -projStep 30000
 int main(int argc, char *argv[]) {
   int n = 100;
-  int m = 10000;
+  int m = 50000;
   double kappa = 1;
   long int nSteps = 10000000;
   long int savetofile_interval = 1000;
@@ -197,6 +198,18 @@ int main(int argc, char *argv[]) {
     // end MPI
   } 
   else {
+
+    int mpierr = MPI_Init(NULL, NULL);
+    if(mpierr != MPI_SUCCESS) {
+      cout << "Error initializing MPI, terminating" << endl;
+      MPI_Abort(MPI_COMM_WORLD, mpierr);
+    }
+
+    const int root = 0;
+    int size, rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     prefAttachModel model(n, kappa);
     if(init_type == "erdos") {
       model.init_er_graph(m);
@@ -204,21 +217,55 @@ int main(int argc, char *argv[]) {
     else if(init_type == "complete") {
       model.init_complete_graph();
     }
+    else if(init_type == "lopsided") {
+      model.init_lopsided_graph();
+    }
 
     const int nintervals = 500;
     const int interval = nSteps/nintervals;
-    ofstream degs_out("./pa_run_data/degs.out");
-    ofstream times_out("./pa_run_data/times.out");
-    vector< vector<int> > degs(nintervals);
-    vector<int> times(nintervals);
+    vector< vector<int> > degs(nintervals+1);
+    vector<int> times(nintervals+1);
 
-    for(int i = 0; i < nintervals; i++) {
-      /* degs[i] = calcGraphProps::get_sorted_degrees(model.run_nsteps(interval)); */
-      times[i] = (i+1)*interval;
+    degs[0] = model.get_degs();
+    times[0] = 0;
+
+    for(int i = 1; i <= nintervals; i++) {
+      degs[i] = model.run_nsteps(interval);
+      sort(degs[i].begin(), degs[i].end());
+      times[i] = i*interval;
     }
 
-    util_fns::save_matrix(degs, degs_out);
-    util_fns::save_vector(times, times_out);
+    if(rank != root) {
+      int tag = 0;
+      for(vector< vector<int> >::iterator v = degs.begin(); v != degs.end(); v++) {
+	MPI_Send(&v->front(), n, MPI_INT, root, tag, MPI_COMM_WORLD);
+	tag++;
+      }
+    }
+    else {
+      for(int i = 0; i < degs.size(); i++) {
+	vector< vector<int> > other_degs(size-1, vector<int>(n));
+	int source = 1;
+	for(vector< vector<int> >::iterator v = other_degs.begin(); v != other_degs.end(); v++) {
+	  MPI_Recv(&v->front(), n, MPI_INT, source, i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  source++;
+	}
+	// average across all processes
+	for(int j = 0; j < other_degs.size(); j++) {
+	  for(int k = 0; k < n; k++) {
+	    degs[i][k] += other_degs[j][k];
+	  }
+	}
+	for(int j = 0; j < n; j++) {
+	  degs[i][j] /= size;
+	}
+      }
+      ofstream degs_out("./paper-data/" + init_type + "-degs.out");
+      ofstream times_out("./paper-data/" + init_type + "-times.out");
+      util_fns::save_matrix(degs, degs_out);
+      util_fns::save_vector(times, times_out);
+    }
+    MPI_Finalize();
   }
   return 0;
 }

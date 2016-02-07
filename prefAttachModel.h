@@ -26,7 +26,6 @@ class prefAttachModel {
     std::mt19937 *mt;
     double genURN();
     void initGraph(int **newA);
-    void init_lopsided_graph();
     void step();
     graphData *step(bool saveFlag);
     int consistencyCheck();
@@ -45,7 +44,9 @@ class prefAttachModel {
     void save_coeffs(const std::vector< std::vector< double > > &data, std::ofstream &fileHandle);
     void save_coeffs(const std::vector< std::vector<int> > &data, std::ofstream &fileHandle);
  public:
+    std::vector<int> get_degs();
     std::vector<int> init_triangle_graph();
+    void init_lopsided_graph();
     int count_triangles();
     int count_degs();
     void init_rando_graph(std::vector<int> new_degs);

@@ -1,3 +1,4 @@
+#include <vector>
 #include <iostream>
 #include <cstdlib>
 #include <string>
@@ -7,10 +8,8 @@
 #include "gmres.h"
 #include "newton_wrapper.h"
 
-//srun --overcommit -n 50 ./coarse_ng -n 500 -m 50000 -kappa 1 -init erdos -proj_step 20000 -off_manifold_wait 20000 -nmicrosteps 800000 -save_interval 10000 -collect_interval 5000 -h 0.025 -nkrylov 6 -abstol 125 -reltol 0.01
-
-// mpirun -n 10  ./pref_attach -n 100 -m 50000 -s 10000000 -project -offManifoldWait 50000 -nMicroSteps 100000 -save_interval 10000 -collectionIntervalci 1000 -kappa 1 -proj_step 50000               
-
+// this shit works
+//mpirun -n 10 ./coarse_ng -n 100 -m 50000 -nms 1000000 -omw 100000 -ci 10000 -proj_step 500000                                  
 int main(int argc, char** argv) {
   // start MPI
   int mpierr = MPI_Init(NULL, NULL);
@@ -19,18 +18,18 @@ int main(int argc, char** argv) {
     MPI_Abort(MPI_COMM_WORLD, mpierr);
   }
   int n = 100;
-  int m = 50000;
+  int m = 10000;
   double kappa = 1.0;
   long int savetofile_interval = 1000;
   bool new_init = true;
   int proj_step = 50000;
-  int collect_interval = 1000;
-  int off_manifold_wait = 50000;
+  int collect_interval = 500;
+  int off_manifold_wait = 20000;
   int nmicrosteps = 100000;
   double h = 0.1;
   int nkrylov = 6;
-  double abs_tol = 1.5*n;
-  double rel_tol = 1e-2;
+  double abs_tol = n;
+  double rel_tol = 1e-1;
   std::string init_type = "erdos";
   //parse command line args, could be moved to separate fn?
   for(int i = 1; i < argc; i++) {
@@ -108,7 +107,12 @@ int main(int argc, char** argv) {
     start_time = time(NULL);
     // root process is responsible for running newton-gmres
     Newton newton(abs_tol, rel_tol, 100);
-    Eigen::VectorXd x = newton.find_zero(newton_wrapper::F, n*Eigen::VectorXd::Ones(n), h, GMRES(1e-4, nkrylov), model);
+    std::vector<int> init_degs = model.get_degs();
+    Eigen::VectorXd x0(n);
+    for(int ii = 0; ii < init_degs.size(); ii++) {
+      x0(ii) = init_degs[ii];
+    }
+    Eigen::VectorXd x = newton.find_zero(newton_wrapper::F, x0, h, GMRES(1e-4, nkrylov), model);
     std::cout << "CELEBRAAAAAAAAAATE" << std::endl;
     // stop other processes from receiving input
     bool receive_data = false;

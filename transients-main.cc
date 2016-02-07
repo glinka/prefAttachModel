@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
   prefAttachModel model(n, m, kappa);
   vector<int> tri_init_deg_seq = model.init_triangle_graph();
   
-  const int nintervals = 500;
+  const int nintervals = 1000;
   const int interval = nSteps/nintervals;
 
   vector<int> tri_tris(nintervals+1);

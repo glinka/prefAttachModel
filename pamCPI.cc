@@ -543,8 +543,8 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
   deg_fit_fns.push_back([] (double x) { return x;});
   deg_fit_fns.push_back([] (double x) { return 0.5*(3*x*x - 1);});
   deg_fit_fns.push_back([] (double x) { return 0.5*(5*x*x*x - 3*x);});
-  /* deg_fit_fns.push_back([] (double x) { return (35*x*x*x*x - 30*x*x + 3)/8.0;}); */
-  /* deg_fit_fns.push_back([] (double x) { return (63*x*x*x*x*x - 70*x*x*x + 15*x)/8.0;}); */
+  deg_fit_fns.push_back([] (double x) { return (35*x*x*x*x - 30*x*x + 3)/8.0;});
+  deg_fit_fns.push_back([] (double x) { return (63*x*x*x*x*x - 70*x*x*x + 15*x)/8.0;});
     
   vector<double> indices(n);
   for(int i = 0; i < n; i++) {
@@ -580,7 +580,7 @@ vector<int> pamCPI::project_degs(const std::vector< std::vector<int> >& deg_data
   fxs coeff_fit_fns;
   coeff_fit_fns.push_back(const_offset);
   coeff_fit_fns.push_back([] (double x) { return x;});
-  /* coeff_fit_fns.push_back([] (double x) { return 0.5*(3*x*x - 1);}); */
+  coeff_fit_fns.push_back([] (double x) { return 0.5*(3*x*x - 1);});
   // coeff_fit_fns.push_back([] (double x) { return x*x;});
   // coeff_fit_fns.push_back([] (double x) { return x*x*x;});
   // coeff_fit_fns.push_back([] (double x) { return x*x*x*x;});

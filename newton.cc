@@ -81,6 +81,8 @@ Eigen::VectorXd Newton::find_zero(Eigen::VectorXd (*F)(const Eigen::VectorXd&, p
     r = F(x, model).norm();
     iters++;
   }
+  utils::save_vector(x, x_out);
+  resid_out << r << std::endl;
   // probably a better way to do this
   Iters_Exception::test_iters(iters, itermax_);
   return x;

@@ -1,6 +1,7 @@
 from multiprocessing import Pool
 import getGraphProps as gGP
 import matplotlib.ticker as ticker
+from matplotlib.ticker import FuncFormatter, FormatStrFormatter
 import numpy as np
 import os
 import util_fns as uf
@@ -9,6 +10,11 @@ import util_fns as uf
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from pca import pca
+
+import pygraphviz as pgv
+
+pgv.Draw
 
 # from mpltools import style
 # from mpltools import layout
@@ -18,8 +24,368 @@ import matplotlib as mpl
 # global variables to the (hopefully temporary) rescue of aligning colornorms
 # PLEASE DELETE ASAP
 
+FILEDIR = './paper-data/current-best'
+
+def temp():
+    """actually this one looks for triangles"""
+    dr = 'current-best'
+    hh_tris = np.genfromtxt('./paper-data/' + dr + '/hh_tris.csv', delimiter=',', skip_header=False)
+    t_tris = np.genfromtxt('./paper-data/' + dr + '/tri_tris.csv', delimiter=',', skip_header=False)
+    r_tris = np.genfromtxt('./paper-data/' + dr + '/rando_tris.csv', delimiter=',', skip_header=False)
+    times = np.genfromtxt('./paper-data/' + dr + '/tris_times.csv', delimiter=',', skip_header=False)
+    ntries = hh_tris.shape[0]
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ifinal = 300
+    ax.semilogy(times[:ifinal], hh_tris[:ifinal], lw=7)
+    ax.semilogy(times[:ifinal], t_tris[:ifinal], c='r', lw=7)
+    ax.semilogy(times[:ifinal], r_tris[:ifinal], c='g', lw=7)
+    ax.set_xlabel('Step')
+    ax.set_ylabel('Triangle count')
+
+
+def temp():
+    """for looking at triangles and stuff"""
+    init = "noinit"
+    dr = 'other-runs'
+    fitted_coeffs = np.genfromtxt('./paper-data/' + dr + '/' + init + 'fitted_coeffs0.csv', delimiter=',', skip_header=True)
+    times = np.genfromtxt('./paper-data/' + dr + '/' + init + 'times0.csv', delimiter=',', skip_header=True)
+    degs = np.genfromtxt('./paper-data/' + dr + '/' + init + 'pre_proj_degs0.csv', delimiter=',', skip_header=True)
+    degs2 = np.genfromtxt('./paper-data/' + dr + '/' + init + 'pre_proj_degs1.csv', delimiter=',', skip_header=True)
+
+    init = "withinit"
+    fitted_coeffs_cpi = np.genfromtxt('./paper-data/' + dr + '/' + init + 'fitted_coeffs0.csv', delimiter=',', skip_header=True)
+    times_cpi = np.genfromtxt('./paper-data/' + dr + '/' + init + 'times0.csv', delimiter=',', skip_header=True)
+    degs_cpi = np.genfromtxt('./paper-data/' + dr + '/' + init + 'pre_proj_degs0.csv', delimiter=',', skip_header=True)
+
+    mutual_times, degs_cpi, degs = align_degs(times_cpi, degs_cpi, times, degs)#, ci=nocpi_ci)
+    init = "withinit"
+    times_cpi = np.genfromtxt('./paper-data/' + dr + '/' + init + 'times0.csv', delimiter=',', skip_header=True)
+    degs_cpi = np.genfromtxt('./paper-data/' + dr + '/' + init + 'pre_proj_degs0.csv', delimiter=',', skip_header=True)
+    mutual_times, degs_cpi, degs2 = align_degs(times_cpi, degs_cpi, times, degs2)#, ci=nocpi_ci)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    scale = np.sum(degs_cpi[0]) # should be constant throughout
+    ax.plot(mutual_times, np.sum(np.abs(degs_cpi - degs), axis=1)/scale, color='b', label='With CPI')
+    ax.plot(mutual_times, np.sum(np.abs(degs2 - degs), axis=1)/scale, color='r', label='Without CPI')
+    ax.set_xlim((0, mutual_times[-1]))
+    fs = 48
+    ax.set_xlabel('Step', fontsize=fs)
+    ax.set_ylabel('Relative error', fontsize=fs)
+    ax.ticklabel_format(axis='y', style='sci', scilimits=(-1, 1))
+    fig.subplots_adjust(left=0.1, bottom=0.11)
+    ax.legend(loc=2)
+
+    plt.plot(mutual_times, np.sum(degs_cpi, axis=1))
+
+    # projected_coeffs = np.genfromtxt('./paper-data/current-best/' + init + 'projected_coeffs0.csv', delimiter=',', skip_header=True)
+    # new_projected_coeffs = np.genfromtxt('./paper-data/current-best/' + init + 'coeff_comp0.csv', delimiter=',', skip_header=True)
+    # loose_degs = np.genfromtxt('./paper-data/current-best/loosehh.csv', delimiter=',', skip_header=True)
+
+    
+    ncoeffs = fitted_coeffs.shape[1]
+    gsize = degs.shape[1]
+    npts = times.shape[0]
+    npts_cpi = times_cpi.shape[0]
+
+    import numpy.polynomial.legendre as npl
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    index = 50
+    ax.scatter(np.arange(gsize), degs[index], label='Sorted degree sequence')
+    ax.plot(np.arange(gsize), npl.legval(np.arange(gsize), fitted_coeffs[index]), c='r', label='Polynomial fit')
+    ax.set_xlim((0,100))
+    ax.set_xlabel('Vertex')
+    ax.set_ylabel('Degree')
+    ax.legend(loc=4, fontsize=42)
+    fig.subplots_adjust(left=0.1, bottom=0.11)
+
+    # # coeff confirm (passes)
+    # import numpy.polynomial.legendre as npl
+    # pdeg = 3
+    # coeffs_cpi = npl.legfit(np.arange(gsize), degs_cpi.T, pdeg)
+    # evals = npl.legval(np.arange(gsize), fitted_coeffs_cpi.T)
+    mutual_times, degs_cpi, degs = align_degs(times_cpi, degs_cpi, times, degs)#, ci=nocpi_ci)
+    # n3
+    plot_degree_projection((degs_cpi - degs)/degs, mutual_times, sort=False, fig_title='', cb_label='Relative error') #, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error') 
+    # time_limit = 50000 #*(cpi_params['proj_step']+cpi_params['nms'])
+    # i = 0
+    # while mutual_times[i] < time_limit:
+    #     i = i + 1
+    # plot_degree_projection((degs_cpi[:i,:] - degs[:i,:])/degs[:i,:], mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='Relative error')
+
+    # for i in range(pdeg+1):
+    #     print np.linalg.norm(coeffs[i] - fitted_coeffs[:,i])
+    #     fig = plt.figure()
+    #     ax = fig.add_subplot(111)
+    #     ax.scatter(times, coeffs[i])
+    #     ax.scatter(times_cpi, fitted_coeffs_cpi[:,i])
+
+        
+    # # cpi coeff comp (shows that all projections and re-initializations are correct, but that noise in the coeff trajectory causes woefully bad new values to be projected to)
+    # for i in range(ncoeffs):
+    #     fig = plt.figure()
+    #     ax = fig.add_subplot(111)
+    #     ax.scatter(times_cpi, fitted_coeffs_cpi[:,i], c='r')
+    #     # ax.scatter(90000*np.arange(1, nprojections+1), projected_coeffs[:,i], c='b')
+    #     # ax.scatter(90000*np.arange(1, nprojections+1), new_projected_coeffs[:,i], c='g', s=50)
+    #     # ax.scatter(90000*np.arange(1, nprojections+1), coeffs_cpi_refit[i,::100], c='c', s=75)
+    #     ax.set_xlabel('Step')
+    #     ax.set_ylabel(r'$c_' + str(i) + '$')
+    #     ax.set_ylim((np.min(fitted_coeffs[:,i]), np.max(fitted_coeffs[:,i])))
+
+    
+    # coeff comp (terrible)
+    for i in range(ncoeffs):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.scatter(times, fitted_coeffs[:,i])
+        ax.scatter(times_cpi, fitted_coeffs_cpi[:,i], c='r')
+        ax.set_xlabel('Step')
+        ax.set_ylabel(r'$c_' + str(i) + '$')
+        ax.set_ylim((np.min(fitted_coeffs[:,i]), np.max(fitted_coeffs[:,i])))
+
+
+    # degree error comp (v good)
+    mutual_times, degs_cpi, degs = align_degs(times_cpi, degs_cpi, times, degs)#, ci=nocpi_ci)
+    plot_total_error(degs_cpi, degs, mutual_times)
+    # n3
+    plot_degree_projection((degs_cpi - degs)/degs, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error') #, mutual_times, sort=False, fig_title=r'$n^3$', cb_label='relative error') 
+    # n2
+    time_limit = 50000 #*(cpi_params['proj_step']+cpi_params['nms'])
+    i = 0
+    while mutual_times[i] < time_limit:
+        i = i + 1
+    plot_degree_projection((degs_cpi[:i,:] - degs[:i,:])/degs[:i,:], mutual_times[:i], sort=False, fig_title=r'$n^2$', cb_label='relative error')
+
+    # 3d degree comp (v good)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    slice_size = 500
+    ts = []
+    tscale = 1e7
+    for i, t in enumerate(mutual_times[::slice_size]):
+        ax.scatter(np.ones(gsize)*t/tscale, np.arange(gsize), degs[i*slice_size], c='b')
+        ax.scatter(np.ones(gsize)*t/tscale, np.arange(gsize), degs_cpi[i*slice_size], c='r')
+        ts.append(t)
+    ax.set_xlim((0, 1))
+    ax.set_ylim((0, gsize))
+    formatter = FormatAxis(ax)
+    formatter.format('x', np.array(ts)/tscale, '%1.1f', nticks=5)
+    ax.text(0.95, -15, -500, '1e7')
+    ax.set_xlabel('\n\nStep')
+    ax.set_ylabel('\n\nVertex')
+    ax.set_zlabel('\n\n\nDegree')
+    # slice_size = 50
+    # for i, t in enumerate(times_cpi[60:80:slice_size]):
+
+
+    # # 2d degrees, not useful
+    # gsize = degs.shape[1]
+    # new_npts = 200
+    # slice_size = degs.shape[0]/new_npts
+    # colornorm = colors.Normalize(vmin=0, vmax=new_npts-1)
+    # colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # for i in range(new_npts):
+    #     ax.scatter(np.arange(degs.shape[1]), degs[i*slice_size], c=colormap.to_rgba(i))
+    # colornorm = colors.Normalize(vmin=0, vmax=times[-1])
+    # colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
+    # colormap.set_array(times[::slice_size])
+    # fig.colorbar(colormap)
+
+    # # shows quality of pooawlefiial fit to sorted deg seq (v. good)
+    # evals = npl.legval(np.arange(gsize), fitted_coeffs.T)
+    # evals_cpi = npl.legval(np.arange(gsize), fitted_coeffs_cpi.T)
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # for i in range(npts):
+    #     ax.scatter(np.arange(gsize), evals[i], c='k')
+    #     ax.scatter(np.arange(gsize), evals[i], c='k')
+
+    # # shows projected deg seqs
+    # degs_post = np.genfromtxt('./paper-data/current-best/' + init + 'post_proj_degs0.csv', delimiter=',', skip_header=True)
+    # nprojs = degs_post.shape[0]
+    # # fig = plt.figure()
+    # # ax = fig.add_subplot(111)
+    # for i in range(nprojs):
+    #     ax.scatter(np.arange(gsize), degs_post[i], c='w', lw=1)
+
+    # # numpy confirms accuracy
+    # import numpy.polynomial.legendre as npl
+    # pdeg = 3
+    # out = npl.legfit(np.arange(degs.shape[1]), degs.T, pdeg)
+    # print out.shape
+    # ncoeffs = out.shape[0]
+    # for i in range(pdeg+1):
+    #     fig = plt.figure()
+    #     ax = fig.add_subplot(111)
+    #     ax.scatter(times, out[i])
+    
+    # V = npl.legvander(np.arange(degs.shape[1]), ncoeffs)
+    # u, s, v = np.linalg.svd(V, full_matrices=False)
+    # coeffs = np.dot(np.dot(np.dot(v.T, np.dot(np.diag(np.power(s, -2)), v)), V.T), degs.T)
+    # for i in range(ncoeffs):
+    #     fig = plt.figure()
+    #     ax = fig.add_subplot(111)
+    #     ax.scatter(times, coeffs[i])
+    #     # ax.set_ylim((np.min(coeffs[:,i]), np.max(coeffs[:,i])))
+
+
 # colornorm = None
 
+def pca_trajs():
+    """does pca on dataset drawn from two different trajectories of the model"""
+    embeddings = np.genfromtxt('./paper-data/many_graph_embeddings.csv', delimiter=',')
+    k = 6
+    pcs, variances = pca(embeddings, k)
+    projections = np.dot(pcs.T, embeddings.T) # (k, n) array
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(np.arange(1,k+1), variances)
+    ax.semilogy(np.arange(1,k+1), variances)
+
+    npts = embeddings.shape[0]
+    colors2 = np.empty(npts)
+    colors2[:npts/2] = 0.2
+    colors2[npts/2:] = 0.9
+    
+    colornorm = colors.Normalize(vmin=0, vmax=1)
+    colormap = cm.ScalarMappable(norm=colornorm, cmap='jet')
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    xscale = 1e4
+    yscale = 1e3
+    ax.scatter(projections[0]/xscale, projections[1]/yscale, c=colormap.to_rgba(colors2), s=100)
+    ax.set_xlabel(r'$w_1$')
+    ax.set_ylabel(r'$w_2$')
+
+    formatter = FormatAxis(ax, has_zaxis=False)
+    formatter.format('x', projections[0]/xscale, '%1.2f', nticks=3)
+    formatter.format('y', projections[1]/yscale, '%1.2f', nticks=3)
+    ax.text(1.0, -0.05, r'$10^4$', transform=ax.transAxes) # x
+    ax.text(-0.05, 1.0, r'$10^3$', transform=ax.transAxes) # y
+
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(projections[0], projections[1], projections[2])
+
+
+def pca_embeddings():
+    embeddings = np.genfromtxt('./embedding_data/rho_kappa_graph_embeddings.csv', delimiter=',')
+    k = 6
+    pcs, variances = pca(embeddings, k)
+    projections = np.dot(pcs.T, embeddings.T) # (k, n) array
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(np.arange(1,k+1), variances)
+    ax.semilogy(np.arange(1,k+1), variances)
+
+    params = np.genfromtxt('./embedding_data/rho_kappa_params.csv', delimiter=',')
+    fs = 64
+    s = 50
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    c = ax.scatter(projections[0], projections[1], c=np.log10(params[:,1]), s=s)
+    cb = fig.colorbar(c)
+    cb.set_label(r'$\log(\kappa)$', fontsize=fs)
+    ax.set_xlabel(r'$w_1$', fontsize=fs)
+    ax.set_ylabel(r'$w_2$', fontsize=fs)
+    ax.set_xlim((1.05*np.min(projections[0]), 1.4*np.max(projections[0])))
+    ax.set_ylim(bottom=1.05*np.min(projections[1]))
+    formatter = FormatAxis(ax, has_zaxis=False)
+    formatter.format('x', projections[0], '%d', nticks=3)
+    formatter.format('y', projections[1], '%d', nticks=3)
+    fig.subplots_adjust(bottom=0.15)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    c = ax.scatter(projections[0], projections[1], c=params[:,0], s=s)
+    cb = fig.colorbar(c)
+    cb.set_label(label=r'$\frac{2m}{n}$', fontsize=1.5*fs)
+    ax.set_xlabel(r'$w_1$', fontsize=fs)
+    ax.set_ylabel(r'$w_2$', fontsize=fs)
+    ax.set_xlim((1.05*np.min(projections[0]), 1.4*np.max(projections[0])))
+    ax.set_ylim(bottom=1.05*np.min(projections[1]))
+    formatter = FormatAxis(ax, has_zaxis=False)
+    formatter.format('x', projections[0], '%d', nticks=3)
+    formatter.format('y', projections[1], '%d', nticks=3)
+    fig.subplots_adjust(bottom=0.15)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(projections[0], projections[1], projections[2], c=np.log10(params[:,1]))
+
+
+def gamma_bullshit():
+    """gamma function investigatoin"""
+    f = lambda x, k: np.power(x, k-1)*np.exp(-x)/scipy.special.gamma(k)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(np.linspace(0, 120, 100), f(np.linspace(0, 120, 100), 10))
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(np.linspace(0, 120, 100), f(np.linspace(0, 120, 100), 20))
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(np.linspace(0, 120, 100), f(np.linspace(0, 120, 100), 100))
+    plt.show()
+    
+def rho_kappa_embedding_fig():
+    """rho/kappa embeding plots"""
+    # eigvects = np.genfromtxt('./adroit/dmaps_rho_kappa_embedding_eigvects.csv', delimiter=',')
+    # params = np.genfromtxt('./adroit/rho_kappa_params.csv', delimiter=',')
+    eigvects = np.genfromtxt('./embedding_data/dmaps_rho_kappa_embedding_eigvects.csv', delimiter=',')
+    params = np.genfromtxt('./embedding_data/rho_kappa_params.csv', delimiter=',')
+    e1 = 1
+    e2 = 4
+    fs = 64
+    s = 50
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    c = ax.scatter(eigvects[e1], eigvects[e2], c=np.log10(params[:,1]), s=s)
+    cb = fig.colorbar(c)
+    cb.set_label(r'$\log(\kappa)$', fontsize=fs)
+    ax.set_xlabel(r'$\Phi_' + str(e2) + '$', fontsize=fs)
+    ax.set_ylabel(r'$\Phi_' + str(e1) + '$', fontsize=fs)
+    ax.set_xlim((1.05*np.min(eigvects[e1]), 1.05*np.max(eigvects[e1])))
+    ax.set_ylim((1.05*np.min(eigvects[e2]), 1.2*np.max(eigvects[e2])))
+    ax.set_xticks((-6e-4, -1e-4, 4e-4))
+    ax.set_xticklabels(('-6', '-1', '4'))
+    ax.set_yticks((7.5e-4, 0, -7.5e-4))
+    ax.set_yticklabels(('-7.5', '0', '7.5'))
+    ax.text(0.99, -0.06, r'$10^4$', transform=ax.transAxes) # x
+    ax.text(-0.07, 1.0, r'$10^4$', transform=ax.transAxes) # y
+    fig.subplots_adjust(bottom=0.15)
+    # formatter = FormatAxis(ax, has_zaxis=False)
+    # formatter.format('x', eigvects[e1], '%1.1e', nticks=3)
+    # formatter.format('y', eigvects[e2], '%1.2e', nticks=3)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    c = ax.scatter(eigvects[e1], eigvects[e2], c=2*params[:,0]/50.0, s=s)
+    cb = fig.colorbar(c)
+    cb.set_label(label=r'$\frac{2m}{n}$', fontsize=1.5*fs)
+    ax.set_xlim((1.05*np.min(eigvects[e1]), 1.05*np.max(eigvects[e1])))
+    ax.set_ylim((1.05*np.min(eigvects[e2]), 1.2*np.max(eigvects[e2])))
+    ax.set_xlabel(r'$\Phi_' + str(e2) + '$', fontsize=fs)
+    ax.set_ylabel(r'$\Phi_' + str(e1) + '$', fontsize=fs)
+    ax.ticklabel_format(axis='x', style='sci', scilimits=(-1, 1))
+    ax.set_xticks((-6e-4, -1e-4, 4e-4))
+    ax.set_xticklabels(('-6', '-1', '4'))
+    ax.set_yticks((7.5e-4, 0, -7.5e-4))
+    ax.set_yticklabels(('-7.5', '0', '7.5'))
+    ax.text(0.99, -0.06, r'$10^4$', transform=ax.transAxes) # x
+    ax.text(-0.07, 1.0, r'$10^4$', transform=ax.transAxes) # y
+    fig.subplots_adjust(bottom=0.15)
+    # formatter = FormatAxis(ax, has_zaxis=False)
+    # formatter.format('x', eigvects[e1], '%1.1e', nticks=3)
+    # formatter.format('y', eigvects[e2], '%1.2e', nticks=3)
 
 def thin_array(array, frac_to_keep=0.5, new_npts=None):
     #
@@ -1170,8 +1536,8 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     for v in range(n):
         ax.scatter(thinned_times, v*ones_vect, color=colormap.to_rgba(thinned_sorted_degs[:, v]), s=40, lw=0, alpha=ALPHA)
 
-    ax.set_xlabel('step', fontsize=FONTSIZE)
-    ax.set_ylabel('vertex', fontsize=FONTSIZE)
+    ax.set_xlabel('Step', fontsize=FONTSIZE)
+    ax.set_ylabel('Vertex', fontsize=FONTSIZE)
     ax.set_xlim((0, thinned_times[-1]))
     ax.set_ylim((0, n))
     ax.set_yticklabels([str(int(i)) for i in np.linspace(1, n, 6)])
@@ -1185,7 +1551,7 @@ def plot_degree_projection(degs, times, sort=True, fig_title='', cb_label='degre
     textcolor = ax.get_ymajorticklabels()[0].get_color()
     ax.set_title(fig_title, fontsize=FONTSIZE, color=textcolor)
     if show_colorbar:
-        format_fn = lambda val, pos: "%.2f" % val
+        format_fn = lambda val, pos: "%.3f" % val
         cb = colorbar.ColorbarBase(ax_cb, cmap='jet', norm=colornorm, orientation='vertical', format=ticker.FuncFormatter(format_fn))
         # cb.set_ticks(np.linspace(mindeg, maxdeg, 5))
         ax_cb.tick_params(axis='both', which='both', labelsize=LABELSIZE)
@@ -1840,18 +2206,61 @@ def super_comp_newton(xs, deg_seqs, resids):
             writer.grab_frame()
             # plt.savefig('./figs/newton/super_comp' + str(npts+i) + '.png')
 
-def pa_dmaps_embedding(eigvals, eigvects, params, t=1, plot_2d=True, plot_3d=False):
+class FormatAxis:
+    def __init__(self, ax, has_zaxis=True):
+        self._ax = ax
+        self._has_zaxis = has_zaxis
+
+    def format(self, axis, data, format_string, offset=0, nticks=5):
+        # dictionary of relevant functions/attributes
+        d = {'x':{'ax':self._ax.xaxis, 'set-tick-pos':self._ax.set_xticks, 'set-tick-labels':self._ax.set_xticklabels, 'tick-pos':self._ax.xaxis.get_majorticklocs()},
+             'y':{'ax':self._ax.yaxis, 'set-tick-pos':self._ax.set_yticks, 'set-tick-labels':self._ax.set_yticklabels, 'tick-pos':self._ax.yaxis.get_majorticklocs()}}
+
+        if self._has_zaxis:
+            d['z'] = {'ax':self._ax.zaxis, 'set-tick-pos':self._ax.set_zticks, 'set-tick-labels':self._ax.set_zticklabels, 'tick-pos':self._ax.get_zticks()}
+
+        # tick positions are constant, regardless of offset
+        minval, maxval = np.min(data), np.max(data)
+        increment = (maxval - minval)/(nticks-1)
+        d[axis]['set-tick-pos']([minval + i*increment for i in range(nticks)])
+        # subtract offset from data if using
+        if offset != 0:
+            if offset < 0:
+                offset_str =  '- %1.2f' % abs(offset) # unicode dash u'\u2012'
+            else:
+                offset_str = '+ %1.2f' % abs(offset)
+            # go through the terrible process of figuring out where to put the damn thing
+            loc = {'x':0, 'y':0, 'z':0}
+            for i,key in enumerate(d.keys()):
+                if key is axis:
+                    if axis is 'x':
+                        loc[key] = np.min(d[key]['tick-pos']) - 0.00*(np.max(d[key]['tick-pos']) - np.min(d[key]['tick-pos']))
+                    else:
+                        loc[key] = np.max(d[key]['tick-pos']) + 0.00*(np.max(d[key]['tick-pos']) - np.min(d[key]['tick-pos']))
+                else:
+                    if key is 'x':
+                        loc[key] = np.max(d[key]['tick-pos']) + 0.2*(np.max(d[key]['tick-pos']) - np.min(d[key]['tick-pos']))
+                    else:
+                        loc[key] = np.min(d[key]['tick-pos']) - 0.2*(np.max(d[key]['tick-pos']) - np.min(d[key]['tick-pos']))
+            if self._has_zaxis:
+                self._ax.text(loc['x'], loc['y'], loc['z'], offset_str, fontsize=12) #maxval-0.05*(maxval-minval)
+            else:
+                self._ax.text(loc['x'], loc['y'], offset_str, fontsize=12) #maxval-0.05*(maxval-minval)
+            data = data - offset
+        # set axis tick labels
+        minval = np.min(data)
+        d[axis]['set-tick-labels']([format_string % (minval + i*increment) for i in range(nticks)])
+
+def pa_dmaps_embedding(eigvals, eigvects, params, t=1, plot_2d=True, plot_3d=True):
     from mpl_toolkits.mplot3d import Axes3D
-    ntypes = params['ntypes']
+    ntypes = 2 # params['ntypes']
     n = eigvects.shape[1]
     n_pertype = n/ntypes
     eigvals = np.abs(eigvals)
-    sorted_indices = np.argsort(eigvals)
+    sorted_indices = np.argsort(eigvals)[::-1]
     eigvals = eigvals[sorted_indices]
     eigvects = eigvects[sorted_indices, :]
-    eigvects_to_plot = np.array([eigvects[-i,:] for i in range(2, eigvects.shape[0] + 1)])
-    eigvals_to_plot = np.array([eigvals[-i] for i in range(2, eigvals.shape[0] + 1)])
-    nvects = eigvals.shape[0] - 1
+    nvects = eigvals.shape[0]
     output_filename = "pa_embedding_"
     cmaps = ['autumn', 'jet', 'spectral', 'winter', 'summer', 'PrOr', 'RdBu', 'RdYlBu', 'RdYlGn']
     cs = ['b', 'r', 'g', 'y', 'c', 'm', 'k', 'b']
@@ -1860,64 +2269,136 @@ def pa_dmaps_embedding(eigvals, eigvects, params, t=1, plot_2d=True, plot_3d=Fal
     else:
         print 'Plotting 2d embeddings'
         # plot 2d embeddings
-        fig = plt.figure(facecolor='w')
-        ax = fig.add_subplot(111)
         n = eigvects.shape[1]
-        for i in range(nvects):
-            for j in range(i+1, nvects):
-                xvals = np.power(eigvals_to_plot[i], t)*eigvects_to_plot[i,:]
-                yvals = np.power(eigvals_to_plot[j], t)*eigvects_to_plot[j,:]
+        for i in [2]: # range(1, nvects):
+            for j in [3]: # range(i+1, nvects):
+                xvals = np.power(eigvals[i], t)*eigvects[i,:]
+                yvals = np.power(eigvals[j], t)*eigvects[j,:]
+                fig = plt.figure(facecolor='w')
+                ax = fig.add_subplot(111)
+                
+
+                xdata = np.empty(ntypes*n_pertype)
+                ydata = np.empty(ntypes*n_pertype)
+
                 for k in range(ntypes):
-                    ax.scatter(xvals[k*n_pertype:(k+1)*n_pertype], yvals[k*n_pertype:(k+1)*n_pertype], c=cs[k], lw=0, alpha=0.3, s=np.arange(n_pertype)*np.arange(n_pertype)*100/(n_pertype*n_pertype), label='trajectory ' + str(k+1))
+                    xdata[k*n_pertype:(k+1)*n_pertype] = xvals[k*n_pertype:(k+1)*n_pertype]
+                    ydata[k*n_pertype:(k+1)*n_pertype] = yvals[k*n_pertype:(k+1)*n_pertype]
+
+                    ax.scatter(xvals[k*n_pertype:(k+1)*n_pertype], yvals[k*n_pertype:(k+1)*n_pertype], c=cs[k], lw=0, alpha=0.3, s=np.arange(1, n_pertype)*1000/(n_pertype), label='trajectory ' + str(k+1))
                     ax.scatter(xvals[(k+1)*n_pertype-1], yvals[(k+1)*n_pertype-1], lw=1, c=cs[k], s=100, alpha=1)
                     # ax.scatter(xvals[k*n_pertype:(k+1)*n_pertype], yvals[k*n_pertype:(k+1)*n_pertype], c=np.arange(n_pertype), lw=0, alpha=0.7, s=np.arange(n_pertype)*np.arange(n_pertype)*100/(n_pertype*n_pertype), cmap=cmaps[k])
                     # ax.scatter(xvals[(k+1)*n_pertype-1], yvals[(k+1)*n_pertype-1], c=0.0, s=100, alpha=0.7, cmap=cmaps[k])
                     ax.hold(True)
-                ax.set_xlim((np.min(xvals), np.max(xvals)))
-                ax.set_ylim((np.min(yvals), np.max(yvals)))
-                ax.set_xlabel('$\\Phi_ ' + str(i+1) + '$')
-                ax.set_ylabel('$\\Phi_ ' + str(j+1) + '$')
+                ax.set_xlim((1.05*np.min(xdata), 1.05*np.max(ydata)))
+                ax.set_ylim((1.05*np.min(ydata), 1.05*np.max(ydata)))
+                ax.set_xlabel('$\\Phi_ ' + str(i) + '$')
+                ax.set_ylabel('$\\Phi_ ' + str(j) + '$')
                 ax.legend(fontsize=28)
                 ax.xaxis.get_major_formatter().set_powerlimits((0, 2))
                 ax.yaxis.get_major_formatter().set_powerlimits((0, 2))
                 plt.tight_layout()
-                plt.savefig("./figs/embeddings/dmaps/2d/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + ".png")
+                # plt.savefig("./figs/embeddings/dmaps/2d/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + ".png")
+                plt.show(fig)
                 ax.hold(False)
     # plot 3d embeddings
     if plot_3d is False:
         print 'Not plotting 3d embeddings'
     else:
         print 'Plotting 3d embeddings'
-        for i in range(nvects):
-            for j in range(i+1, nvects):
-                for k in range(j+1, nvects):
+        # for i in range(1, nvects):
+            # for j in range(i+1, nvects):
+                # for k in range(j+1, nvects):
+        for i in range(1, 2):
+            for j in range(2,3):
+                for k in range(3,4):
                     fig = plt.figure(facecolor='w')
                     ax = fig.add_subplot(111, projection='3d')
-                    xvals = np.power(eigvals_to_plot[i], t)*eigvects_to_plot[i,:]
-                    yvals = np.power(eigvals_to_plot[j], t)*eigvects_to_plot[j,:]
-                    zvals = np.power(eigvals_to_plot[k], t)*eigvects_to_plot[k,:]
+                    xvals = np.power(eigvals[i], t)*eigvects[i,:]
+                    yvals = np.power(eigvals[j], t)*eigvects[j,:]
+                    zvals = np.power(eigvals[k], t)*eigvects[k,:]
 
                     for p in range(ntypes):
-                        ax.scatter(xvals[p*n_pertype:(p+1)*n_pertype], yvals[p*n_pertype:(p+1)*n_pertype], zvals[p*n_pertype:(p+1)*n_pertype], c=cs[p], lw=0, alpha=0.3, s=np.arange(n_pertype)*np.arange(n_pertype)*100/(n_pertype*n_pertype))
-                        ax.scatter(xvals[(p+1)*n_pertype-1], yvals[(p+1)*n_pertype-1], zvals[(p+1)*n_pertype-1], lw=1, c=cs[p], s=100, alpha=1)
+                        # ax.scatter(xvals[p*n_pertype:(p+1)*n_pertype], yvals[p*n_pertype:(p+1)*n_pertype], zvals[p*n_pertype:(p+1)*n_pertype], c=cs[p], lw=0, alpha=0.3, s=np.arange(n_pertype)*np.arange(n_pertype)*100/(n_pertype*n_pertype))
+                        ax.scatter(xvals[p*n_pertype:(p+1)*n_pertype], yvals[p*n_pertype:(p+1)*n_pertype], zvals[p*n_pertype:(p+1)*n_pertype], c=cs[p], lw=0, alpha=0.3, s=np.arange(1, n_pertype)*1000/(n_pertype))
+                        ax.scatter(xvals[(p+1)*n_pertype-1], yvals[(p+1)*n_pertype-1], zvals[(p+1)*n_pertype-1], lw=50, edgecolor=cs[p], c=cs[p], s=1, alpha=1)
+                        ax.scatter(xvals[p*n_pertype], yvals[p*n_pertype], zvals[p*n_pertype], lw=25, edgecolor=cs[p], c=cs[p], s=1, alpha=1)
+
 
                     # ax.hold(False)
                     # ax.scatter(xvals[:n/2], yvals[:n/2], zvals[:n/2], c=np.arange(n/2), lw=0, alpha=1, cmap='Reds')
                     # ax.hold(True)
                     # ax.scatter(xvals[-n/2:], yvals[-n/2:], zvals[-n/2:], c=np.arange(n/2), lw=0, alpha=1, cmap='jet')
                     # ax.scatter(xvals, yvals, zvals, c=np.arange(n), lw=0, alpha=1, cmap='jet')
+                    ax.set_xlabel('\n\n\n' + r'$\Phi_ ' + str(i) + '$')
+                    ax.set_ylabel('\n\n\n' + r'$\Phi_ ' + str(j) + '$')
+                    ax.set_zlabel('\n\n\n' + r'$\Phi_ ' + str(k) + '$')
+                    # ax.xaxis.get_major_formatter().set_powerlimits((0, 2))
+                    # ax.yaxis.get_major_formatter().set_powerlimits((0, 2))
+                    # ax.zaxis.get_major_formatter().set_powerlimits((0, 2))
                     ax.set_xlim((np.min(xvals), np.max(xvals)))
                     ax.set_ylim((np.min(yvals), np.max(yvals)))
                     ax.set_zlim((np.min(zvals), np.max(zvals)))
-                    ax.set_xlabel('$\\Phi_ ' + str(i+1) + '$')
-                    ax.set_ylabel('$\\Phi_ ' + str(j+1) + '$')
-                    ax.set_zlabel('$\\Phi_ ' + str(k+1) + '$')
-                    ax.xaxis.get_major_formatter().set_powerlimits((0, 2))
-                    ax.yaxis.get_major_formatter().set_powerlimits((0, 2))
-                    ax.zaxis.get_major_formatter().set_powerlimits((0, 2))
-                    plt.tight_layout()
+                    ax.xaxis._axinfo['label']['space_factor'] = 4
+                    ax.yaxis._axinfo['label']['space_factor'] = 4
+                    ax.zaxis._axinfo['label']['space_factor'] = 4
+                    # plt.tight_layout()
                     plt.show(fig)
                     # plt.savefig("./figs/embeddings/dmaps/3d/" + output_filename + "eigvects_" + str(i+1) + str(j+1) + str(k+1) + ".png")
+
+                    # probably delete the following to end of fn: is paper-specific 
+
+                    fig = plt.figure(facecolor='w')
+                    ax = fig.add_subplot(111, projection='3d')
+                    xvals = np.power(eigvals[i], t)*eigvects[i,:]
+                    yvals = np.power(eigvals[j], t)*eigvects[j,:]
+                    zvals = np.power(eigvals[k], t)*eigvects[k,:]
+
+                    q = 100
+                    xdata = np.empty(2*q)
+                    ydata = np.empty(2*q)
+                    zdata = np.empty(2*q)
+                    for p in range(ntypes):
+                        # ax.scatter(xvals[p*n_pertype:(p+1)*n_pertype], yvals[p*n_pertype:(p+1)*n_pertype], zvals[p*n_pertype:(p+1)*n_pertype], c=cs[p], lw=0, alpha=0.3, s=np.arange(n_pertype)*np.arange(n_pertype)*100/(n_pertype*n_pertype))
+                        xdata[q*p:q*(p+1)] = xvals[(p+1)*n_pertype-q:(p+1)*n_pertype]
+                        ydata[q*p:q*(p+1)] = yvals[(p+1)*n_pertype-q:(p+1)*n_pertype]
+                        zdata[q*p:q*(p+1)] = zvals[(p+1)*n_pertype-q:(p+1)*n_pertype]
+
+                        ax.scatter(xvals[(p+1)*n_pertype-q:(p+1)*n_pertype], yvals[(p+1)*n_pertype-q:(p+1)*n_pertype], zvals[(p+1)*n_pertype-q:(p+1)*n_pertype], c=cs[p], lw=0, alpha=0.3, s=np.arange(1, n_pertype)[-q:]*1000/(n_pertype))
+                        ax.scatter(xvals[(p+1)*n_pertype-1], yvals[(p+1)*n_pertype-1], zvals[(p+1)*n_pertype-1], lw=50, edgecolor=cs[p], c=cs[p], s=1, alpha=1)
+                        # ax.scatter(xvals[p*n_pertype], yvals[p*n_pertype], zvals[p*n_pertype], lw=25, edgecolor=cs[p], c=cs[p], s=1, alpha=1)
+
+                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    # probably delete the following to match !!! line, is paper-specific
+                    
+
+                    # ax.hold(False)
+                    # ax.scatter(xvals[:n/2], yvals[:n/2], zvals[:n/2], c=np.arange(n/2), lw=0, alpha=1, cmap='Reds')
+                    # ax.hold(True)
+                    # ax.scatter(xvals[-n/2:], yvals[-n/2:], zvals[-n/2:], c=np.arange(n/2), lw=0, alpha=1, cmap='jet')
+                    # ax.scatter(xvals, yvals, zvals, c=np.arange(n), lw=0, alpha=1, cmap='jet')
+                    formatter = FormatAxis(ax)
+                    formatter.format('x', xdata, '%1.3f', nticks=3)
+                    formatter.format('y', ydata, '%1.3f', nticks=3)
+                    formatter.format('z', zdata, '%1.3f')
+
+                    ax.set_xlabel('\n\n\n' + r'$\Phi_ ' + str(i) + '$')
+                    ax.set_ylabel('\n\n\n' + r'$\Phi_ ' + str(j) + '$')
+                    ax.set_zlabel('\n\n\n' + r'$\Phi_ ' + str(k) + '$')
+                    # ax.xaxis.get_major_formatter().set_powerlimits((0, 2))
+                    # ax.yaxis.get_major_formatter().set_powerlimits((0, 2))
+                    # ax.zaxis.get_major_formatter().set_powerlimits((0, 2))
+                    # ax.set_xlim((np.min(xvals), np.max(xvals)))
+                    # ax.set_ylim((np.min(yvals), np.max(yvals)))
+                    # ax.set_zlim((np.min(zvals), np.max(zvals)))
+                    ax.xaxis._axinfo['label']['space_factor'] = 4
+                    ax.yaxis._axinfo['label']['space_factor'] = 4
+                    ax.zaxis._axinfo['label']['space_factor'] = 4
+                    plt.tight_layout()
+                    plt.show(fig)
+                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 
 def pa_pca_embedding(eigvals, eigvects, orig_data):
     # recall eigenvectors are stored in rows
@@ -1946,10 +2427,14 @@ def pa_pca_embedding(eigvals, eigvects, orig_data):
 def plot_total_error(cpi_degs, nocpi_degs, times):
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.plot(times, np.sum(np.abs(cpi_degs - nocpi_degs), axis=1))
+    scale = np.sum(cpi_degs[0]) # should be constant throughout
+    ax.plot(times, np.sum(np.abs(cpi_degs - nocpi_degs), axis=1)/scale)
+    ax.set_xlim((0, times[-1]))
     fs = 48
-    ax.set_xlabel('step', fontsize=fs)
-    ax.set_ylabel('error in degree estimation', fontsize=fs)
+    ax.set_xlabel('Step', fontsize=fs)
+    ax.set_ylabel('Relative error in CPI routine', fontsize=fs)
+    ax.ticklabel_format(axis='y', style='sci', scilimits=(-1, 1))
+    fig.subplots_adjust(left=0.1, bottom=0.11)
     plt.show()
 
 def comp_final_degs(degs, times, params):
@@ -2231,9 +2716,9 @@ if __name__=="__main__":
     elif args.dmaps_embeddings:
         for f in args.inputFiles:
             if 'eigvects' in f:
-                eigvects,  params = get_data(f, header_rows=1)
+                eigvects,  params = get_data(f, header_rows=0)
             if 'eigvals' in f:
-                eigvals, params = get_data(f, header_rows=1)
+                eigvals, params = get_data(f, header_rows=0)
         pa_dmaps_embedding(eigvals, eigvects, params)
     elif args.pca_embeddings:
         for f in args.inputFiles:

@@ -741,6 +741,10 @@ double prefAttachModel::compute_selfloop_density() {
   return ((double) selfloop_count)/n;
 }
 
+vector<int> prefAttachModel::get_degs() {
+  return vector<int>(degs, degs+n);
+}
+
 void prefAttachModel::init_graph_loosehh(vector<int> new_degs) {
   // sort in decreasing order
   sort(new_degs.begin(), new_degs.end(), reverse_comp);

@@ -28,7 +28,7 @@ CXXFLAGS = -I/home/alexander/local/eigen -I/home/alexander/workspace/dmaps -I/ho
 CXX = mpic++
 # CXXFLAGS = -g -Wall -Wno-sign-compare -std=c++0x #-O3
 
-all: coarse_ng # pref_attach # transients-main # pref_attach # graph-embedding-motifs # graph_embedding # pref_attach coarse_ng rho_kappa_embedding
+all: coarse_ng pref_attach transients-main # pref_attach # graph-embedding-motifs # graph_embedding # pref_attach coarse_ng rho_kappa_embedding
 
 %.o: %.c
 	$(CXX) -c $<  $(CXXFLAGS)
