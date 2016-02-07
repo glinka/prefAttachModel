@@ -12,13 +12,10 @@
 % \let\endchangemargin=\endlist 
 
 \title{Equation-free analysis of a dynamically evolving multigraph}
-\author{Alexander Holiday \inst{1} \and Bal\'{a}zs R\'{a}th \inst{2}
-  \and Ioannis G. Kevrekidis \inst{1.3}} \institute{Department of
-  Chemical and Biological Engineering, Princeton University,
-  Princeton, New Jersey 08544, USA \and Institute of Mathematics,
-  Budapest University of Technology, 1 Egry J\'{o}zsef u., Budapest
-  1111, Hungary \and PACM, Princeton University, Princeton, New Jersey
-  08544, USA}
+\author{Alexander Holiday \inst{1} \and Ioannis G. Kevrekidis
+  \inst{1,2}} \institute{Department of Chemical and Biological
+  Engineering, Princeton University, Princeton, New Jersey 08544, USA
+  \and PACM, Princeton University, Princeton, New Jersey 08544, USA}
 % $^1$\textit{Department of Chemical and Biological Engineering},
 % \textit{Princeton University, Princeton, New Jersey 08544, USA} \\ \\
 % $^2$\textit{Department of Mathematics}, \\
@@ -99,18 +96,18 @@ Evolving the system in this manner, the degree sequence approaches a stationary 
 \end{figure}
 
 \begin{figure}[th!]
-  \vspace{-5mm}
-  \centering
-  \begin{subfigure}[t]{0.49\textwidth}
+  % \vspace{-5mm}
+  % \centering
+  % \begin{subfigure}[t]{0.49\textwidth}
+  %   \centering
+  %   \includegraphics[width=\textwidth]{triangle-slaving}
+  %   \subcaption{\label{fig:sv-n2}}
+  % \end{subfigure} %
+  % \begin{subfigure}[t]{0.49\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{triangle-slaving}
-    \subcaption{\label{fig:sv-n2}}
-  \end{subfigure} %
-  \begin{subfigure}[t]{0.49\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{triangle-slaving-n3}
-    \subcaption{\label{fig:sv-n3}}
-  \end{subfigure}
+    \includegraphics[width=0.8\textwidth]{triangle-slaving-n2-n3}
+    % \subcaption{\label{fig:sv-n3}}
+  % \end{subfigure}
   \caption{Evolution of higher-order statistics (here, the total
     triangle count) for three different network initializations. They
     are quickly ($O(n^2)$ steps) drawn to a slow manifold on which
@@ -159,7 +156,7 @@ The lifting operator performs the inverse role of restriction: translating coars
 \subsection{Coarse-projective integration (CPI)}
 \label{sec:cpi}
 
-The pieces described above are combined to accelerate simulations through coarse-projective integration. Denoting the lifting operator by $\mathbf{L} \; : \; c \rightarrow G$ where $c \in \mathbb{R}^7$ is the vector of polynomial coefficients, and the restriction operator as $\mathbf{R} \; : G \rightarrow c$, the method progresses as follows:
+The pieces described above are combined to accelerate simulations through coarse-projective integration. Denoting the lifting operator by $\mathbf{L} \; : \; c \rightarrow G$ where $c \in \mathbb{R}^4$ is the vector of polynomial coefficients, and the restriction operator as $\mathbf{R} \; : G \rightarrow c$, the method progresses as follows:
 
 \begin{enumerate}
 \item Advance the full system for $t_h$ steps
@@ -172,19 +169,19 @@ The pieces described above are combined to accelerate simulations through coarse
 \item Repeat from Step (\ref{cpi:heal}) until desired number of steps have been reached
 \end{enumerate}
 
-A representative evolution of one of the polynomial coefficients and its projected value is shown in Fig. (\ref{fig:coeff-evo}). Note that Step (\ref{cpi:heal}) is necessary to allow the system to approach its slow manifold. Upon initializing a new network in Step (\ref{cpi:init}), certain variables will be far from their expected values in a normal system; however, by hypothesis these quantities quickly evolve to a state in which they are strongly correlated with, or are functions of, the selected coarse variables. Thus, after a short interval of ``healing'', they are drawn to the expected trajectory, after which we begin sampling. This is analogous to Fig. (\ref{fig:sv}). The computational gains arise from the projective step, (\ref{cpi:proj}). Here, we advance the system $t_p$ steps at the cost of one evaluation of forward Euler, instead of $t_p$ direct evaluations. \\
+Note that Step (\ref{cpi:heal}) is necessary to allow the system to approach its slow manifold. Upon initializing a new network in Step (\ref{cpi:init}), certain variables will be far from their expected values in a normal system; however, by hypothesis these quantities quickly evolve to a state in which they are strongly correlated with, or are functions of, the selected coarse variables. Thus, after a short interval of ``healing'', they are drawn to the expected trajectory, after which we begin sampling. This is analogous to Fig. (\ref{fig:sv}). The computational gains arise from the projective step, (\ref{cpi:proj}). Here, we advance the system $t_p$ steps at the cost of one evaluation of forward Euler, instead of $t_p$ direct evaluations. \\
 
 Results of the application of this general framework with the specific lifting and restriction operators previously outlined are shown in Fig. (\ref{fig:cpi-results}). We see good agreement between the CPI-accelerated and normal systems, while reducing the number of detailed steps by one third. It is important to mention that this method was applied not to a single system instantiation, but to a large ensemble. This ensured that when properties such as the fitted polynomial coefficients were averaged over the ensemble they evolved smoothly despite the stochastic nature of the system, as shown previously in Fig. (\ref{fig:coeff-evo}).
 
 \begin{figure}[h!]
   \vspace{-5mm}
   \centering
-  \begin{subfigure}{0.49\textwidth}
+  \begin{subfigure}{0.59\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{cpi-3d-comp}
+    \includegraphics[width=\textwidth]{cpi-3d-comp-stretch}
     \subcaption{\label{fig:cpi-error}}
   \end{subfigure} %
-  \begin{subfigure}{0.49\textwidth}
+  \begin{subfigure}{0.39\textwidth}
     \centering
     \includegraphics[width=\textwidth]{cpi-relative-error-n3}
     \subcaption{\label{fig:self-error}}
@@ -242,9 +239,43 @@ Crucial to the above analysis was the identification of suitable coarse, system 
 
 \subsection{Network distances}
 
-When applying machine learning techniques to a dataset, it is necessary to define a distance (or similarity) between each data point. If these points are a set of vectors in $\mathbb{R}^n$ one has a number of metrics to choose from, the Euclidean distance being a common first option. Unfortunately, when individual points are not vectors but networks, the definition of a computationally feasible metric becomes far more challenging. Examples such as the maximal common subgraph and edit distances, defined in \cite{bunke_graph_1998} and \cite{gao_survey_2010} do define metrics on the space of graphs, but their computation is $NP\textnormal{-}hard$. \\
+When applying machine learning techniques to a dataset, it is
+necessary to define a distance (or similarity) between each pair of
+data point. If these points are a set of vectors in $\mathbb{R}^n$ one
+has a number of metrics to choose from, the Euclidean distance being a
+common first option. Unfortunately, when individual points are not
+vectors but networks, the definition of a computationally feasible
+metric becomes far more challenging. Examples such as the maximal
+common subgraph and edit distances, defined in \cite{bunke_graph_1998}
+and \cite{gao_survey_2010} do define metrics on the space of graphs,
+but their computation is $NP\textnormal{-}hard$. Other computationally
+feasible approaches include comparing distributions of random
+walks on each graph \cite{kondor}, calculating the so-called
+$n$-tangle density \cite{fefferman}, or calculting the edit distance
+with an approximation algorithm \cite{riesen,zeng}.  \\
 
-The strategy used in the following methods, detailed in \cite{rajendran_analysis_2013}, is to embed each graph based on statistics of random walks along its edges and vertices. This maps each network to a vector in $\mathbb{R}^n$, and the Euclidean distance is subsequently used to calculate the similarity of two graphs. Full details are given in (\cite{rajendran_analysis_2013}).
+The strategy used in the following methods, detailed in
+\cite{rajendran_analysis_2013} and \cite{gu} enumerates the number of
+times a certain set of motifs (or subgraphs) appears in each network
+in the dataset. This maps each network to a vector in $\mathbb{R}^n$,
+and the Euclidean distance is subsequently used to calculate the
+similarity of two graphs. Due to computational restrictions, we chose
+to count the number of three- and four-vertex subgraphs that were
+contained in each network. As there are eight such motifs, shown in
+Fig. (\ref{fig:motifs}), this process $\gamma$ maps each graph to an
+eight-dimensional vector: $\gamma : G \rightarrow
+\mathbb{R}^8$. Additionally, we applied this operateration to a
+simplified version of each graph, wherein any multiple edges were
+reduced to single edges.
+
+\begin{figure}[h!]
+  \vspace{-5mm}
+  \centering
+  \includegraphics[width=\textwidth]{motifs}
+  \caption{List of the subgraphs used to embed each network. The
+    number of times each appeared in the simplified input graph was
+    calculated, effectively mapping graphs to $\mathbb{R}^8$. \label{fig:motifs}}
+\end{figure}
 
 \subsection{PCA}
 
@@ -292,12 +323,12 @@ We see that both PCA and DMAPS, when combined with a suitable embedding of each 
   \centering
   \begin{subfigure}{0.49\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{dmaps-3d-convergence}
+    \includegraphics[width=\textwidth]{dmaps-3d-convergence-a}
     \subcaption{\label{fig:dmaps-results-regular}}
   \end{subfigure} %
   \begin{subfigure}{0.49\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{dmaps-3d-convergence-zoom}
+    \includegraphics[width=\textwidth]{dmaps-3d-convergence-zoom-a}
     \subcaption{\label{fig:dmaps-results-zoom}}
   \end{subfigure}%
   \caption{DMAP of motif-based embeddings from two separate simulation
@@ -349,7 +380,10 @@ An open area of investigation is the interpretation of the output from the PCA a
 %% For instance, the simple model proposed in \ref{votingmodel} describing the adoption of opinions in a population is defined such that at each simulation step, a random individual is chosen and acted upon.  This precludes the use of traditional numerical techniques such as optimization and fixed-point location that could offer valuable insight into the network's behavior. 
 %% We expand 
 
-
+\begin{acknowledgement}
+The authors thank Bal\'{a}zs R\'{a}th for his helpful discussion and
+insightful suggestions that have greatly enhanced this work.
+\end{acknowledgement}
 
 \end{onehalfspace}
 
