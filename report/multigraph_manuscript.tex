@@ -55,7 +55,7 @@ We begin in Section \ref{sec:m} with a description of the model. Section \ref{se
 \section{Model description}
 \label{sec:m}
 
-We study the edge-conservative preferential attachment model, a detailed mathematical analysis of which can be found in \cite{rath_time_2009}. The system evolves in discrete steps $t = 0,1,\ldots t_f$, and we denote the $n$-vertex graph at each point by $G_n(t)$. The initial state, $G_n(0)$, is an arbitrary distribution of $m$ edges among the $n$ vertices. No restrictions are placed on this initial distribution: multiple edges and loops are permitted.\ignore{an Erd\H{o}s-R\'{e}nyi random graph on $n$ vertices and $m$ edges. Here, however, $m$ may be larger than the total number of edges in a completely-connected $n$-vertex graph so we cannot assign a probability to each edges existence, instead placing $m$ edges at random in the graph.} The system is then advanced step-by-step based on the following procedure:
+We study the edge-conservative preferential attachment model, a detailed mathematical analysis of which can be found in \cite{rath_time_2009} and \cite{rath_multigraph_2012}. The system evolves in discrete steps $t = 0,1,\ldots t_f$, and we denote the $n$-vertex graph at each point by $G_n(t)$. The initial state, $G_n(0)$, is an arbitrary distribution of $m$ edges among the $n$ vertices. No restrictions are placed on this initial distribution: multiple edges and loops are permitted.\ignore{an Erd\H{o}s-R\'{e}nyi random graph on $n$ vertices and $m$ edges. Here, however, $m$ may be larger than the total number of edges in a completely-connected $n$-vertex graph so we cannot assign a probability to each edges existence, instead placing $m$ edges at random in the graph.} The system is then advanced step-by-step based on the following procedure:
 
 \begin{enumerate}
 \item Choose an edge $e_{ij} \in E(G)$ uniformly at random and flip a coin to label one of the ends as $v_{i}$
@@ -171,7 +171,7 @@ The pieces described above are combined to accelerate simulations through coarse
 
 Note that Step (\ref{cpi:heal}) is necessary to allow the system to approach its slow manifold. Upon initializing a new network in Step (\ref{cpi:init}), certain variables will be far from their expected values in a normal system; however, by hypothesis these quantities quickly evolve to a state in which they are strongly correlated with, or are functions of, the selected coarse variables. Thus, after a short interval of ``healing'', they are drawn to the expected trajectory, after which we begin sampling. This is analogous to Fig. (\ref{fig:sv}). The computational gains arise from the projective step, (\ref{cpi:proj}). Here, we advance the system $t_p$ steps at the cost of one evaluation of forward Euler, instead of $t_p$ direct evaluations. \\
 
-Results of the application of this general framework with the specific lifting and restriction operators previously outlined are shown in Fig. (\ref{fig:cpi-results}). We see good agreement between the CPI-accelerated and normal systems, while reducing the number of detailed steps by one third. It is important to mention that this method was applied not to a single system instantiation, but to a large ensemble. This ensured that when properties such as the fitted polynomial coefficients were averaged over the ensemble they evolved smoothly despite the stochastic nature of the system, as shown previously in Fig. (\ref{fig:coeff-evo}).
+Results of the application of this general framework with the specific lifting and restriction operators previously outlined are shown in Fig. (\ref{fig:cpi-results}). We see good agreement between the CPI-accelerated and normal systems, while reducing the number of detailed steps by one third. It is important to mention that this method was applied not to a single system instantiation, but to a large ensemble. This ensured that when properties such as the fitted polynomial coefficients were averaged over the ensemble they evolved smoothly despite the stochastic nature of the system.
 
 \begin{figure}[h!]
   \vspace{-5mm}
@@ -250,23 +250,23 @@ common subgraph and edit distances, defined in \cite{bunke_graph_1998}
 and \cite{gao_survey_2010} do define metrics on the space of graphs,
 but their computation is $NP\textnormal{-}hard$. Other computationally
 feasible approaches include comparing distributions of random
-walks on each graph \cite{kondor}, calculating the so-called
-$n$-tangle density \cite{fefferman}, or calculting the edit distance
-with an approximation algorithm \cite{riesen,zeng}.  \\
+walks on each graph \cite{vishwanathan_graph_2010}, calculating the so-called
+$n$-tangle density \cite{gallos_revealing_2014}, or calculting the edit distance
+with an approximation algorithm \cite{riesen_approximate_2009,zeng_comparing_2009}.  \\
 
 The strategy used in the following methods, detailed in
-\cite{rajendran_analysis_2013} and \cite{gu} enumerates the number of
-times a certain set of motifs (or subgraphs) appears in each network
-in the dataset. This maps each network to a vector in $\mathbb{R}^n$,
-and the Euclidean distance is subsequently used to calculate the
-similarity of two graphs. Due to computational restrictions, we chose
-to count the number of three- and four-vertex subgraphs that were
-contained in each network. As there are eight such motifs, shown in
-Fig. (\ref{fig:motifs}), this process $\gamma$ maps each graph to an
-eight-dimensional vector: $\gamma : G \rightarrow
-\mathbb{R}^8$. Additionally, we applied this operateration to a
-simplified version of each graph, wherein any multiple edges were
-reduced to single edges.
+\cite{rajendran_analysis_2013} and \cite{xiao_structure-based_2008}
+enumerates the number of times a certain set of motifs (or subgraphs)
+appears in each network in the dataset. This maps each network to a
+vector in $\mathbb{R}^n$, and the Euclidean distance is subsequently
+used to calculate the similarity of two graphs. Due to computational
+restrictions, we chose to count the number of three- and four-vertex
+subgraphs that were contained in each network. As there are eight such
+motifs, shown in Fig. (\ref{fig:motifs}), this process $\gamma$ maps
+each graph to an eight-dimensional vector:
+$\gamma : G \rightarrow \mathbb{R}^8$. Additionally, we applied this
+operateration to a simplified version of each graph, wherein any
+multiple edges were reduced to single edges.
 
 \begin{figure}[h!]
   \vspace{-5mm}
@@ -278,20 +278,37 @@ reduced to single edges.
 \end{figure}
 
 \subsection{PCA}
-
+\label{sec:pca}
 % TODO (referenced fig below)
 
 PCA is used to linearly project data into subspaces that capture the
-directions along with the data varies most
+directions along which the data varies most
 \cite{jolliffe_principal_2014}. It has found wide application, but
-suffers from its restriction to linear embeddings. Indeed, many
+can suffer from its restriction to linear embeddings. Indeed, many
 datasets will not lie along some hyperplane embedded in
 $\mathbb{R}^n$, but rather will form a nonlinear manifold throughout
-the space. Thus it is not unexpected that such a method might work
-poorly when applied to our nonlinear system. Results shown in
-Fig. (\ref{fig:pca}) show that, while worse than the embedding
-uncovered by DMAPS in the next section, PCA still offers a reasonable
-dimensionality reduction.
+the space. \\
+
+Theoretical results in \cite{rath_time_2009} state that, for a given network
+size $n$, the final stationary state depends only on the number of
+edges present $m$ and the model parameter $\kappa$. To assess both the
+validity of our graph embedding technique and the usefullness of the
+PCA in the context of complex networks, we generated a dataset of
+stationary states over a range of $m$ and $\kappa$ values by directly
+running the model over $O(n^3)$ steps ($N$ values of each parameter
+were taken, for a total number of $N^2$ networks). Each resulting
+graph $G(m_i, \kappa_j) = G_{ij}$ was then embedded into
+$\mathbb{R}^8$ by counting the number of times each of the subgraphs
+shown in Fig. (\ref{fig:motifs}) appeared in the network. Thus
+$\gamma(G_{ij}) = v_{ij} \in \mathbb{R}^8$. We then proceeded to
+perform a principal component analysis on this collection of vectors
+${v_{ij}}_{i,j=1}^N$. Surprisingly, this linear technique succeeded in
+uncovering a two-dimensional embedding of the dataset corresponding to
+the two underlying parameters $m$ and $\kappa$, as shown in
+Fig. (\ref{fig:pca}). This suggests that, given some final network
+state $G_f(m, \kappa)$, by projecting its embedding onto these first two
+principal components one could obtain a reasonable approximation of
+the hidden parameter $\kappa$.
 
 \begin{figure}[h!]
   \vspace{-5mm}
@@ -313,7 +330,41 @@ dimensionality reduction.
 
 \subsection{DMAPS}
 
-Unlike PCA, DMAPS uncovers underlying nonlinear manifolds hidden in data. This is achieved by solving for the discrete equivalent of the eigenfunctions and eigenvalues of the Laplacian operator over the manifold, which amounts to calculating leading eigenvector/eigenvalue pairs of a symmetric Markov matrix $W$. See \cite{coifman_diffusion_2006,nadler_diffusion_2006} for details. Results from embeddings on different timescales are shown in Fig. (\ref{fig:dmaps-results}). We see that on the short, $n^2$ timescale, the differences in initial conditions lead to well-separated embeddings in three-dimensions represented by the small spheres in Fig. (\ref{fig:dmaps-results}), while at long times, we see that both systems evolve to the same steady state over a shared one-dimensional curve, as would be expected given the one-dimensional parameterization possible in time. \\
+Unlike PCA, DMAPS uncovers underlying nonlinear manifolds hidden in data. This is achieved by solving for the discrete equivalent of the eigenfunctions and eigenvalues of the Laplacian operator over the manifold, which amounts to calculating leading eigenvector/eigenvalue pairs of a symmetric Markov matrix $W$. See \cite{coifman_diffusion_2006,nadler_diffusion_2006} for details. \\
+
+First we applied DMAPS to the dataset described in
+Sec. (\ref{sec:pca}). Given the relative success of PCA in this
+setting, one would expect DMAPS to also uncover the two-dimensional
+embedding corresponding to different values of $m$ and $\kappa$. As
+Fig. (\ref{fig:dmaps-rk}) shows, this is indeed the
+case. Additionally, we were interested in embeddings of different
+model trajectories. This dataset was generated by sampling two
+different model simulations at even intervals as they evolved ($N$
+points were sampled from each trajectory). The parameter values $m$
+and $\kappa$ were held constant, but one graph was initialiazed as an
+Erd\H{o}s-R\'{e}nyi random graph (Fig. (\ref{fig:erdos-init})), while
+the other was initialized as a lopsided graph
+(Fig. (\ref{fig:lopsided-init})). Letting $G_e(t)$ refer to the
+Erd\H{o}s-R\'{e}nyi-initialized system at step $t$, and $G_l(t)$ the
+lopsided-initialized system, the embedding $\gamma$ was used to create
+points $\gamma(G_e(t) = v_e(t) \in \mathbb{R}^8$ and similarly
+$\gamma(G_l(t) = v_l(t) \in \mathbb{R}^8$. \\ 
+
+DMAPS was then applied to this set of $2N$ points, the results of
+which are shown in Fig. (\ref{fig:dmaps-results}). At first, the two
+points are mapped to distant regions in $\mathbb{R}^3$ due to their
+different initial conditions. They also evolve along different
+coordinates of the embedding, showing they traverse two distinct
+trajectories on their approach to the stationary state. The particular
+eigenvector each trajectory travels along is also significant: as
+$G_e(t)$ was mapped to $\Phi_1$ and $G_l(t)$ to $\Phi_2$, we can infer
+that the dynamics of the Erd\H{o}s-R\'{e}nyi-initialized system occur
+more slowly than those of the lopsided-initialized system. Indeed,
+referring back to Fig. (\ref{fig:dse}), we see that the lopsided
+network descends more rapidly to the stationary state. Eventually,
+their embeddings meet as they arrive at this final, shared state. Thus
+DMAPS has proven useful in elucidating both geometric and dynamic
+features of the system as shown in Figs. (\ref{fig:dmaps-rk}) and (\ref{fig:dmaps-results}). \\
 
 We see that both PCA and DMAPS, when combined with a suitable embedding of each graph, uncover useful information pertaining to the underlying dimensionality of the problem.
 
@@ -369,9 +420,9 @@ We see that both PCA and DMAPS, when combined with a suitable embedding of each 
 
 \section{Conclusion}
 
-The equation free framework was successfully applied to the edge-conservative preferential attachment model, accelerating simulations through CPI and locating stationary states through coarse Newton-GMRES. Additionally the underlying low-dimensional embedding was detected via PCA and DMAPS. \\
+The equation free framework was successfully applied to the edge-conservative preferential attachment model, accelerating simulations through CPI and locating stationary states through coarse Newton-GMRES. Additionally the underlying two-dimensional description was uncovered via PCA and DMAPS. \\
 
-An open area of investigation is the interpretation of the output from the PCA and DMAPS techniques. As a linear map, PCA retains a clear relationship between its input and output, but, as we saw, it is less effective when data is highly nonlinear. DMAPS may perform better the task of dimensionality reduction, but it is unclear what the embedding coordinates relate to in the data.
+An open area of investigation is the interpretation of the output from the PCA and DMAPS techniques. As a linear map, PCA retains a clear relationship between its input and output, but is less effective when data is highly nonlinear. DMAPS may perform better the task of dimensionality reduction, but it is unclear what the embedding coordinates relate to in the data.
 
 
  
@@ -388,6 +439,6 @@ insightful suggestions that have greatly enhanced this work.
 \end{onehalfspace}
 
 \bibliographystyle{abbrv}
-\bibliography{manuscript-refs.bib}
+\bibliography{multigraph-refs.bib}
 
 \end{document}
