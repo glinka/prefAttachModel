@@ -531,6 +531,19 @@ vector<int> prefAttachModel::run_nsteps(const int nsteps) {
 }
 
 
+vector< vector<int> > prefAttachModel::run_nsteps_a(const int nsteps) {
+  for(int i = 0; i < nsteps; i++) {
+    step();
+  }
+  vector< vector<int> > adj(n, vector<int>(n));
+  for(int i = 0; i < n; i++) {
+    for(int j = 0; j < n; j++) {
+      adj[i][j] = A[i][j];
+    }
+  }
+  return adj;
+}
+
 
 void prefAttachModel::save_degrees(const vector< vector<int> > &degs, ofstream &fileHandle) {
   vector<int>::const_iterator val;

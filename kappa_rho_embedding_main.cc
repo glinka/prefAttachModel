@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
 	prefAttachModel model(graph_size, m, kappa);
 	model.init("erdos");
 	for(int k = 0; k < nintervals; k++) {
-	  std::vector< std::vector<int> > model_graph = model.run_nsteps(interval_length);
+	  std::vector< std::vector<int> > model_graph = model.run_nsteps_a(interval_length);
 	  // graph_embeddings[(i*nms + j)*nintervals + k] = spectral_embedding(model_graph, spectral_params);
 	  rho_kappas[(i*nms + j)*nintervals + k][0] = m;
 	  rho_kappas[(i*nms + j)*nintervals + k][1] = kappa;
