@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
       prefAttachModel model(graph_size, m, kappa);
       model.init(init_types[i]);
       for(int j = 0; j < nintervals; j++) {
-	pa_graphs[i*nintervals+j] = model.run_nsteps(run_interval);
+	pa_graphs[i*nintervals+j] = model.run_nsteps_a(run_interval);
 	pa_degs[i*nintervals+j] = calcGraphProps::get_sorted_degrees(pa_graphs[i*nintervals+j]);
 	pa_times[i*nintervals+j] = (j+1)*run_interval;
       }

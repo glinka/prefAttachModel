@@ -1,0 +1,1 @@
+As of February 9, 2016, on 'butterworth', 'make' succeeds in creating all executables, and the plotting functions in paper-figs.py all generate the desired figures for inclusion in the manuscript. Also included in paper-figs.py are recommended parameter settings for creating the relevant data.
