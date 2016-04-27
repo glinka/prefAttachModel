@@ -1,0 +1,111 @@
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+%\usepackage{subcaption}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{epstopdf}
+%\usepackage{fullpage}
+
+\begin{document}
+
+\begin{flushright}
+From: A. Holiday, I. Kevrekidis
+\end{flushright}
+
+\vspace{5mm}
+
+% \begin{flushleft}
+% To: Terre Arena \\
+% Senior Editorial Assistant \\
+% Physical Review E \\
+% Email: pre@aps.org \\
+% http://journals.aps.org/pre/
+% \end{flushleft}
+
+\vspace{2mm}
+
+\section*{Response to comments/changes implemented in Equation-free analysis
+of a dynamically evolving multigraph by A. Holiday and I. Kevrekidis.}
+
+First, we would like to thank both reviewers for their helpful input!
+
+\vspace{3mm}
+
+\textbf{First Editor's recommendations}
+\vspace*{\baselineskip}
+
+* {\em ... I would like to make a few suggestions to the authors of
+  the paper for a possible extension of their methodology in the
+  investigation of more realistic models of complex networks and
+  possibly models supported by concrete empirical data. The notion of
+  a multigraph is too general to include the whole range of
+  applications of graph theory in complex network science. As a matter
+  of fact, a further step would be towards the consideration of
+  attributes (or labels) on nodes and links of a (multi)graph... }.
+
+\textbf{OUR REPLY}: It is a very good suggestion to apply the method
+to other systems with labeled nodes, and we have in fact already
+addressed a first example of this in \cite{kattis_modeling_2015} in which
+an SIS epidemiological model is investigated with similar
+techniques. We have added a reference to this paper in the text.
+\vspace*{\baselineskip}
+
+* {\em ... in the literature of network science there are many
+  examples of such large empirical networks exhibiting structures of a
+  multilayer (or multiplex) typology. Equation-free modeling applied
+  to such empirically sustained networks would be expected to
+  demonstrate a very interesting novel attainment in the evolving
+  field of complex network science.}
+
+\textbf{OUR REPLY}: An application to empirically-based network models
+would also be worthwhile, but as the aim of the current paper is
+simply to show the extension of our techniques to systems with
+multiple edges, we believe the recommendation would serve well as a
+separate, second paper on the topic which we are already working on.
+\vspace*{\baselineskip}
+
+\textbf{Second Editor's recommendations}
+
+* {\em While it is clear that the paper deals with new techniques
+  applied in well known systems, it is not clear what questions it
+  tries to answer, what are the objectives of this work. Thus, I would
+  try to add a couple of sentences both in the abstract and in the
+  conclusion sections showing where such results are useful, other
+  that as theoretical techniques.}
+
+\textbf{OUR REPLY}: To clarify the prospects for future application
+areas, we have added a little information in the abstract and
+conclusion section mentioning relevant systems that could benefit from
+such a study.  \vspace*{\baselineskip}
+
+{\em There is a Figure 1, but it is not discussed in the text of the
+  paper.  Figure 2. It is not clear which is the independent
+  variable. Is it the degree or is it the vertex number? Are the
+  numbers given here summations of many simulations?  How many?}
+
+\textbf{OUR REPLY}: We have added a missing reference to Fig. 1, and
+appreciate the reviewer's help in noticing its absence. To clarify
+Fig. 2 we have created a new caption. Indeed the results are an
+instantaneous average over twenty simulations. Also, the vertex number
+is simply a pseudo-labeling of each node for the purpose of
+plotting. In the actual model, vertices are not labeled.
+\vspace*{\baselineskip}
+
+{\em It is clear here that multiple links are allowed between two
+  specific nodes.  While this may be a mathematical notion, all
+  practical problems in networks today deal with a single link between
+  two nodes. Would the results be the same for such a case?}
+
+\textbf{OUR REPLY}: The model could also be cast as a weighted
+network, in which the edge weight signifies the number of connections
+between two nodes. We now note this in the model description. While
+this might be a more familiar formulation to some researchers, since
+previous theoretical results on the system were couched in the
+language of multiple edges, we chose this framework. 
+\vspace*{\baselineskip}
+
+\bibliographystyle{abbrv} \bibliography{multigraph-refs.bib}
+
+\end{document}

@@ -1,5 +1,5 @@
 \documentclass[epjST, final]{svjour} \usepackage{graphicx, subcaption,
-  setspace, indentfirst, amsfonts, amsthm, empheq}
+  setspace, indentfirst, amsfonts, amsthm, empheq, color, soul}
 % \usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
 % \usepackage[center]{titlesec}
 \graphicspath{ {../figs/} }
@@ -38,7 +38,14 @@
   We also demonstrate the use of data-mining, both linear (principal
   component analysis, PCA) and nonlinear (diffusion maps, DMAPS) to
   determine good macroscopic variables (observables) through which one
-  can coarse-grain the model.}
+  can coarse-grain the model.
+%
+  These results suggest methods for decreasing simulation times of
+  dynamic real-world systems such as epidemiological network
+  models. Additionally, the data-mining techniques could be applied to
+  a diverse class of problems to search for a succint, low-dimensional
+  description of the system in a small number of variables.}
+
 
 \begin{document}
 \maketitle
@@ -148,7 +155,7 @@
   vertices is conserved.
 %
   No restrictions are placed on this initial distribution: multiple
-  edges and loops are permitted.
+  edges and loops are permitted. 
   % \ignore{an Erd\H{o}s-R\'{e}nyi random graph on $n$ vertices and
   % $m$ edges. Here, however, $m$ may be larger than the total number
   % of edges in a completely-connected $n$-vertex graph so we cannot
@@ -170,7 +177,7 @@
   \noindent where $d_i$ is the degree of vertex $v_i$, $E(G)$ is the
   set of edges in the graph, and $\kappa \in (0, \infty)$ is a model
   parameter affecting the influence degrees have on the probability
-  distribution in Step \ref{step:prob}.
+  distribution in Step \ref{step:prob}. 
 %
   That is, taking $\lim\limits{\kappa \rightarrow 0}$, we recover
   ``pure'' preferential attachment, and probability scales directly
@@ -183,7 +190,12 @@
   %%% all vertices (and degree has no effect. Valid at every step.
   while
   $\lim\limits_{\kappa \rightarrow \infty} P(v_k = v_l) = \frac{1}{n}
-  \; \forall \; l$, and individual degrees have no effect.
+  \; \forall \; l$, and individual degrees have no effect. A single
+  step of this evolution process is illustrated in
+  Fig. ({\ref{fig:step-illustration}}). Note that this can also be
+  represented as a graph in which only one edge is permitted between
+  each pair of nodes, but with edge weights signifying the number, or
+  strength, of connections between nodes.
   %%% YGK you mean individual initial degrees ?
 %%%
   \par
@@ -219,13 +231,17 @@
       \includegraphics[width=\textwidth]{erdos-degs-a}
       \subcaption{\label{fig:erdos-init}}
     \end{subfigure}
-    \caption{Multigraph evolution dynamics for an $n=100$ vertex graph
-      observed through the degree sequence (after sorting the nodes by
-      degree). Two distinct transients are shown, initialized with (a)
-      an Erd\H{o}s-R\'{e}nyi random graph with $m = 5,050$ edges and (b)
-      a graph in which half the vertices are isolated, and half
-      uniformly share $m = 5,050$ edges. Both approach the same ultimate
-      stationary sequence. \label{fig:dse}}
+    \caption{Evolution of the multigraph model's sorted degree
+      sequence. Two distinct transients are shown, initialized with
+      (a) an Erd\H{o}s-R\'{e}nyi random graph with $m = 5,050$ edges
+      and (b) a graph in which half the vertices are isolated, and
+      half uniformly share $m = 5,050$ edges. Both approach the same
+      ultimate stationary sequence. To smoothen the evolution of this
+      stochastic system, here we plot the instantaneous average of twenty
+      simulations. \label{fig:dse}}
+    % Multigraph evolution dynamics for an $n=100$ vertex graph
+    % observed through the degree sequence (after sorting the nodes by
+    % degree)
   \end{figure}
 
   \begin{figure}[th!]
@@ -378,7 +394,7 @@
   The lifting procedure is represented by the red arrows of
   Fig. (\ref{fig:cpi-diagram}).
 
-  \subsection{Coarse-projective integration (CPI)}
+  \subsection{Coarse projective integration (CPI)}
   \label{sec:cpi}
 
   The components described above are combined to accelerate simulations
@@ -852,11 +868,18 @@
   The equation free framework was successfully applied to the
   edge-conservative preferential attachment model, accelerating
   simulations through CPI and locating stationary states through coarse
-  Newton-GMRES.
+  Newton-GMRES. This indicates potential avenues for improving
+  simulation times of other complex network models, such as those
+  found in epidemiology.
   % 
-  Additionally, an underlying two-dimensional description was uncovered via PCA and DMAPS. \\
+  Additionally, an underlying two-dimensional description was
+  uncovered via PCA and DMAPS. These automated methods of
+  dimensionality-reduction are quite general, and can in principle be
+  applied in a wide range of network settings to probe hidden
+  low-dimensional structure. For an application in the setting of
+  labeled nodes, see ({\cite{kattis_modeling_2015}}). \\
 
-  An open area of investigation is the interpretation of the output from
+  However, an open area of investigation is the interpretation of the output from
   the PCA and DMAPS techniques.
   % 
   As a linear map, PCA retains a clear relationship between its input
