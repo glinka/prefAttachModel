@@ -1,25 +1,13 @@
 \documentclass[epjST, final]{svjour} \usepackage{graphicx, subcaption,
   setspace, indentfirst, amsfonts, amsthm, empheq, color, soul}
-% \usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
-% \usepackage[center]{titlesec}
 \graphicspath{ {../figs/} }
-% \pagestyle{plain} \renewcommand\thesection{\Roman{section}}
-% \renewcommand\thesubsection{\alph{subsection}.}
 \newcommand\ignore[1]{}
-% \setlength{\parskip}{0ex}
-% \def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
-% \let\endchangemargin=\endlist
 
 \title{Equation-free analysis of a dynamically evolving multigraph}
 \author{Alexander Holiday \inst{1} \and Ioannis G. Kevrekidis
   \inst{1,2}} \institute{Department of Chemical and Biological
   Engineering, Princeton University, Princeton, New Jersey 08544, USA
   \and PACM, Princeton University, Princeton, New Jersey 08544, USA}
-% $^1$\textit{Department of Chemical and Biological Engineering},
-% \textit{Princeton University, Princeton, New Jersey 08544, USA} \\ \\
-% $^2$\textit{Department of Mathematics}, \\
-% \textit{The University of British Columbia, Vancouver, British
-% Columbia V6T 1Z4} } \date{}
 
 \abstract{In order to illustrate the adaptation of traditional
   continuum numerical techniques to the study of complex network
@@ -156,11 +144,6 @@
 %
   No restrictions are placed on this initial distribution: multiple
   edges and loops are permitted. 
-  % \ignore{an Erd\H{o}s-R\'{e}nyi random graph on $n$ vertices and
-  % $m$ edges. Here, however, $m$ may be larger than the total number
-  % of edges in a completely-connected $n$-vertex graph so we cannot
-  % assign a probability to each edges existence, instead placing $m$
-  % edges at random in the graph.}
   The system is then advanced step-by-step based on the following
   procedure:
 
@@ -182,12 +165,6 @@
   That is, taking $\lim\limits{\kappa \rightarrow 0}$, we recover
   ``pure'' preferential attachment, and probability scales directly
   with degree,
-  %%% YGK immediately? after a short time ? at steady state ?  if at
-  %%% steady state say it ?  ATH This refers to the dynamics at all
-  %%% times. At every step, we need some probability of choosing a
-  %%% given vertex v_i: if k -> 0, this probability is proportional to
-  %%% deg(v_i), and if k -> infinity this probability is uniform over
-  %%% all vertices (and degree has no effect. Valid at every step.
   while
   $\lim\limits_{\kappa \rightarrow \infty} P(v_k = v_l) = \frac{1}{n}
   \; \forall \; l$, and individual degrees have no effect. A single
@@ -196,8 +173,6 @@
   represented as a graph in which only one edge is permitted between
   each pair of nodes, but with edge weights signifying the number, or
   strength, of connections between nodes.
-  %%% YGK you mean individual initial degrees ?
-%%%
   \par
 
   Evolving the system in this manner, the degree sequence approaches a
@@ -239,35 +214,17 @@
       ultimate stationary sequence. To smoothen the evolution of this
       stochastic system, here we plot the instantaneous average of twenty
       simulations. \label{fig:dse}}
-    % Multigraph evolution dynamics for an $n=100$ vertex graph
-    % observed through the degree sequence (after sorting the nodes by
-    % degree)
   \end{figure}
 
   \begin{figure}[th!]
-    % \vspace{-5mm}
-    % \centering
-    % \begin{subfigure}[t]{0.49\textwidth}
-    %   \centering
-    %   \includegraphics[width=\textwidth]{triangle-slaving}
-    %   \subcaption{\label{fig:sv-n2}}
-    % \end{subfigure} %
-    % \begin{subfigure}[t]{0.49\textwidth}
     \centering
     \includegraphics[width=0.8\textwidth]{triangle-slaving-n2-n3}
-    % \subcaption{\label{fig:sv-n3}}
-    % \end{subfigure}
     \caption{Evolution of higher-order network statistics (here, the
       total triangle count) for three different network
       initializations. They are quickly ($O(n^2)$ steps) drawn to a slow
       manifold on which they slowly evolve over ($O(n^3)$ steps) to a
       stationary state. \label{fig:sv}}
   \end{figure}
-  %%% 
-  %%% YGK maybe you can draw a short horizontal broken line at the "end"
-  %%% of the graph, where "presumably" the steady state value is
-  %%% extending from the boundary of the plot "inward" in the plot maybe
-  %%% a thick black broken line ?
 
   \section{Equation-free modeling}
   \label{sec:ef}
@@ -386,11 +343,6 @@
   While the canonical Havel-Hakimi method produces simple graphs, it is
   not difficult to extend it to multigraphs by allowing the algorithm to
   wrap around the sequence, producing multiple edges and self-loops.
-  %%% YGK is this you, Alexander, is it Balazs, did you read it
-  %%% somewhere, is there a reference ?  ATH This is me, but Balazs
-  %%% confirmed this in his comments when he said that Havel Hakimi was
-  %%% even overly-complex for this case as there are even simpler
-  %%% methods one could use. I think it is easy to prove.
   The lifting procedure is represented by the red arrows of
   Fig. (\ref{fig:cpi-diagram}).
 
@@ -444,8 +396,6 @@
   (\ref{cpi:proj}).
   % 
   Here, we advance the system $t_p$ steps at the cost of one evaluation of forward Euler, instead of $t_p$ direct detailed steps. \\
-  %%% YGK do you say what your step counts are in your actual
-  %%% computation ?  ATH added specifics into the paragraph below
 
   Results of the application of this general framework with the specific
   lifting and restriction operators previously outlined are shown in
@@ -459,11 +409,7 @@
   % 
   It is important to mention that this method was applied not to a
   single system instantiation,
-  % t
   but to an ensemble of fifty such realizations.
-  %%% YGK say how many ?
-  %%% 
-  %%% ATH done (fifty)
   This ensured that when properties such as the fitted polynomial
   coefficients were averaged over the ensemble they evolved smoothly
   despite the stochastic nature of the system; in effect, we are
@@ -512,11 +458,6 @@
     \label{eq:f}
     \mathbf{F}(\mathbf{d}) \equiv \Theta(\mathbf{d}) - \mathbf{d} = 0
   \end{align}
-
-  %%% YGK can you consistently make F and d bold, so that they are
-  %%% vectors ?
-  %%% 
-  %%% ATH done
 
   However, this requires the repeated solution of the system of linear
   equations
@@ -649,7 +590,6 @@
 
   \subsection{PCA}
   \label{sec:pca}
-  % TODO (referenced fig below)
 
   PCA is used to embed data into linear subspaces that capture the
   directions along which the data varies most
@@ -768,8 +708,6 @@
   trajectories.
   % 
   This dataset was generated by sampling two different model simulations
-  %%% YGK why even intervals ?  at even intervals ATH I don't remember a
-  %%% particular reason
   as they evolved ($N=2000$ points were sampled from each trajectory).
   % 
   The parameters $n$, $m$ and $\kappa$ were held constant at $200$,
@@ -797,13 +735,6 @@
   They evolve along different ``regions'' of the embedding, taking two
   distinct trajectories on their approach to the stationary state.
   % 
-  % The particular eigenvector each trajectory travels along is also
-  % significant: as $G_e(t)$ was mapped to $\Phi_1$ and $G_l(t)$ to
-  % $\Phi_2$, we can infer that the dynamics of the
-  % Erd\H{o}s-R\'{e}nyi-initialized system occur more slowly than those
-  % of the lopsided-initialized system. Indeed, referring back to
-  % Fig. (\ref{fig:dse}), we see that the lopsided network descends more
-  % rapidly to the stationary state.
   Eventually, their embeddings meet as they arrive at this final, shared
   state, each asymptotically along opposite sides of the slowest
   eigenvector of the linearization of the steady state.
@@ -877,7 +808,7 @@
   dimensionality-reduction are quite general, and can in principle be
   applied in a wide range of network settings to probe hidden
   low-dimensional structure. For an application in the setting of
-  labeled nodes, see ({\cite{kattis_modeling_2015}}). \\
+  labeled nodes, see ({\cite{kattis_modeling_2016}}). \\
 
   However, an open area of investigation is the interpretation of the output from
   the PCA and DMAPS techniques.
@@ -899,22 +830,6 @@
   % 
   Both items are, and we expect will continue being, the subject of
   intense investigation by many research groups, including ours.
-
-
-
-  %% This poses several problems to the investigator. First, the
-  %% interactions themselves may be complicated functions that are
-  %% expensive to compute and dependent on several network
-  %% parameters. This, coupled with the large network sizes inherent to
-  %% many interesting problems makes numerical investigation
-  %% computationally prohibitive.
-
-  %% For instance, the simple model proposed in \ref{votingmodel}
-  %% describing the adoption of opinions in a population is defined such
-  %% that at each simulation step, a random individual is chosen and
-  %% acted upon.  This precludes the use of traditional numerical
-  %% techniques such as optimization and fixed-point location that could
-  %% offer valuable insight into the network's behavior.  We expand
 
   \begin{acknowledgement}
     The authors are grateful to Bal\'{a}zs R\'{a}th for helpful
